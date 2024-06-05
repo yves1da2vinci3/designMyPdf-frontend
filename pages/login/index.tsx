@@ -52,7 +52,7 @@ export default function Login() {
           <TextInput
             {...form.getInputProps('email')}
             label="Email"
-            placeholder="you@mantine.dev"
+            placeholder="you@gmail.dev"
             required
           />
           <PasswordInput
@@ -64,7 +64,7 @@ export default function Login() {
           />
           <Group justify="space-between" mt="lg">
             <Checkbox {...form.getInputProps('password')} label="Remember me" />
-            <Anchor component="button" size="sm">
+            <Anchor onClick={() => router.push(Links.FORGOT_PASSWORD)} component="button" size="sm">
               Forgot password?
             </Anchor>
           </Group>

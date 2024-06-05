@@ -3,6 +3,9 @@ export interface LoginDto {
   password: string;
   rememberMe?: boolean;
 }
+export interface ForgotPasswordDto {
+  email: string;
+}
 
 export const authApi = {
   login: (loginInfo: LoginDto) => {
