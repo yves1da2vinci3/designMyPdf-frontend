@@ -7,13 +7,20 @@ import {
   Title,
 } from '@mantine/core';
 import TemplateItem from '@/components/TemplateItem/TemplateItem';
+import AddTemplate from '@/modals/AddTemplate/AddTemplate';
+import { useDisclosure } from '@mantine/hooks';
 
 const TemplateHome = () => {
+  const [
+    addTemplateOpened,
+    { open: openAddTemplate, close: closeAddTemplate },
+  ] = useDisclosure(false);
   return (
     <Stack>
+      <AddTemplate opened={addTemplateOpened} onClose={closeAddTemplate}/>
       <Group justify="space-between">
         <Title>Templates</Title>
-        <Button>create new template</Button>
+        <Button onClick={() => openAddTemplate()} >create new template</Button>
       </Group>
       {/* Templates */}
       <Group>
