@@ -53,7 +53,7 @@ export function DashboardNav() {
         <Group className={classes.header} justify="space-between">
           <IconBoxSeam size={40} />
           <Code fw={700} className={classes.version}>
-            v3.1.2
+            v0.5.2
           </Code>
         </Group>
         {links}
