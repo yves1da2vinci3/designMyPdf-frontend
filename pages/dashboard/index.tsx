@@ -1,5 +1,5 @@
 import DashboardLayout from '@/layouts/DashboardLayout';
-import { Button, Group, Stack, Text, Title } from '@mantine/core';
+import { Button, Group, Stack, Text, Title, rem } from '@mantine/core';
 import React from 'react';
 import { BarChart } from '@mantine/charts';
 import data from '../../mock/barData';
@@ -20,7 +20,12 @@ export default function Overiew() {
         tickLine="y"
       />
       <Title>Quick Actions</Title>
-      <Group gap={100} >
+      <Group
+        style={{
+          rowGap: rem(10),
+          columnGap: rem(100),
+        }}
+      >
         {' '}
         <Group>
           {' '}
