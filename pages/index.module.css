@@ -3,4 +3,37 @@
     padding-right: rem(200);
 }
 
+@media screen and (max-width: 1200px) {
+    .container {
+        padding-left: rem(00);
+        padding-right: rem(00);
+    }
+}
 
+@media screen and (max-width: 992px) {
+    .container {
+        padding-left: rem(100);
+        padding-right: rem(100);
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .container {
+        padding-left: rem(50);
+        padding-right: rem(50);
+    }
+}
+
+@media screen and (max-width: 576px) {
+    .container {
+        padding-left: rem(20);
+        padding-right: rem(20);
+    }
+}
+
+@media screen and (max-width: 400px) {
+    .container {
+        padding-left: rem(0);
+        padding-right: rem(0);
+    }
+}
