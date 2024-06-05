@@ -1,9 +1,27 @@
 import React from 'react';
 import DashboardLayout from '@/layouts/DashboardLayout';
-import { NextPage } from 'next';
+import {
+  Button,
+  Group,
+  Stack,
+  Title,
+} from '@mantine/core';
+import TemplateItem from '@/components/TemplateItem/TemplateItem';
 
 const TemplateHome = () => {
-  return <div>TemplateHome</div>;
+  return (
+    <Stack>
+      <Group justify="space-between">
+        <Title>Templates</Title>
+        <Button>create new template</Button>
+      </Group>
+      {/* Templates */}
+      <Group>
+       <TemplateItem/>
+       <TemplateItem/>
+      </Group>
+    </Stack>
+  );
 };
 
 TemplateHome.getLayout = (page: React.ReactNode) => <DashboardLayout>{page}</DashboardLayout>;
