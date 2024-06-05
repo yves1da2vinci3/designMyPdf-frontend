@@ -1,0 +1,55 @@
+.title {
+    font-family:
+      Greycliff CF,
+      var(--mantine-font-family);
+    font-weight: 900;
+  }
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}  
+
+
+.formContainer {
+    min-width: rem(500px);
+}
+
+
+
+@media screen and (max-width: 1200px) {
+    .formContainer {
+    min-width: rem(300px);
+       
+    }
+}
+
+@media screen and (max-width: 992px) {
+    .formContainer {
+        padding-left: rem(100);
+        padding-right: rem(100);
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .formContainer {
+        padding-left: rem(50);
+        padding-right: rem(50);
+    }
+}
+
+@media screen and (max-width: 576px) {
+    .formContainer {
+        padding-left: rem(20);
+        padding-right: rem(20);
+    }
+}
+
+@media screen and (max-width: 400px) {
+    .formContainer {
+        padding-left: rem(0);
+        padding-right: rem(0);
+    }
+}
