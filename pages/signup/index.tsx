@@ -1,5 +1,5 @@
 import { Box, Stack } from '@mantine/core';
-import styles from './login.module.css';
+import styles from './signup.module.css';
 import {
   TextInput,
   PasswordInput,
@@ -15,14 +15,13 @@ import {
 import { useRouter } from 'next/router';
 import { Links } from '@/components/Navbar/Navbar';
 import { useForm } from '@mantine/form';
-import { LoginDto, authApi } from '@/api/authApi';
-export default function Login() {
+import { SignupDto, authApi } from '@/api/authApi';
+export default function Signup() {
   const router = useRouter();
   const form = useForm({
     initialValues: {
       email: '',
       password: '',
-      rememberMe: true,
     },
 
     validate: {
@@ -31,24 +30,24 @@ export default function Login() {
     },
   });
 
-  const onSubmit = (loginInfo: LoginDto) => {
+  const onSubmit = (loginInfo: SignupDto) => {
     authApi.login(loginInfo);
   };
   return (
     <Box className={styles.container}>
       <Container className={styles.boxContainer} size={420} my={40}>
         <Title ta="center" className={styles.title}>
-          Welcome back!
+          Welcome !
         </Title>
         <Text c="dimmed" size="sm" ta="center" mt={5}>
-          Do not have an account yet?{' '}
-          <Anchor onClick={() => router.push(Links.SIGNUP)} size="sm" component="button">
-            Create account
+          Do  have an account ?{' '}
+          <Anchor onClick={() => router.push(Links.LOGIN)} size="sm" component="button">
+            Login here
           </Anchor>
         </Text>
 
         <Paper withBorder shadow="md" p={30} mt={30} className={styles.formContainer} radius="md">
-          <form onSubmit={form.onSubmit((values: LoginDto) => onSubmit(values))}></form>
+          <form onSubmit={form.onSubmit((values: SignupDto) => onSubmit(values))}></form>
           <TextInput
             {...form.getInputProps('email')}
             label="Email"
@@ -62,14 +61,9 @@ export default function Login() {
             required
             mt="md"
           />
-          <Group justify="space-between" mt="lg">
-            <Checkbox {...form.getInputProps('password')} label="Remember me" />
-            <Anchor onClick={() => router.push(Links.FORGOT_PASSWORD)} component="button" size="sm">
-              Forgot password?
-            </Anchor>
-          </Group>
+          
           <Button type="submit" disabled={!form.isValid()} fullWidth mt="xl">
-            Sign in
+            Sign up
           </Button>
         </Paper>
       </Container>
