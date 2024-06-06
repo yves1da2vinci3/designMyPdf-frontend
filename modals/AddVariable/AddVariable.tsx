@@ -1,4 +1,4 @@
-import { Modal, ModalProps, Title } from '@mantine/core';
+import { Button, Modal, ModalProps, Stack, Title, rem } from '@mantine/core';
 import { Editor } from '@monaco-editor/react';
 import React, { useState } from 'react';
 
@@ -13,10 +13,15 @@ const AddVariable: React.FC<AddVariableModalProps> = ({
   setJsonContent,
   ...modalProps
 }) => {
+  const [modifiedContent, setModifiedContent] = useState(jsonContent);
   const handleEditorChange = (value: string | undefined) => {
     if (value) {
-      setJsonContent(value);
+      setModifiedContent(value);
     }
+  };
+  const handleSave = () => {
+    setJsonContent(modifiedContent);
+    onClose();
   };
   return (
     <Modal
@@ -30,16 +35,21 @@ const AddVariable: React.FC<AddVariableModalProps> = ({
         </Title>
       }
     >
-      <Editor
-        height="400px"
-        defaultLanguage="json"
-        value={jsonContent}
-        onChange={handleEditorChange}
-        options={{
-          minimap: { enabled: false },
-          scrollBeyondLastLine: false,
-        }}
-      />
+      <Stack>
+        <Editor
+          height="400px"
+          defaultLanguage="json"
+          value={jsonContent}
+          onChange={handleEditorChange}
+          options={{
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+          }}
+        />
+        <Button onClick={()=> handleSave()} w={rem(130)} style={{ alignSelf: 'flex-end' }}>
+          Save
+        </Button>
+      </Stack>
     </Modal>
   );
 };

@@ -5,7 +5,7 @@ import { IconBraces, IconTable } from '@tabler/icons-react'; // Assuming you're 
 
 interface VariableBadgeProps {
   varName: string;
-  type: 'array' | 'object' | 'key-value';
+  type: string;
 }
 
 const VariableBadge: FC<VariableBadgeProps> = ({ varName, type }) => {
@@ -17,7 +17,7 @@ const VariableBadge: FC<VariableBadgeProps> = ({ varName, type }) => {
     }),
   }));
 
-  const getIcon = (type: 'array' | 'object' | 'key-value') => {
+  const getIcon = (type: string) => {
     switch (type) {
       case 'array':
         return <IconTable size={10} />;

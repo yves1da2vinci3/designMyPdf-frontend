@@ -46,8 +46,8 @@ export default function CreateTemplate() {
   const monaco = useMonaco();
   const [{ isOver }, drop] = useDrop({
     accept: 'VARIABLE',
-    drop: (item: { varName: string, type: 'array' | 'object' | 'key-value' }) => {
-      console.log(item)
+    drop: (item: { varName: string; type: 'array' | 'object' | 'key-value' }) => {
+      console.log(item);
       if (editorRef.current) {
         const position = editorRef.current.getPosition();
         const range = new monaco.Range(
@@ -61,13 +61,13 @@ export default function CreateTemplate() {
 
         switch (item.type) {
           case 'array':
-            const objectConcerned =  variables[item.varName][0]
-            const firstKeyName = Object.keys(objectConcerned)[0]
+            const objectConcerned = variables[item.varName][0];
+            const firstKeyName = Object.keys(objectConcerned)[0];
             text = `<% ${item.varName}.forEach((item) => { %>\n\t<%= item.${firstKeyName} %>\n<% }); %>`;
             break;
           case 'object':
-            const firstKey = Object.keys(item.varName)[0];
-            text = `<% Object.keys(${item.varName}).forEach((key) => { %>\n\t<%= ${item.varName}[${JSON.stringify(firstKey)}] %>\n<% }); %>`;
+            const firstKey = Object.keys(variables[item.varName])[0];
+            text = `<%= ${item.varName}.${firstKey} %>`;
             break;
           default:
             text = `<%= ${item.varName} %>`;
@@ -108,7 +108,7 @@ export default function CreateTemplate() {
         {/* Variables */}
         <Group>
           {Object.entries(variables).map(([varName, value]) => {
-            let type = '';
+            let type = 'object';
             if (Array.isArray(value)) {
               type = 'array';
             } else if (typeof value === 'object' && value !== null) {
@@ -116,7 +116,7 @@ export default function CreateTemplate() {
             } else {
               type = 'key-value';
             }
-            return <VariableBadge key={varName} varName={varName} type={type} />;
+            return <VariableBadge key={varName} varName={varName} type={type}  />;
           })}
         </Group>
       </Stack>
