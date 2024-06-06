@@ -4,6 +4,19 @@ import IDE from './CodeEditor';
 import Preview from './Preview';
 import { DEFAULT_FORMAT } from '@/constants/template';
 
+const data = {
+  date: '2024-06-05',
+  items: [
+    { name: 'Item 1', price: 10.00 },
+    { name: 'Item 2', price: 20.00 },
+    { name: 'Item 3', price: 30.00 },
+    { name: 'Item 4', price: 40.00 },
+    { name: 'Item 5', price: 50.00 },
+  ],
+  total: 150.00,
+  contactEmail: 'info@example.com'
+};
+
 export default function CreateTemplate() {
     
   const [code, setCode] = useState<string>(DEFAULT_FORMAT);
@@ -28,7 +41,7 @@ export default function CreateTemplate() {
       </Box>
       {/* Preview */}
       <Box w={'35%'} h={'100vh'} p={40} >
-        <Preview format='a3' htmlContent={code} />
+        <Preview format='a3' htmlContent={code} data={data} />
       </Box>
     </Group>
   );
