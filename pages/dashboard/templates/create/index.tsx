@@ -46,10 +46,10 @@ export default function CreateTemplate() {
   const monaco = useMonaco();
   const [{ isOver }, drop] = useDrop({
     accept: 'VARIABLE',
-    drop: (item: { varName: string }) => {
+    drop: (item: { varName: string, type: 'array' | 'object' | 'key-value' }) => {
+      console.log(item)
       if (editorRef.current) {
-        const editor = editorRef.current;
-        const position = editor.getPosition();
+        const position = editorRef.current.getPosition();
         const range = new monaco.Range(
           position.lineNumber,
           position.column,
@@ -57,9 +57,25 @@ export default function CreateTemplate() {
           position.column
         );
         const id = { major: 1, minor: 1 }; // unique identifier for the op
-        const text = `<%= ${item.varName} %>`;
+        let text = '';
+
+        switch (item.type) {
+          case 'array':
+            const objectConcerned =  variables[item.varName][0]
+            const firstKeyName = Object.keys(objectConcerned)[0]
+            text = `<% ${item.varName}.forEach((item) => { %>\n\t<%= item.${firstKeyName} %>\n<% }); %>`;
+            break;
+          case 'object':
+            const firstKey = Object.keys(item.varName)[0];
+            text = `<% Object.keys(${item.varName}).forEach((key) => { %>\n\t<%= ${item.varName}[${JSON.stringify(firstKey)}] %>\n<% }); %>`;
+            break;
+          default:
+            text = `<%= ${item.varName} %>`;
+            break;
+        }
+
         const op = { identifier: id, range: range, text: text, forceMoveMarkers: true };
-        editor.executeEdits('my-source', [op]);
+        editorRef.current.executeEdits('my-source', [op]);
       }
     },
     collect: (monitor) => ({
@@ -77,23 +93,31 @@ export default function CreateTemplate() {
         setJsonContent={setJsonContent}
       />
       {/* Editing configuration */}
-      <Stack w={'15%'} p={10} h={'100vh'} bg={'blue'}>
-        <Text>Template settings</Text>
+      <Stack w={'15%'} p={10} h={'100vh'} bg={'black'}>
+        <Text c={'white'}>Template settings</Text>
         <Group>
           <Select placeholder="A4" data={['a1', 'a2', 'a3', 'a4', 'a5', 'a6']} />
           <Select placeholder="Type" data={['landscape', 'portrait']} />
         </Group>
         <Group justify="space-between">
-          <Text>Template variables</Text>
+          <Text c={'white'}>Template variables</Text>
           <Box onClick={() => handleAddVariable()} component="button">
-            <IconPlus />
+            <IconPlus color="white" />
           </Box>
         </Group>
         {/* Variables */}
         <Group>
-          {Object.keys(variables).map((varName) => (
-            <VariableBadge key={varName} varName={varName} />
-          ))}
+          {Object.entries(variables).map(([varName, value]) => {
+            let type = '';
+            if (Array.isArray(value)) {
+              type = 'array';
+            } else if (typeof value === 'object' && value !== null) {
+              type = 'object';
+            } else {
+              type = 'key-value';
+            }
+            return <VariableBadge key={varName} varName={varName} type={type} />;
+          })}
         </Group>
       </Stack>
       {/* Code editor */}
@@ -107,8 +131,6 @@ export default function CreateTemplate() {
             }}
           />
         </DndProvider>
-       
-       
       </Box>
       {/* Preview */}
       <Box w={'35%'} h={'100vh'} p={40}>
