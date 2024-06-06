@@ -22,6 +22,7 @@ const AddVariable: React.FC<AddVariableModalProps> = ({
     <Modal
       centered
       onClose={onClose}
+      size={'lg'}
       {...modalProps}
       title={
         <Title order={3} my={4}>

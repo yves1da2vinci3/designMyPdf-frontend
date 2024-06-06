@@ -5,7 +5,8 @@ import { MantineProvider } from '@mantine/core';
 import { theme } from '../theme';
 import { ReactElement, ReactNode } from 'react';
 import { NextPage } from 'next';
-
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
 };
@@ -28,7 +29,11 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
         />
         <link rel="shortcut icon" href="/favicon.svg" />
       </Head>
-      {getLayout(<Component {...pageProps} />)}
+      {getLayout(
+        <DndProvider backend={HTML5Backend}>
+          <Component {...pageProps} />
+        </DndProvider>
+      )}
     </MantineProvider>
   );
 }

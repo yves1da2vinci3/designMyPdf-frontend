@@ -1,12 +1,13 @@
-import Editor from '@monaco-editor/react';
+import Editor, { OnMount } from '@monaco-editor/react';
 import React, { useEffect, useState } from 'react';
 
 interface EditorProps {
   onChange: (value: string) => void;
   defaultValue: string;
+  editorDidMount: OnMount;
 }
 
-const IDE: React.FC<EditorProps> = ({ onChange, defaultValue }) => {
+const IDE: React.FC<EditorProps> = ({ onChange, defaultValue, editorDidMount }) => {
   const [value, setValue] = useState<string>(defaultValue);
 
   useEffect(() => {
@@ -23,9 +24,10 @@ const IDE: React.FC<EditorProps> = ({ onChange, defaultValue }) => {
   return (
     <Editor
       value={value}
-      onChange={(newValue) => handleEditorChange(newValue)}
+      onChange={handleEditorChange}
       height="100vh"
       defaultLanguage="html"
+      onMount={editorDidMount}
     />
   );
 };
