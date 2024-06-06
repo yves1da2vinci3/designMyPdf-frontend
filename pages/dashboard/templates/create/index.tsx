@@ -1,15 +1,16 @@
-import { Badge, Box, Group, Select, Stack, Text } from '@mantine/core';
+import { Badge, Box, Button, Group, Select, Stack, Text, rem } from '@mantine/core';
 import React, { useEffect, useState, useRef } from 'react';
 import IDE from './CodeEditor';
 import Preview from './Preview';
 import { DEFAULT_FORMAT } from '@/constants/template';
-import { IconPlus } from '@tabler/icons-react';
+import { IconArrowLeft, IconDownload, IconPlus } from '@tabler/icons-react';
 import AddVariable from '@/modals/AddVariable/AddVariable';
 import { useDisclosure } from '@mantine/hooks';
 import { DndProvider, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import VariableBadge from '@/components/VariableBadge/VariableBadge';
 import { useMonaco } from '@monaco-editor/react';
+import { Router, useRouter } from 'next/router';
 
 const data = {
   date: '2024-06-05',
@@ -28,6 +29,7 @@ export default function CreateTemplate() {
   const [code, setCode] = useState<string>(DEFAULT_FORMAT);
   const [addVariableOpened, { open: openAddVariable, close: closeAddVariable }] =
     useDisclosure(false);
+    const router = useRouter()
   const handleAddVariable = () => {
     openAddVariable();
   };
@@ -83,8 +85,12 @@ export default function CreateTemplate() {
     }),
   });
 
+  const handleBack = () => {
+    router.back()
+  }
+
   return (
-    <Group style={{ overflow: 'hidden' }} gap={0}>
+    <Stack style={{ overflow: 'hidden' }} gap={0}>
       {/* Manage variable */}
       <AddVariable
         opened={addVariableOpened}
@@ -92,8 +98,16 @@ export default function CreateTemplate() {
         jsonContent={jsonContent}
         setJsonContent={setJsonContent}
       />
+      {/* NavBar */}
+      <Group h={rem(40)} px={10} bg={'black'} justify='space-between' >
+        <Button onClick={()=> handleBack()} leftSection={<IconArrowLeft size={14} />} bg={'black'} >return to dashoard</Button>
+        <Text c={'white'} >lolo domine le monde</Text>
+        <Button size='xs' rightSection={<IconDownload size={14} />} bg={'blue'} >save</Button>
+      </Group>
+      {/* Main Content */}
+      <Group>
       {/* Editing configuration */}
-      <Stack w={'15%'} p={10} h={'100vh'} bg={'black'}>
+      <Stack w={'15%'} p={10} h={'95vh'} bg={'black'}>
         <Text c={'white'}>Template settings</Text>
         <Group>
           <Select placeholder="A4" data={['a1', 'a2', 'a3', 'a4', 'a5', 'a6']} />
@@ -121,7 +135,7 @@ export default function CreateTemplate() {
         </Group>
       </Stack>
       {/* Code editor */}
-      <Box flex={1} h={'100vh'} bg={'green'} ref={drop} style={{ position: 'relative' }}>
+      <Box flex={1} h={'95vh'} bg={'green'} ref={drop} style={{ position: 'relative' }}>
         <DndProvider backend={HTML5Backend}>
           <IDE
             onChange={(newValue) => setCode(newValue)}
@@ -133,9 +147,10 @@ export default function CreateTemplate() {
         </DndProvider>
       </Box>
       {/* Preview */}
-      <Box w={'35%'} h={'100vh'} p={40}>
+      <Box w={'35%'} h={'95vh'} p={40}>
         <Preview format="a3" htmlContent={code} data={variables} />
       </Box>
-    </Group>
+      </Group>
+    </Stack>
   );
 }
