@@ -3,9 +3,10 @@ import { useDrag } from 'react-dnd';
 import { Badge } from '@mantine/core';
 
 interface VariableBadgeProps {
-    varName: string;
+  varName: string;
 }
-const VariableBadge :FC<VariableBadgeProps> = ({ varName }) => {
+
+const VariableBadge: FC<VariableBadgeProps> = ({ varName }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'VARIABLE',
     item: { varName },
@@ -15,7 +16,10 @@ const VariableBadge :FC<VariableBadgeProps> = ({ varName }) => {
   }));
 
   return (
-    <Badge ref={drag} color="black" style={{ opacity: isDragging ? 0.5 : 1 }}>
+    <Badge
+      ref={drag}
+      style={{ opacity: isDragging ? 0.5 : 1, background: isDragging ? 'transparent' : 'black' }}
+    >
       {varName}
     </Badge>
   );
