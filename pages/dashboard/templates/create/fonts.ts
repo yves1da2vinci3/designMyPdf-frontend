@@ -97,6 +97,7 @@ export const fonts = [
     'Lobster',
     'Kanit',
     'Prompt',
+    'Poppins'
   ];
   
   
