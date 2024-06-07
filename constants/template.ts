@@ -1,4 +1,4 @@
-export const DEFAULT_FORMAT = `
+export const DEFAULT_TEMPLATE = `
 <div class="max-w-md w-full bg-white shadow-lg rounded-lg p-6">
   <div class="flex justify-between items-center border-b pb-3">
     <h2 class="text-xl font-bold">Receipt</h2>

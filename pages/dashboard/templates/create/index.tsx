@@ -1,8 +1,8 @@
 import { Badge, Box, Button, Group, Select, Stack, Text, rem } from '@mantine/core';
 import React, { useEffect, useState, useRef } from 'react';
 import IDE from './CodeEditor';
-import Preview from './Preview';
-import { DEFAULT_FORMAT } from '@/constants/template';
+import Preview, { FormatType } from './Preview';
+import { DEFAULT_TEMPLATE } from '@/constants/template';
 import { IconArrowLeft, IconDownload, IconPlus } from '@tabler/icons-react';
 import AddVariable from '@/modals/AddVariable/AddVariable';
 import { useDisclosure } from '@mantine/hooks';
@@ -12,6 +12,7 @@ import VariableBadge from '@/components/VariableBadge/VariableBadge';
 import { useMonaco } from '@monaco-editor/react';
 import { Router, useRouter } from 'next/router';
 
+const DEFAULT_FORMAT = 'a4';
 const data = {
   date: '2024-06-05',
   items: [
@@ -26,10 +27,10 @@ const data = {
 };
 
 export default function CreateTemplate() {
-  const [code, setCode] = useState<string>(DEFAULT_FORMAT);
+  const [code, setCode] = useState<string>(DEFAULT_TEMPLATE);
   const [addVariableOpened, { open: openAddVariable, close: closeAddVariable }] =
     useDisclosure(false);
-    const router = useRouter()
+  const router = useRouter();
   const handleAddVariable = () => {
     openAddVariable();
   };
@@ -86,9 +87,15 @@ export default function CreateTemplate() {
   });
 
   const handleBack = () => {
-    router.back()
-  }
+    router.back();
+  };
 
+  // handle Format
+  const [format, setFormat] = useState<FormatType>(DEFAULT_FORMAT);
+  const handleFormat = (format: FormatType) => {
+    console.log(format);
+    setFormat(format);
+  };
   return (
     <Stack style={{ overflow: 'hidden' }} gap={0}>
       {/* Manage variable */}
@@ -99,57 +106,73 @@ export default function CreateTemplate() {
         setJsonContent={setJsonContent}
       />
       {/* NavBar */}
-      <Group h={rem(40)} px={10} bg={'black'} justify='space-between' >
-        <Button onClick={()=> handleBack()} leftSection={<IconArrowLeft size={14} />} bg={'black'} >return to dashoard</Button>
-        <Text c={'white'} >lolo domine le monde</Text>
-        <Button size='xs' rightSection={<IconDownload size={14} />} bg={'blue'} >save</Button>
+      <Group h={rem(40)} px={10} bg={'black'} justify="space-between">
+        <Button onClick={() => handleBack()} leftSection={<IconArrowLeft size={14} />} bg={'black'}>
+          return to dashoard
+        </Button>
+        <Text c={'white'}>lolo domine le monde</Text>
+        <Button size="xs" rightSection={<IconDownload size={14} />} bg={'blue'}>
+          save
+        </Button>
       </Group>
       {/* Main Content */}
       <Group>
-      {/* Editing configuration */}
-      <Stack w={'15%'} p={10} h={'95vh'} bg={'black'}>
-        <Text c={'white'}>Template settings</Text>
-        <Group>
-          <Select placeholder="A4" data={['a1', 'a2', 'a3', 'a4', 'a5', 'a6']} />
-          <Select placeholder="Type" data={['landscape', 'portrait']} />
-        </Group>
-        <Group justify="space-between">
-          <Text c={'white'}>Template variables</Text>
-          <Box onClick={() => handleAddVariable()} component="button">
-            <IconPlus color="white" />
-          </Box>
-        </Group>
-        {/* Variables */}
-        <Group>
-          {Object.entries(variables).map(([varName, value]) => {
-            let type = 'object';
-            if (Array.isArray(value)) {
-              type = 'array';
-            } else if (typeof value === 'object' && value !== null) {
-              type = 'object';
-            } else {
-              type = 'key-value';
-            }
-            return <VariableBadge key={varName} varName={varName} type={type}  />;
-          })}
-        </Group>
-      </Stack>
-      {/* Code editor */}
-      <Box flex={1} h={'95vh'} bg={'green'} ref={drop} style={{ position: 'relative' }}>
-        <DndProvider backend={HTML5Backend}>
-          <IDE
-            onChange={(newValue) => setCode(newValue)}
-            defaultValue={code}
-            editorDidMount={(editor) => {
-              editorRef.current = editor;
-            }}
-          />
-        </DndProvider>
-      </Box>
-      {/* Preview */}
-      <Box w={'35%'} h={'95vh'} p={40}>
-        <Preview format="a3" htmlContent={code} data={variables} />
-      </Box>
+        {/* Editing configuration */}
+        <Stack w={'15%'} p={10} h={'95vh'} bg={'black'}>
+          <Text c={'white'}>Template settings</Text>
+          <Group>
+            <Select
+              onChange={(_, formatSelected) => {
+                console.log(formatSelected);
+                const format = (formatSelected.value as FormatType) || DEFAULT_FORMAT;
+                handleFormat(format);
+              }}
+              defaultValue={DEFAULT_FORMAT}
+              data={['a1', 'a2', 'a3', 'a4', 'a5', 'a6']}
+            />
+            <Select placeholder="Type" data={['landscape', 'portrait']} />
+          </Group>
+          <Group justify="space-between">
+            <Text c={'white'}>Template variables</Text>
+            <Box onClick={() => handleAddVariable()} component="button">
+              <IconPlus color="white" />
+            </Box>
+          </Group>
+          {/* Variables */}
+          <Group>
+            {Object.entries(variables).map(([varName, value]) => {
+              let type = 'object';
+              if (Array.isArray(value)) {
+                type = 'array';
+              } else if (typeof value === 'object' && value !== null) {
+                type = 'object';
+              } else {
+                type = 'key-value';
+              }
+              return <VariableBadge key={varName} varName={varName} type={type} />;
+            })}
+          </Group>
+        </Stack>
+        {/* Code editor */}
+        <Box flex={1} h={'95vh'} bg={'green'} ref={drop} style={{ position: 'relative' }}>
+          <DndProvider backend={HTML5Backend}>
+            <IDE
+              onChange={(newValue) => setCode(newValue)}
+              defaultValue={code}
+              editorDidMount={(editor) => {
+                editorRef.current = editor;
+              }}
+            />
+          </DndProvider>
+        </Box>
+        {/* Preview */}
+        <Box
+          style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+          w={'35%'}
+          h={'95vh'}
+        >
+          <Preview format={format} htmlContent={code} data={variables} />
+        </Box>
       </Group>
     </Stack>
   );

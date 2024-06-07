@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import styles from './create.module.css';
 import ejs from 'ejs-browser';
+
+export type FormatType = 'a1' | 'a2' | 'a3' | 'a4' | 'a5' | 'a6';
 interface PreviewProps {
   htmlContent: string;
-  format?: 'a1' | 'a2' | 'a3' | 'a4' | 'a5' | 'a6' | 'default'; // Add the format prop
+  format?: FormatType  // Add the format prop
   data?: Record<string, any>; // Add a data prop for EJS
 }
 
@@ -30,9 +32,9 @@ const Preview: React.FC<PreviewProps> = ({ htmlContent, format, data = {} }) => 
     }
   }, [htmlContent, data]);
 
-  const formatClass = format !== 'default' ? styles[`${format}Format`] : '';
+  const formatClass = styles[`${format}-format`];
   return (
-    <div className={`prose ${formatClass}`} dangerouslySetInnerHTML={{ __html: renderedContent }} />
+    <div className={formatClass} dangerouslySetInnerHTML={{ __html: renderedContent }} />
   );
 };
 
