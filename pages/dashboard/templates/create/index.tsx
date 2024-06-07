@@ -11,6 +11,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import VariableBadge from '@/components/VariableBadge/VariableBadge';
 import { useMonaco } from '@monaco-editor/react';
 import { Router, useRouter } from 'next/router';
+import { DEFAULT_FONT, fonts } from './fonts';
 
 const DEFAULT_FORMAT = 'a4';
 const data = {
@@ -96,6 +97,12 @@ export default function CreateTemplate() {
     console.log(format);
     setFormat(format);
   };
+  // Handle Font
+  const [selectedFont, setSelectedFont] = useState(DEFAULT_FONT);
+  const handleChangeFont = (selectedOption: any) => {
+    setSelectedFont(selectedOption.value);
+  };
+
   return (
     <Stack style={{ overflow: 'hidden' }} gap={0}>
       {/* Manage variable */}
@@ -152,6 +159,17 @@ export default function CreateTemplate() {
               return <VariableBadge key={varName} varName={varName} type={type} />;
             })}
           </Group>
+
+          {/* Fonts */}
+          <Text c={'white'}>Fonts</Text>
+          <Select
+            onChange={(_, fontSelected) => {
+              handleChangeFont(fontSelected);
+            }}
+            searchable
+            defaultValue={DEFAULT_FONT}
+            data={fonts}
+          />
         </Stack>
         {/* Code editor */}
         <Box flex={1} h={'95vh'} bg={'green'} ref={drop} style={{ position: 'relative' }}>
@@ -171,7 +189,7 @@ export default function CreateTemplate() {
           w={'35%'}
           h={'95vh'}
         >
-          <Preview format={format} htmlContent={code} data={variables} />
+          <Preview format={format} htmlContent={code} data={variables} font={selectedFont} />
         </Box>
       </Group>
     </Stack>
