@@ -11,7 +11,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import VariableBadge from '@/components/VariableBadge/VariableBadge';
 import { useMonaco } from '@monaco-editor/react';
 import { Router, useRouter } from 'next/router';
-import { DEFAULT_FONT, fonts } from './fonts';
+import { DEFAULT_FONT, fonts } from '../../../../constants/fonts';
 
 const DEFAULT_FORMAT = 'a4';
 const data = {
