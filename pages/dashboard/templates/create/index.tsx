@@ -10,7 +10,7 @@ import { DndProvider, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import VariableBadge from '@/components/VariableBadge/VariableBadge';
 import { useMonaco } from '@monaco-editor/react';
-import { Router, useRouter } from 'next/router';
+import { useRouter } from 'next/router';
 import { DEFAULT_FONT, fonts } from '../../../../constants/fonts';
 
 const DEFAULT_FORMAT = 'a4';
@@ -119,7 +119,7 @@ export default function CreateTemplate() {
         </Button>
         <Text c={'white'}>lolo domine le monde</Text>
         <Button size="xs" rightSection={<IconDownload size={14} />} bg={'blue'}>
-          save
+          save and publish
         </Button>
       </Group>
       {/* Main Content */}
@@ -185,7 +185,9 @@ export default function CreateTemplate() {
         </Box>
         {/* Preview */}
         <Box
-          style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+          style={{
+            backgroundColor: 'black',
+          }}
           w={'35%'}
           h={'95vh'}
         >
