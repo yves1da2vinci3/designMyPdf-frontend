@@ -116,17 +116,17 @@ export default function CreateTemplate() {
     setFormat(format);
   };
   // Handle Font
-  const [selectedFont, setSelectedFont] = useState(DEFAULT_FONT);
+  const [isLandScape, setIsLandScape] = useState<boolean>(false);
   const [fontsSelected, setFontsSelected] = useState([DEFAULT_FONT]);
 
-  const addFont = () => { 
+  const addFont = () => {
     setFontsSelected([...fontsSelected, '--Select--your-font']);
-   }
+  };
 
-  const removeFont = (fontToRemove:string) => { 
+  const removeFont = (fontToRemove: string) => {
     setFontsSelected(fontsSelected.filter((f) => f !== fontToRemove));
-   }
-  const handleChangeFont = (selectedOption: any,index: number) => {
+  };
+  const handleChangeFont = (selectedOption: any, index: number) => {
     const newFontsSelected = [...fontsSelected];
     newFontsSelected[index] = selectedOption.value;
     setFontsSelected(newFontsSelected);
@@ -177,7 +177,12 @@ export default function CreateTemplate() {
                 { label: 'A6', value: 'a6' },
               ]}
             />
-            <Checkbox defaultChecked c={'white'} label="landscape" />
+            <Checkbox
+              checked={isLandScape}
+              c={'white'}
+              onChange={(event) => setIsLandScape(event.currentTarget.checked)}
+              label="landscape"
+            />
           </Group>
           <Group justify="space-between">
             <Text size="sm" fw={'bold'} c={'white'}>
@@ -213,22 +218,21 @@ export default function CreateTemplate() {
           </Group>
           {/* Selected Fonts */}
           {fontsSelected.map((font, index) => (
-            <Group justify="space-between" >
-            <Select
-              w={'60%'}
-              onChange={(_, fontSelected) => {
-                handleChangeFont(fontSelected,index);
-              }}
-              searchable
-              defaultValue={font}
-              data={fonts}
-            />
-            <Box onClick={() => removeFont(font)} component="button">
-              <IconMinus color="white" />
-            </Box>
-          </Group>
+            <Group justify="space-between">
+              <Select
+                w={'60%'}
+                onChange={(_, fontSelected) => {
+                  handleChangeFont(fontSelected, index);
+                }}
+                searchable
+                defaultValue={font}
+                data={fonts}
+              />
+              <Box onClick={() => removeFont(font)} component="button">
+                <IconMinus color="white" />
+              </Box>
+            </Group>
           ))}
-          
         </Stack>
         {/* Code editor */}
         <Box flex={1} h={'95vh'} bg={'green'} ref={drop} style={{ position: 'relative' }}>
@@ -250,7 +254,13 @@ export default function CreateTemplate() {
           w={'35%'}
           h={'95vh'}
         >
-          <Preview format={format} htmlContent={code} data={variables} fonts={fontsSelected} />
+          <Preview
+            format={format}
+            htmlContent={code}
+            data={variables}
+            isLandscape={isLandScape}
+            fonts={fontsSelected}
+          />
         </Box>
       </Group>
     </Stack>

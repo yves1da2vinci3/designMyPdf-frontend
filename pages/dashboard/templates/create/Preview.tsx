@@ -8,6 +8,7 @@ interface PreviewProps {
   format?: FormatType;
   data?: Record<string, any>;
   fonts: string[];
+  isLandscape?: boolean;
 }
 
 const importFontCreation = (fonts: string[]) => {
@@ -29,7 +30,13 @@ const fontCssCreation = (fonts: string[]) => {
   `;
 };
 
-const Preview: React.FC<PreviewProps> = ({ htmlContent, format = 'a4', data = {}, fonts }) => {
+const Preview: React.FC<PreviewProps> = ({
+  htmlContent,
+  format = 'a4',
+  data = {},
+  fonts,
+  isLandscape = false,
+}) => {
   const [renderedContent, setRenderedContent] = useState('');
   const [fontImport, setFontImport] = useState<string>('');
   const [fontStyle, setFontStyle] = useState<string>('');
@@ -45,8 +52,6 @@ const Preview: React.FC<PreviewProps> = ({ htmlContent, format = 'a4', data = {}
     a5: { width: 148, height: 210 },
     a6: { width: 105, height: 148 },
   };
-
-  const selectedSize = formatToSize[format];
 
   useEffect(() => {
     setFontImport(importFontCreation(fonts));
@@ -99,7 +104,15 @@ const Preview: React.FC<PreviewProps> = ({ htmlContent, format = 'a4', data = {}
     }
   }, [htmlContent, data, fontImport, fontStyle]);
 
-  const a4AspectRatio = selectedSize.height / selectedSize.width;
+  const getSize = () => {
+    const selectedSize = formatToSize[format];
+    if (isLandscape) {
+      return { width: selectedSize.height, height: selectedSize.width };
+    }
+    return selectedSize;
+  };
+
+  const a4AspectRatio = getSize().height / getSize().width;
 
   useEffect(() => {
     const updatePaperSize = () => {
@@ -118,7 +131,7 @@ const Preview: React.FC<PreviewProps> = ({ htmlContent, format = 'a4', data = {}
         paperRef.current.style.width = `${paperWidth}px`;
         paperRef.current.style.height = `${paperHeight}px`;
 
-        const scale = paperWidth / (selectedSize.width * (96 / 25.4));
+        const scale = paperWidth / (getSize().width * (96 / 25.4));
         iframeRef.current!.style.transform = `scale(${scale})`;
         iframeRef.current!.style.transformOrigin = 'top left';
       }
@@ -128,7 +141,7 @@ const Preview: React.FC<PreviewProps> = ({ htmlContent, format = 'a4', data = {}
     window.addEventListener('resize', updatePaperSize);
 
     return () => window.removeEventListener('resize', updatePaperSize);
-  }, [a4AspectRatio, selectedSize.width]);
+  }, [a4AspectRatio, getSize]);
 
   return (
     <div ref={containerRef} className="h-full w-full flex flex-col items-center justify-center">
@@ -138,8 +151,8 @@ const Preview: React.FC<PreviewProps> = ({ htmlContent, format = 'a4', data = {}
           title="Preview"
           srcDoc={renderedContent}
           style={{
-            width: `${selectedSize.width}mm`,
-            height: `${selectedSize.height}mm`,
+            width: `${getSize().width}mm`,
+            height: `${getSize().height}mm`,
             border: 'none',
           }}
           sandbox="allow-popups-to-escape-sandbox allow-scripts allow-popups allow-forms allow-pointer-lock allow-top-navigation allow-modals"
