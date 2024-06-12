@@ -12,22 +12,22 @@ const TemplateHome = () => {
     useDisclosure(false);
   const [addNamespaceOpened, { open: openAddNamespace, close: closeAddNamespace }] =
     useDisclosure(false);
+
   return (
     <Stack h={'98vh'}>
       <AddTemplate opened={addTemplateOpened} onClose={closeAddTemplate} />
       <AddNamespace opened={addNamespaceOpened} onClose={closeAddNamespace} />
-      <Group style={{ borderBottom : 2 ,borderColor : 'red' }} justify="space-between">
+      <Group style={{ borderBottom: 2, borderColor: 'red' }} justify="space-between">
         <Title>Templates</Title>
         <Button onClick={() => openAddTemplate()}>create new template</Button>
       </Group>
-      {/* Templates */}
-      <Group  gap={4} flex={1}>
+      <Group gap={4} flex={1}>
         {/* NameSpaces management */}
-        <Stack px={rem(12)} gap={2} flex={1} w={'100%'}   h={'100%'}>
+        <Stack px={rem(12)} gap={2} flex={1} w={'100%'} h={'100%'}>
           {/* NameSpaces */}
-          <NamespaceItem selected={false} />
-          <NamespaceItem selected={true} />
-          <NamespaceItem selected={false} />
+          <NamespaceItem id={1} selected={false} />
+          <NamespaceItem id={2} selected={true} />
+          <NamespaceItem id={3} selected={false} />
           {/* NameSpaces management */}
           <Button onClick={openAddNamespace} size="xs" bg={'dark'} w={rem(164)}>
             Add namespace
@@ -38,22 +38,22 @@ const TemplateHome = () => {
         </Stack>
         {/* Templates element */}
         <Stack h={'100%'} flex={4}>
-          <Group justify='flex-start' gap={6}>
-            <TemplateItem />
-            <TemplateItem />
-            <TemplateItem />
-            <TemplateItem />
-            <TemplateItem />
-            <TemplateItem />
-            <TemplateItem />
-            <TemplateItem />
-            <TemplateItem />
-            <TemplateItem />
-            <TemplateItem />
-            <TemplateItem />
+          <Group justify="flex-start" gap={6}>
+            <TemplateItem id={1} />
+            <TemplateItem id={2} />
+            <TemplateItem id={3} />
+            <TemplateItem id={4} />
+            <TemplateItem id={5} />
+            <TemplateItem id={6} />
+            <TemplateItem id={7} />
+            <TemplateItem id={8} />
+            <TemplateItem id={9} />
+            <TemplateItem id={10} />
+            <TemplateItem id={11} />
+            <TemplateItem id={12} />
             {/* Pagination */}
           </Group>
-          <Pagination style={{alignSelf : 'self-end'}}  total={10} />
+          <Pagination style={{ alignSelf: 'self-end' }} total={10} />
         </Stack>
       </Group>
     </Stack>

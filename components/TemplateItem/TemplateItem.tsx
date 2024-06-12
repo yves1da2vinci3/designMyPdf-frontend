@@ -1,10 +1,19 @@
 import { Paper, Box, Menu, rem, Avatar, Text } from '@mantine/core';
 import { IconDots, IconTrash } from '@tabler/icons-react';
 import React from 'react';
+import { useDrag } from 'react-dnd';
 
-export default function TemplateItem() {
+export default function TemplateItem({ id }: { id: number }) {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: 'TEMPLATE',
+    item: { id },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  }));
+
   return (
-    <Paper p={20} withBorder mt={0} shadow="sm">
+    <Paper ref={drag} p={20} withBorder mt={0} shadow="sm" style={{ opacity: isDragging ? 0.5 : 1 }}>
       <Box style={{ position: 'relative' }}>
         <Menu shadow="md" width={200}>
           <Menu.Target>
