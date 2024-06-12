@@ -18,7 +18,7 @@ import { useRouter } from 'next/router';
 const data = [
   { link: '/dashboard/', label: 'Overview', icon: IconWaveSawTool },
   { link: '/dashboard/templates', label: 'Templates', icon: IconReceipt },
-  { link: '/dashboard/logs', label: 'Logs', icon: IconNotebook },
+  { link: '/dashboard/backtrace', label: 'Logs', icon: IconNotebook },
   { link: '/dashboard/keys', label: 'Api Keys', icon: IconKey },
   { link: '/dashboard/account', label: 'Account', icon: IconUserCircle },
 ];
