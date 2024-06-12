@@ -7,13 +7,13 @@ interface PreviewProps {
   htmlContent: string;
   format?: FormatType;
   data?: Record<string, any>;
-  font: string;
+  fonts: string[];
 }
 
-const importFontCreation = (font: string) => {
+const importFontCreation = (fonts: string[]) => {
   try {
-    const encodedFont = encodeURIComponent(font);
-    const fontUrl = `https://fonts.googleapis.com/css2?family=${encodedFont}:wght@100;200;300;400;500;600;700;800;900&display=swap`;
+    const encodedFont = encodeURIComponent(fonts[0]);
+    const fontUrl = `https://fonts.googleapis.com/css2?family=${encodedFont}:wght@100;200;300;400;500;600;700;800;900${fonts.slice(1).map((font) => `&display=swap&family=${encodeURIComponent(font)}`)}`;
     return `<link key="font-import" rel="stylesheet" href="${fontUrl}" />`;
   } catch (error) {
     console.error('Error generating font import:', error);
@@ -21,23 +21,21 @@ const importFontCreation = (font: string) => {
   }
 };
 
-const fontCssCreation = (font: string) => {
+const fontCssCreation = (fonts: string[]) => {
   return `
     body {
-      font-family: '${font}', sans-serif;
+      font-family: '${fonts[0]}', sans-serif;
     }
   `;
 };
 
-const Preview: React.FC<PreviewProps> = ({ htmlContent, format = 'a4', data = {}, font }) => {
+const Preview: React.FC<PreviewProps> = ({ htmlContent, format = 'a4', data = {}, fonts }) => {
   const [renderedContent, setRenderedContent] = useState('');
   const [fontImport, setFontImport] = useState<string>('');
   const [fontStyle, setFontStyle] = useState<string>('');
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
-
-  const mmToPx = (mm: number) => Math.round(mm * (96 / 25.4));
 
   const formatToSize = {
     a1: { width: 841, height: 1189 },
@@ -51,9 +49,9 @@ const Preview: React.FC<PreviewProps> = ({ htmlContent, format = 'a4', data = {}
   const selectedSize = formatToSize[format];
 
   useEffect(() => {
-    setFontImport(importFontCreation(font));
-    setFontStyle(fontCssCreation(font));
-  }, [font]);
+    setFontImport(importFontCreation(fonts));
+    setFontStyle(fontCssCreation(fonts));
+  }, [fonts]);
 
   useEffect(() => {
     if (!document.getElementById('tailwind-cdn')) {
@@ -134,10 +132,7 @@ const Preview: React.FC<PreviewProps> = ({ htmlContent, format = 'a4', data = {}
 
   return (
     <div ref={containerRef} className="h-full w-full flex flex-col items-center justify-center">
-      <div
-        ref={paperRef}
-        className="shadow-lg bg-white rounded overflow-hidden relative"
-      >
+      <div ref={paperRef} className="shadow-lg bg-white rounded overflow-hidden relative">
         <iframe
           ref={iframeRef}
           title="Preview"

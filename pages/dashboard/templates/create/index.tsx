@@ -1,9 +1,9 @@
-import { Badge, Box, Button, Group, Select, Stack, Text, rem } from '@mantine/core';
+import { Badge, Box, Button, Checkbox, Group, Select, Stack, Text, rem } from '@mantine/core';
 import React, { useEffect, useState, useRef } from 'react';
 import IDE from './CodeEditor';
 import Preview, { FormatType } from './Preview';
 import { DEFAULT_TEMPLATE } from '@/constants/template';
-import { IconArrowLeft, IconDownload, IconPlus } from '@tabler/icons-react';
+import { IconArrowLeft, IconDownload, IconMinus, IconPlus } from '@tabler/icons-react';
 import AddVariable from '@/modals/AddVariable/AddVariable';
 import { useDisclosure } from '@mantine/hooks';
 import { DndProvider, useDrop } from 'react-dnd';
@@ -20,29 +20,29 @@ const data = {
     street: '123 Main St',
     city: 'Example City',
     country: 'Example Country',
-    zip: '12345'
+    zip: '12345',
   },
   toCompany: {
     name: 'Client Corp',
     street: '456 Client St',
     city: 'Client City',
     country: 'Client Country',
-    zip: '67890'
+    zip: '67890',
   },
   invoiceNumber: 'INV-12345',
   issueDate: '2024-06-10',
   dueDate: '2024-06-24',
   items: [
     { name: 'Service A', quantity: 10, taxes: 5, price: 100 },
-    { name: 'Service B', quantity: 5, taxes: 2, price: 50 }
+    { name: 'Service B', quantity: 5, taxes: 2, price: 50 },
   ],
   prices: {
     subtotal: 150,
     discount: 10,
     taxes: 7,
-    total: 147
+    total: 147,
   },
-  showTerms: true
+  showTerms: true,
 };
 
 export default function CreateTemplate() {
@@ -117,8 +117,19 @@ export default function CreateTemplate() {
   };
   // Handle Font
   const [selectedFont, setSelectedFont] = useState(DEFAULT_FONT);
-  const handleChangeFont = (selectedOption: any) => {
-    setSelectedFont(selectedOption.value);
+  const [fontsSelected, setFontsSelected] = useState([DEFAULT_FONT]);
+
+  const addFont = () => { 
+    setFontsSelected([...fontsSelected, '--Select--your-font']);
+   }
+
+  const removeFont = (fontToRemove:string) => { 
+    setFontsSelected(fontsSelected.filter((f) => f !== fontToRemove));
+   }
+  const handleChangeFont = (selectedOption: any,index: number) => {
+    const newFontsSelected = [...fontsSelected];
+    newFontsSelected[index] = selectedOption.value;
+    setFontsSelected(newFontsSelected);
   };
 
   return (
@@ -143,22 +154,35 @@ export default function CreateTemplate() {
       {/* Main Content */}
       <Group>
         {/* Editing configuration */}
-        <Stack w={'15%'} p={10} h={'95vh'} bg={'black'}>
-          <Text c={'white'}>Template settings</Text>
+        <Stack w={'16%'} p={10} h={'95vh'} bg={'black'}>
+          <Text size="sm" fw={'bold'} c={'white'}>
+            Template settings
+          </Text>
           <Group>
             <Select
+              size="xs"
+              w={'30%'}
               onChange={(_, formatSelected) => {
                 console.log(formatSelected);
                 const format = (formatSelected.value as FormatType) || DEFAULT_FORMAT;
                 handleFormat(format);
               }}
               defaultValue={DEFAULT_FORMAT}
-              data={['a1', 'a2', 'a3', 'a4', 'a5', 'a6']}
+              data={[
+                { label: 'A1', value: 'a1' },
+                { label: 'A2', value: 'a2' },
+                { label: 'A3', value: 'a3' },
+                { label: 'A4', value: 'a4' },
+                { label: 'A5', value: 'a5' },
+                { label: 'A6', value: 'a6' },
+              ]}
             />
-            <Select placeholder="Type" data={['landscape', 'portrait']} />
+            <Checkbox defaultChecked c={'white'} label="landscape" />
           </Group>
           <Group justify="space-between">
-            <Text c={'white'}>Template variables</Text>
+            <Text size="sm" fw={'bold'} c={'white'}>
+              Template variables
+            </Text>
             <Box onClick={() => handleAddVariable()} component="button">
               <IconPlus color="white" />
             </Box>
@@ -179,15 +203,32 @@ export default function CreateTemplate() {
           </Group>
 
           {/* Fonts */}
-          <Text c={'white'}>Fonts</Text>
-          <Select
-            onChange={(_, fontSelected) => {
-              handleChangeFont(fontSelected);
-            }}
-            searchable
-            defaultValue={DEFAULT_FONT}
-            data={fonts}
-          />
+          <Group justify="space-between">
+            <Text size="sm" fw={'bold'} c={'white'}>
+              Fonts
+            </Text>
+            <Box onClick={() => addFont()} component="button">
+              <IconPlus color="white" />
+            </Box>
+          </Group>
+          {/* Selected Fonts */}
+          {fontsSelected.map((font, index) => (
+            <Group justify="space-between" >
+            <Select
+              w={'60%'}
+              onChange={(_, fontSelected) => {
+                handleChangeFont(fontSelected,index);
+              }}
+              searchable
+              defaultValue={font}
+              data={fonts}
+            />
+            <Box onClick={() => removeFont(font)} component="button">
+              <IconMinus color="white" />
+            </Box>
+          </Group>
+          ))}
+          
         </Stack>
         {/* Code editor */}
         <Box flex={1} h={'95vh'} bg={'green'} ref={drop} style={{ position: 'relative' }}>
@@ -209,7 +250,7 @@ export default function CreateTemplate() {
           w={'35%'}
           h={'95vh'}
         >
-          <Preview format={format} htmlContent={code} data={variables} font={selectedFont} />
+          <Preview format={format} htmlContent={code} data={variables} fonts={fontsSelected} />
         </Box>
       </Group>
     </Stack>
