@@ -27,7 +27,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           overflow: 'hidden',
         }}
       >
-        <AppShell.Section my={'xs'}  >
+        <AppShell.Section   >
           <DashboardNav />
         </AppShell.Section>
       </AppShell.Navbar>

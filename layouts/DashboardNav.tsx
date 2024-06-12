@@ -51,7 +51,7 @@ export function DashboardNav() {
     <nav className={classes.navbar}>
       <div className={classes.navbarMain}>
         <Group className={classes.header} justify="space-between">
-          <IconBoxSeam size={40} />
+          <IconBoxSeam style={{color : 'white'}} size={40} />
           <Code fw={700} className={classes.version}>
             v0.5.2
           </Code>

@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import IDE from './CodeEditor';
 import Preview, { FormatType } from './Preview';
 import { DEFAULT_TEMPLATE } from '@/constants/template';
-import { IconArrowLeft, IconDownload, IconMinus, IconPlus } from '@tabler/icons-react';
+import {IconChevronLeft, IconDownload, IconMinus, IconPlus } from '@tabler/icons-react';
 import AddVariable from '@/modals/AddVariable/AddVariable';
 import { useDisclosure } from '@mantine/hooks';
 import { DndProvider, useDrop } from 'react-dnd';
@@ -143,7 +143,7 @@ export default function CreateTemplate() {
       />
       {/* NavBar */}
       <Group h={rem(40)} px={10} bg={'black'} justify="space-between">
-        <Button onClick={() => handleBack()} leftSection={<IconArrowLeft size={14} />} bg={'black'}>
+        <Button onClick={() => handleBack()} leftSection={<IconChevronLeft size={14} />} bg={'black'}>
           return to dashoard
         </Button>
         <Text c={'white'}>lolo domine le monde</Text>
@@ -225,6 +225,7 @@ export default function CreateTemplate() {
                   handleChangeFont(fontSelected, index);
                 }}
                 searchable
+                placeholder={font}
                 defaultValue={font}
                 data={fonts}
               />
