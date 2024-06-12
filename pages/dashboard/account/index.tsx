@@ -1,14 +1,29 @@
 import { updateUserDTO } from '@/api/authApi';
 import { RequestStatus } from '@/api/request-status.enum';
+import ManagedNamespaceItem from '@/components/ManageNamespaceItem/ManagedNamespaceItem';
 import { ModifyUserForm } from '@/forms/ModifyUser';
 import DashboardLayout from '@/layouts/DashboardLayout';
-import { Stack, Tabs, rem, useMantineTheme } from '@mantine/core';
+import AddNamespace from '@/modals/AddNamespace/AddNamespace';
+import {
+  Button,
+  Group,
+  Paper,
+  Stack,
+  Tabs,
+  Text,
+  Title,
+  rem,
+  useMantineTheme,
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import {
   IconPhoto,
   IconMessageCircle,
   IconSettings,
   IconUserCircle,
   IconFolderFilled,
+  IconTrashFilled,
+  IconTrash,
 } from '@tabler/icons-react';
 import React, { useState } from 'react';
 
@@ -36,6 +51,10 @@ export default function Account() {
   const updateUserHandler = (updateUser: updateUserDTO) => {
     console.log(updateUser);
   };
+
+  // Management namspace
+  const [addNamespaceOpened, { open: openAddNamespace, close: closeAddNamespace }] =
+    useDisclosure(false);
   const [selectedTabName, setSelectedTabName] = useState<string | null>(ACCOUNT_TAB_NAME);
   return (
     <Tabs flex={1} onChange={(value) => setSelectedTabName(value)} defaultValue={ACCOUNT_TAB_NAME}>
@@ -78,7 +97,36 @@ export default function Account() {
         </Stack>
       </Tabs.Panel>
 
-      <Tabs.Panel value={NAMESPACE_TAB_NAME}>Namespace tab content</Tabs.Panel>
+      <Tabs.Panel value={NAMESPACE_TAB_NAME}>
+        <AddNamespace opened={addNamespaceOpened} onClose={closeAddNamespace} />
+
+        <Stack flex={1} h={'90vh'} mt={8}>
+          <Group px={12} style={{ borderBottom: 2, borderColor: 'red' }} justify="space-between">
+            <Title order={5}>Namespaces</Title>
+            <Button onClick={openAddNamespace}>create new nameSpace</Button>
+          </Group>
+          {/* Tite */}
+          <Text mx={12} c={'gray'}>
+            Separate your templates into namespace
+          </Text>
+          {/* Namespaces  */}
+          <Group>
+           <ManagedNamespaceItem />
+           <ManagedNamespaceItem />
+           <ManagedNamespaceItem />
+           <ManagedNamespaceItem />
+           <ManagedNamespaceItem />
+           <ManagedNamespaceItem />
+           <ManagedNamespaceItem />
+           <ManagedNamespaceItem />
+           <ManagedNamespaceItem />
+           <ManagedNamespaceItem />
+           <ManagedNamespaceItem />
+           <ManagedNamespaceItem />
+           <ManagedNamespaceItem />
+          </Group>
+        </Stack>
+      </Tabs.Panel>
     </Tabs>
   );
 }

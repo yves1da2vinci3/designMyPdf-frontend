@@ -2693,6 +2693,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@mantine/modals@npm:^7.10.1":
+  version: 7.10.1
+  resolution: "@mantine/modals@npm:7.10.1"
+  peerDependencies:
+    "@mantine/core": 7.10.1
+    "@mantine/hooks": 7.10.1
+    react: ^18.2.0
+    react-dom: ^18.2.0
+  checksum: 10c0/de91e72faaf5618e9006905bdc7114f065fa9c97909266d426a23c4c8bc5299e94a3de019fa6ef46fee5d8d49f81b8fb4314e1db52d506d404779b91e493781f
+  languageName: node
+  linkType: hard
+
 "@mantine/notifications@npm:^7.10.1":
   version: 7.10.1
   resolution: "@mantine/notifications@npm:7.10.1"
@@ -12403,6 +12415,7 @@ __metadata:
     "@mantine/core": "npm:7.8.1"
     "@mantine/form": "npm:^7.10.1"
     "@mantine/hooks": "npm:7.8.1"
+    "@mantine/modals": "npm:^7.10.1"
     "@mantine/notifications": "npm:^7.10.1"
     "@monaco-editor/react": "npm:^4.6.0"
     "@next/bundle-analyzer": "npm:^14.1.3"

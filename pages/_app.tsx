@@ -7,6 +7,7 @@ import { ReactElement, ReactNode } from 'react';
 import { NextPage } from 'next';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { ModalsProvider } from '@mantine/modals';
 type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
 };
@@ -21,19 +22,21 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
 
   return (
     <MantineProvider theme={theme}>
-      <Head>
-        <title>transcational.dev</title>
-        <meta
-          name="viewport"
-          content="minimum-scale=1, initial-scale=1, width=device-width, user-scalable=no"
-        />
-        <link rel="shortcut icon" href="/favicon.svg" />
-      </Head>
-      {getLayout(
-        <DndProvider backend={HTML5Backend}>
-          <Component {...pageProps} />
-        </DndProvider>
-      )}
+      <ModalsProvider>
+        <Head>
+          <title>transcational.dev</title>
+          <meta
+            name="viewport"
+            content="minimum-scale=1, initial-scale=1, width=device-width, user-scalable=no"
+          />
+          <link rel="shortcut icon" href="/favicon.svg" />
+        </Head>
+        {getLayout(
+          <DndProvider backend={HTML5Backend}>
+            <Component {...pageProps} />
+          </DndProvider>
+        )}
+      </ModalsProvider>
     </MantineProvider>
   );
 }
