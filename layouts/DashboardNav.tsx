@@ -20,7 +20,6 @@ const data = [
   { link: '/dashboard/templates', label: 'Templates', icon: IconReceipt },
   { link: '/dashboard/logs', label: 'Logs', icon: IconNotebook },
   { link: '/dashboard/keys', label: 'Api Keys', icon: IconKey },
-  { link: '/dashboard/settings', label: 'Settings', icon: IconSettingsAutomation },
   { link: '/dashboard/account', label: 'Account', icon: IconUserCircle },
 ];
 

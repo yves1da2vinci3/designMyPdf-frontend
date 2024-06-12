@@ -7,6 +7,11 @@ export interface SignupDto {
   email: string;
   password: string;
 }
+export interface updateUserDTO {
+  userName?: string;
+  password?: string;
+  confirmPassword?: string;
+}
 export interface ForgotPasswordDto {
   email: string;
 }
@@ -17,5 +22,8 @@ export const authApi = {
   },
   signup: (signup: SignupDto) => {
     console.log(signup)
+  },
+  update: (updateUser: updateUserDTO) => {
+    console.log(updateUser)
   },
 };
