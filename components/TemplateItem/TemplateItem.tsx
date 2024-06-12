@@ -4,7 +4,7 @@ import React from 'react';
 
 export default function TemplateItem() {
   return (
-    <Paper p={20} withBorder shadow="sm">
+    <Paper p={20} withBorder mt={0} shadow="sm">
       <Box style={{ position: 'relative' }}>
         <Menu shadow="md" width={200}>
           <Menu.Target>
@@ -19,7 +19,7 @@ export default function TemplateItem() {
             </Menu.Item>
           </Menu.Dropdown>
         </Menu>
-        <Avatar w={'100%'} h={152} radius={0} />
+        <Avatar w={'100%'} h={122} radius={0} />
       </Box>
       <Text>lolo domine le monde</Text>
       <Text c={'gray'}>crée il y a 5 minutes</Text>

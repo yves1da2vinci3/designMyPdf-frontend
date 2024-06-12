@@ -1,31 +1,56 @@
 import React from 'react';
 import DashboardLayout from '@/layouts/DashboardLayout';
-import {
-  Button,
-  Group,
-  Stack,
-  Title,
-} from '@mantine/core';
+import { Button, Group, Pagination, Stack, Title, rem } from '@mantine/core';
 import TemplateItem from '@/components/TemplateItem/TemplateItem';
 import AddTemplate from '@/modals/AddTemplate/AddTemplate';
 import { useDisclosure } from '@mantine/hooks';
+import NamespaceItem from '@/components/NamespaceItem/NamespaceItem';
 
 const TemplateHome = () => {
-  const [
-    addTemplateOpened,
-    { open: openAddTemplate, close: closeAddTemplate },
-  ] = useDisclosure(false);
+  const [addTemplateOpened, { open: openAddTemplate, close: closeAddTemplate }] =
+    useDisclosure(false);
   return (
-    <Stack>
-      <AddTemplate opened={addTemplateOpened} onClose={closeAddTemplate}/>
-      <Group justify="space-between">
+    <Stack h={'98vh'}>
+      <AddTemplate opened={addTemplateOpened} onClose={closeAddTemplate} />
+      <Group style={{ borderBottom : 2 ,borderColor : 'red' }} justify="space-between">
         <Title>Templates</Title>
-        <Button onClick={() => openAddTemplate()} >create new template</Button>
+        <Button onClick={() => openAddTemplate()}>create new template</Button>
       </Group>
       {/* Templates */}
-      <Group>
-       <TemplateItem/>
-       <TemplateItem/>
+      <Group  gap={4} flex={1}>
+        {/* NameSpaces management */}
+        <Stack px={rem(12)} gap={2} flex={1} w={'100%'}   h={'100%'}>
+          {/* NameSpaces */}
+          <NamespaceItem selected={false} />
+          <NamespaceItem selected={true} />
+          <NamespaceItem selected={false} />
+          {/* NameSpaces management */}
+          <Button size="xs" bg={'dark'} w={rem(164)}>
+            Add namespace
+          </Button>
+          <Button size="xs" bg={'dark'} w={rem(164)}>
+            Manage namespaces
+          </Button>
+        </Stack>
+        {/* Templates element */}
+        <Stack h={'100%'} flex={4}>
+          <Group justify='flex-start' gap={6}>
+            <TemplateItem />
+            <TemplateItem />
+            <TemplateItem />
+            <TemplateItem />
+            <TemplateItem />
+            <TemplateItem />
+            <TemplateItem />
+            <TemplateItem />
+            <TemplateItem />
+            <TemplateItem />
+            <TemplateItem />
+            <TemplateItem />
+            {/* Pagination */}
+          </Group>
+          <Pagination style={{alignSelf : 'self-end'}}  total={10} />
+        </Stack>
       </Group>
     </Stack>
   );
