@@ -68,6 +68,7 @@ import { useRouter } from 'next/router';
     LOGIN : '/login',
     SIGNUP: '/signup',
     FORGOT_PASSWORD : '/forgotPassword',
+    DASHBOARD : '/dashboard',
   }
   export function NavBar() {
     const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] = useDisclosure(false);

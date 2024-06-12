@@ -12,7 +12,7 @@ const ManagedNamespaceItem = () => {
           have to contact support to restore your data.
         </Text>
       ),
-      labels: { confirm: 'Delete account', cancel: "No don't delete it" },
+      labels: { confirm: 'Delete namespace', cancel: "No don't delete it" },
       confirmProps: { color: 'red' },
       onCancel: () => console.log('Cancel'),
       onConfirm: () => console.log('Confirmed'),
