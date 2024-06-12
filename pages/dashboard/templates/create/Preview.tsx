@@ -34,7 +34,21 @@ const Preview: React.FC<PreviewProps> = ({ htmlContent, format = 'a4', data = {}
   const [fontImport, setFontImport] = useState<string>('');
   const [fontStyle, setFontStyle] = useState<string>('');
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
+
+  const mmToPx = (mm: number) => Math.round(mm * (96 / 25.4));
+
+  const formatToSize = {
+    a1: { width: 841, height: 1189 },
+    a2: { width: 594, height: 841 },
+    a3: { width: 420, height: 594 },
+    a4: { width: 210, height: 297 },
+    a5: { width: 148, height: 210 },
+    a6: { width: 105, height: 148 },
+  };
+
+  const selectedSize = formatToSize[format];
 
   useEffect(() => {
     setFontImport(importFontCreation(font));
@@ -77,7 +91,7 @@ const Preview: React.FC<PreviewProps> = ({ htmlContent, format = 'a4', data = {}
             }
           </style>
       </head>
-      <body>
+      <body class="overflow-x-hidden overflow-y-auto">
         <div class="content">${rendered}</div>
       </body>
       </html>`;
@@ -87,62 +101,51 @@ const Preview: React.FC<PreviewProps> = ({ htmlContent, format = 'a4', data = {}
     }
   }, [htmlContent, data, fontImport, fontStyle]);
 
-  // Convert mm to pixels (96 DPI)
-  const mmToPx = (mm: number) => Math.round(mm * (96 / 25.4));
-
-  const formatToSize = {
-    a1: { width: mmToPx(841), height: mmToPx(1189) },
-    a2: { width: mmToPx(594), height: mmToPx(841) },
-    a3: { width: mmToPx(420), height: mmToPx(594) },
-    a4: { width: mmToPx(297), height: mmToPx(420) },
-    a5: { width: mmToPx(210), height: mmToPx(297) },
-    a6: { width: mmToPx(148), height: mmToPx(210) },
-  };
-
-  const a4Size = { width: mmToPx(210), height: mmToPx(297) }; // A4 size in pixels
-  const size = formatToSize[format];
-  const [scale, setScale] = useState(1);
-
-  const getScale = (containerWidth: number, containerHeight: number) => {
-    const widthScale = containerWidth / a4Size.width;
-    const heightScale = containerHeight / a4Size.height;
-    return Math.min(widthScale, heightScale);
-  };
+  const a4AspectRatio = selectedSize.height / selectedSize.width;
 
   useEffect(() => {
-    const updateScale = () => {
-      if (paperRef.current) {
-        const containerWidth = paperRef.current.clientWidth;
-        const containerHeight = paperRef.current.clientHeight;
-        const scale = getScale(containerWidth, containerHeight);
-        setScale(scale);
+    const updatePaperSize = () => {
+      if (containerRef.current && paperRef.current) {
+        const containerWidth = containerRef.current.clientWidth * 0.8;
+        const containerHeight = containerRef.current.clientHeight * 0.8;
+
+        let paperWidth = containerWidth;
+        let paperHeight = containerWidth * a4AspectRatio;
+
+        if (paperHeight > containerHeight) {
+          paperHeight = containerHeight;
+          paperWidth = containerHeight / a4AspectRatio;
+        }
+
+        paperRef.current.style.width = `${paperWidth}px`;
+        paperRef.current.style.height = `${paperHeight}px`;
+
+        const scale = paperWidth / (selectedSize.width * (96 / 25.4));
+        iframeRef.current!.style.transform = `scale(${scale})`;
+        iframeRef.current!.style.transformOrigin = 'top left';
       }
     };
 
-    updateScale();
-    window.addEventListener('resize', updateScale);
+    updatePaperSize();
+    window.addEventListener('resize', updatePaperSize);
 
-    return () => window.removeEventListener('resize', updateScale);
-  }, []);
+    return () => window.removeEventListener('resize', updatePaperSize);
+  }, [a4AspectRatio, selectedSize.width]);
 
   return (
-    <div className="h-full w-full flex flex-col items-center justify-center">
+    <div ref={containerRef} className="h-full w-full flex flex-col items-center justify-center">
       <div
         ref={paperRef}
-        className="shadow-lg h-4/5 w-4/5 mx-3 bg-white rounded overflow-hidden relative"
+        className="shadow-lg bg-white rounded overflow-hidden relative"
       >
         <iframe
           ref={iframeRef}
-          className="absolute top-0 left-0"
           title="Preview"
           srcDoc={renderedContent}
           style={{
-            transform: `scale(${scale})`,
-            transformOrigin: 'top left',
-            width: `${size.width}px`,
-            height: `${size.height}px`,
+            width: `${selectedSize.width}mm`,
+            height: `${selectedSize.height}mm`,
             border: 'none',
-            overflow: 'auto', // Ensure iframe is scrollable if content exceeds height
           }}
           sandbox="allow-popups-to-escape-sandbox allow-scripts allow-popups allow-forms allow-pointer-lock allow-top-navigation allow-modals"
         />
