@@ -34,6 +34,7 @@ const Preview: React.FC<PreviewProps> = ({ htmlContent, format = 'a4', data = {}
   const [fontImport, setFontImport] = useState<string>('');
   const [fontStyle, setFontStyle] = useState<string>('');
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const paperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setFontImport(importFontCreation(font));
@@ -48,70 +49,100 @@ const Preview: React.FC<PreviewProps> = ({ htmlContent, format = 'a4', data = {}
       link.href = 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css';
       document.head.appendChild(link);
     }
-
     try {
       const rendered = ejs.render(htmlContent, data);
       const fullContent = `<!doctype html>
       <html>
       <head>
-          <title></title>
+          <title>Preview</title>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <script  src="https://cdn.tailwindcss.com"></script>
+          <script src="https://cdn.tailwindcss.com"></script>
           ${fontImport}
           <style>
             ${fontStyle}
+            body {
+              margin: 0;
+              padding: 0;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              height: 100vh;
+              width: 100%;
+            }
+            .content {
+              width: 100%;
+              align-self: flex-start;
+              height: 100%;
+            }
           </style>
       </head>
       <body>
-       ${rendered}
+        <div class="content">${rendered}</div>
       </body>
-      </html>
-      `;
+      </html>`;
       setRenderedContent(fullContent);
     } catch (error) {
       console.error('Error rendering EJS template:', error);
     }
   }, [htmlContent, data, fontImport, fontStyle]);
 
+  // Convert mm to pixels (96 DPI)
+  const mmToPx = (mm: number) => Math.round(mm * (96 / 25.4));
+
   const formatToSize = {
-    a1: { width: 841, height: 594 },
-    a2: { width: 594, height: 420 },
-    a3: { width: 420, height: 297 },
-    a4: { width: 297, height: 210 },
-    a5: { width: 210, height: 148 },
-    a6: { width: 148, height: 105 },
+    a1: { width: mmToPx(841), height: mmToPx(1189) },
+    a2: { width: mmToPx(594), height: mmToPx(841) },
+    a3: { width: mmToPx(420), height: mmToPx(594) },
+    a4: { width: mmToPx(297), height: mmToPx(420) },
+    a5: { width: mmToPx(210), height: mmToPx(297) },
+    a6: { width: mmToPx(148), height: mmToPx(210) },
   };
 
+  const a4Size = { width: mmToPx(210), height: mmToPx(297) }; // A4 size in pixels
   const size = formatToSize[format];
+  const [scale, setScale] = useState(1);
 
-  const getScale = () => {
-    const containerWidth = 297; // A4 width in mm
-    const containerHeight = 210; // A4 height in mm
-    const widthScale = containerWidth / size.width;
-    const heightScale = containerHeight / size.height;
+  const getScale = (containerWidth: number, containerHeight: number) => {
+    const widthScale = containerWidth / a4Size.width;
+    const heightScale = containerHeight / a4Size.height;
     return Math.min(widthScale, heightScale);
   };
 
-  const scale = getScale();
+  useEffect(() => {
+    const updateScale = () => {
+      if (paperRef.current) {
+        const containerWidth = paperRef.current.clientWidth;
+        const containerHeight = paperRef.current.clientHeight;
+        const scale = getScale(containerWidth, containerHeight);
+        setScale(scale);
+      }
+    };
+
+    updateScale();
+    window.addEventListener('resize', updateScale);
+
+    return () => window.removeEventListener('resize', updateScale);
+  }, []);
 
   return (
-    <div className="h-full w-full flex items-center justify-center">
-      <div className="shadow-lg h-4/5 w-full mx-3 bg-white rounded overflow-hidden" style={{ position: 'relative' }}>
+    <div className="h-full w-full flex flex-col items-center justify-center">
+      <div
+        ref={paperRef}
+        className="shadow-lg h-4/5 w-4/5 mx-3 bg-white rounded overflow-hidden relative"
+      >
         <iframe
           ref={iframeRef}
-          className="bg-white"
+          className="absolute top-0 left-0"
           title="Preview"
           srcDoc={renderedContent}
           style={{
             transform: `scale(${scale})`,
             transformOrigin: 'top left',
-            width: `${size.width}mm`,
-            height: `${size.height}mm`,
+            width: `${size.width}px`,
+            height: `${size.height}px`,
             border: 'none',
-            position: 'absolute',
-            top: 0,
-            left: 0,
+            overflow: 'auto', // Ensure iframe is scrollable if content exceeds height
           }}
           sandbox="allow-popups-to-escape-sandbox allow-scripts allow-popups allow-forms allow-pointer-lock allow-top-navigation allow-modals"
         />

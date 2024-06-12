@@ -15,16 +15,34 @@ import { DEFAULT_FONT, fonts } from '../../../../constants/fonts';
 
 const DEFAULT_FORMAT = 'a4';
 const data = {
-  date: '2024-06-05',
+  fromCompany: {
+    name: 'Example Corp',
+    street: '123 Main St',
+    city: 'Example City',
+    country: 'Example Country',
+    zip: '12345'
+  },
+  toCompany: {
+    name: 'Client Corp',
+    street: '456 Client St',
+    city: 'Client City',
+    country: 'Client Country',
+    zip: '67890'
+  },
+  invoiceNumber: 'INV-12345',
+  issueDate: '2024-06-10',
+  dueDate: '2024-06-24',
   items: [
-    { name: 'Item 1', price: 10.0 },
-    { name: 'Item 2', price: 20.0 },
-    { name: 'Item 3', price: 30.0 },
-    { name: 'Item 4', price: 40.0 },
-    { name: 'Item 5', price: 50.0 },
+    { name: 'Service A', quantity: 10, taxes: 5, price: 100 },
+    { name: 'Service B', quantity: 5, taxes: 2, price: 50 }
   ],
-  total: 150.0,
-  contactEmail: 'info@example.com',
+  prices: {
+    subtotal: 150,
+    discount: 10,
+    taxes: 7,
+    total: 147
+  },
+  showTerms: true
 };
 
 export default function CreateTemplate() {
