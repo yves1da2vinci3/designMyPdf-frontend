@@ -150,3 +150,277 @@ export const DEFAULT_TEMPLATE = `
 </div>
 
 `;
+
+export const RESUME_TEMPLATE = `<div class="max-w-4xl mx-auto">
+<!-- Header -->
+<header class="mb-4">
+    <h1 class="text-4xl font-bold">Your Name</h1>
+    <p class="text-lg font-semibold">Job Title</p>
+    <p class="text-lg">Location</p>
+</header>
+
+<!-- Experience -->
+<section class="mb-4">
+    <h2 class="text-2xl font-semibold mb-2">Experience</h2>
+    <div class="mb-2">
+        <h3 class="text-lg font-semibold">Job Title</h3>
+        <p class="text-sm text-gray-700 mb-1">Company Name | Date</p>
+        <p class="text-sm">Description of responsibilities and achievements.</p>
+    </div>
+    <!-- Add more experience items as needed -->
+</section>
+
+<!-- Education -->
+<section class="mb-4">
+    <h2 class="text-2xl font-semibold mb-2">Education</h2>
+    <div class="mb-2">
+        <h3 class="text-lg font-semibold">Degree Name</h3>
+        <p class="text-sm text-gray-700 mb-1">University Name | Date</p>
+        <p class="text-sm">Additional details such as GPA, honors, etc.</p>
+    </div>
+    <!-- Add more education items as needed -->
+</section>
+
+<!-- Skills -->
+<section class="mb-4">
+    <h2 class="text-2xl font-semibold mb-2">Skills</h2>
+    <ul class="list-disc pl-6">
+        <li class="mb-1">Skill 1</li>
+        <li class="mb-1">Skill 2</li>
+        <li class="mb-1">Skill 3</li>
+        <!-- Add more skills as needed -->
+    </ul>
+</section>
+
+<!-- Footer -->
+<footer class="text-center text-sm text-gray-600 mt-4">
+    <p>&copy; 2024 Your Name. All rights reserved.</p>
+</footer>
+</div>`;
+
+export const PORTFOLIO_TEMPLATE = `<div class="max-w-4xl mx-auto">
+<!-- Header -->
+<header class="mb-4">
+    <h1 class="text-4xl font-bold">Your Name</h1>
+    <p class="text-lg font-semibold">Job Title</p>
+    <p class="text-lg">Location</p>
+</header>
+
+<!-- Projects -->
+<section class="mb-4">
+    <h2 class="text-2xl font-semibold mb-2">Projects</h2>
+    <div class="mb-2">
+        <h3 class="text-lg font-semibold">Project Title</h3>
+        <p class="text-sm text-gray-700 mb-1">Date | Client/Company Name</p>
+        <p class="text-sm">Description of the project and your role.</p>
+    </div>
+    <!-- Add more project items as needed -->
+</section>
+
+<!-- Skills -->
+<section class="mb-4">
+    <h2 class="text-2xl font-semibold mb-2">Skills</h2>
+    <ul class="list-disc pl-6">
+        <li class="mb-1">Skill 1</li>
+        <li class="mb-1">Skill 2</li>
+        <li class="mb-1">Skill 3</li>
+        <!-- Add more skills as needed -->
+    </ul>
+</section>
+
+<!-- Contact -->
+<section class="mb-4">
+    <h2 class="text-2xl font-semibold mb-2">Contact</h2>
+    <p class="text-lg">Email | Phone</p>
+    <p class="text-lg">LinkedIn | GitHub | Personal Website</p>
+</section>
+
+<!-- Footer -->
+<footer class="text-center text-sm text-gray-600 mt-4">
+    <p>&copy; 2024 Your Name. All rights reserved.</p>
+</footer>
+</div>
+`;
+
+export const REPORT_TEMPLATE = `    <div class="max-w-4xl mx-auto">
+<!-- Title -->
+<header class="mb-4">
+    <h1 class="text-4xl font-bold">Report Title</h1>
+    <p class="text-lg font-semibold">Report Subtitle</p>
+    <p class="text-lg">Date</p>
+</header>
+
+<!-- Introduction -->
+<section class="mb-4">
+    <h2 class="text-2xl font-semibold mb-2">Introduction</h2>
+    <p class="mb-2">Brief introduction to the report topic and purpose.</p>
+    <p class="mb-2">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed malesuada dolor.</p>
+</section>
+
+<!-- Analysis -->
+<section class="mb-4">
+    <h2 class="text-2xl font-semibold mb-2">Analysis</h2>
+    <p class="mb-2">Detailed analysis of findings and results.</p>
+    <ul class="list-disc pl-6">
+        <li class="mb-1">Point 1</li>
+        <li class="mb-1">Point 2</li>
+        <li class="mb-1">Point 3</li>
+    </ul>
+</section>
+
+<!-- Conclusion -->
+<section class="mb-4">
+    <h2 class="text-2xl font-semibold mb-2">Conclusion</h2>
+    <p class="mb-2">Summary of key findings and recommendations.</p>
+    <p class="mb-2">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed malesuada dolor.</p>
+</section>
+
+<!-- Footer -->
+<footer class="text-center text-sm text-gray-600 mt-4">
+    <p>&copy; 2024 Your Name. All rights reserved.</p>
+</footer>
+</div>
+`;
+
+export const PROPOSAL_TEMPLATE = `<div class="max-w-4xl mx-auto">
+<!-- Title -->
+<header class="mb-4">
+    <h1 class="text-4xl font-bold">Proposal Title</h1>
+    <p class="text-lg font-semibold">Client Name | Date</p>
+</header>
+
+<!-- Executive Summary -->
+<section class="mb-4">
+    <h2 class="text-2xl font-semibold mb-2">Executive Summary</h2>
+    <p class="mb-2">Brief summary of the proposal, including key objectives.</p>
+    <p class="mb-2">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed malesuada dolor.</p>
+</section>
+ <section class="mb-4">
+<h3 class="text-lg font-semibold mb-1">Service Offering 1</h3>
+<p class="mb-2">Description of the service or solution.</p>
+<ul class="list-disc pl-6">
+    <li class="mb-1">Feature 1</li>
+    <li class="mb-1">Feature 2</li>
+    <li class="mb-1">Feature 3</li>
+</ul>
+</section>
+
+<!-- Budget -->
+<section class="mb-4">
+<h2 class="text-2xl font-semibold mb-2">Budget</h2>
+<table class="w-full mb-2">
+    <thead>
+        <tr>
+            <th class="border px-4 py-2">Item</th>
+            <th class="border px-4 py-2">Cost</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="border px-4 py-2">Item 1</td>
+            <td class="border px-4 py-2">$1000</td>
+        </tr>
+        <tr>
+            <td class="border px-4 py-2">Item 2</td>
+            <td class="border px-4 py-2">$1500</td>
+        </tr>
+        <tr>
+            <td class="border px-4 py-2">Item 3</td>
+            <td class="border px-4 py-2">$800</td>
+        </tr>
+    </tbody>
+    <tfoot>
+        <tr>
+            <td class="border px-4 py-2 font-semibold">Total</td>
+            <td class="border px-4 py-2 font-semibold">$3300</td>
+        </tr>
+    </tfoot>
+</table>
+</section>
+
+<!-- Terms and Conditions -->
+<section class="mb-4">
+<h2 class="text-2xl font-semibold mb-2">Terms and Conditions</h2>
+<p class="mb-2">Terms and conditions of the proposal.</p>
+<p class="mb-2">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed malesuada dolor.</p>
+</section>
+
+<!-- Contact Information -->
+<section class="mb-4">
+<h2 class="text-2xl font-semibold mb-2">Contact Information</h2>
+<p class="mb-2">Email | Phone</p>
+<p class="mb-2">LinkedIn | GitHub | Personal Website</p>
+</section>
+
+<!-- Footer -->
+<footer class="text-center text-sm text-gray-600 mt-4">
+<p>&copy; 2024 Your Name. All rights reserved.</p>
+</footer>
+</div>`;
+
+export const EVENT_TEMPLATE = ` <div class="max-w-4xl mx-auto">
+<!-- Title -->
+<header class="mb-4">
+    <h1 class="text-4xl font-bold">Event Title</h1>
+    <p class="text-lg font-semibold">Event Date | Location</p>
+</header>
+
+<!-- Schedule -->
+<section class="mb-4">
+    <h2 class="text-2xl font-semibold mb-2">Event Schedule</h2>
+    <table class="w-full mb-2">
+        <thead>
+            <tr>
+                <th class="border px-4 py-2">Time</th>
+                <th class="border px-4 py-2">Activity</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="border px-4 py-2">9:00 AM</td>
+                <td class="border px-4 py-2">Registration</td>
+            </tr>
+            <tr>
+                <td class="border px-4 py-2">10:00 AM</td>
+                <td class="border px-4 py-2">Opening Keynote</td>
+            </tr>
+            <tr>
+                <td class="border px-4 py-2">12:00 PM</td>
+                <td class="border px-4 py-2">Lunch Break</td>
+            </tr>
+            <tr>
+                <td class="border px-4 py-2">2:00 PM</td>
+                <td class="border px-4 py-2">Panel Discussion</td>
+            </tr>
+            <tr>
+                <td class="border px-4 py-2">4:00 PM</td>
+                <td class="border px-4 py-2">Closing Remarks</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- Speakers -->
+<section class="mb-4">
+    <h2 class="text-2xl font-semibold mb-2">Speakers</h2>
+    <div class="mb-2">
+        <h3 class="text-lg font-semibold">Speaker Name</h3>
+        <p class="mb-1">Job Title</p>
+        <p class="mb-1">Company</p>
+        <p class="mb-2">Topic of Presentation</p>
+    </div>
+    <!-- Add more speakers as needed -->
+</section>
+
+<!-- Contact Information -->
+<section class="mb-4">
+    <h2 class="text-2xl font-semibold mb-2">Contact Information</h2>
+    <p class="mb-2">Email | Phone</p>
+    <p class="mb-2">Event Website | Social Media Links</p>
+</section>
+
+<!-- Footer -->
+<footer class="text-center text-sm text-gray-600 mt-4">
+    <p>&copy; 2024 Your Name. All rights reserved.</p>
+</footer>
+</div> `;
