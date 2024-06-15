@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import IDE from './CodeEditor';
 import Preview, { FormatType } from './Preview';
 import { DEFAULT_TEMPLATE } from '@/constants/template';
-import {IconChevronLeft, IconDownload, IconMinus, IconPlus } from '@tabler/icons-react';
+import { IconChevronLeft, IconDownload, IconEye, IconMinus, IconPlus } from '@tabler/icons-react';
 import AddVariable from '@/modals/AddVariable/AddVariable';
 import { useDisclosure } from '@mantine/hooks';
 import { DndProvider, useDrop } from 'react-dnd';
@@ -132,6 +132,33 @@ export default function CreateTemplate() {
     setFontsSelected(newFontsSelected);
   };
 
+  // Preview feature
+  const [templateContent, setTemplateContent] = useState('');
+  function uploadTemplate(text: string) {
+    // Créer un objet Blob avec le contenu du texte
+    const blob = new Blob([text], { type: 'text/plain' });
+
+    // Créer un URL pour le Blob
+    const url = URL.createObjectURL(blob);
+
+    // Créer un élément de lien temporaire
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `template${Math.random()}.ejs`;
+
+    // Ajouter le lien au document
+    document.body.appendChild(a);
+
+    // Simuler un clic pour déclencher le téléchargement
+    a.click();
+
+    // Supprimer le lien du document
+    document.body.removeChild(a);
+
+    // Libérer l'URL du Blob après téléchargement
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <Stack style={{ overflow: 'hidden' }} gap={0}>
       {/* Manage variable */}
@@ -143,13 +170,27 @@ export default function CreateTemplate() {
       />
       {/* NavBar */}
       <Group h={rem(40)} px={10} bg={'black'} justify="space-between">
-        <Button onClick={() => handleBack()} leftSection={<IconChevronLeft size={14} />} bg={'black'}>
+        <Button
+          onClick={() => handleBack()}
+          leftSection={<IconChevronLeft size={14} />}
+          bg={'black'}
+        >
           return to dashoard
         </Button>
         <Text c={'white'}>lolo domine le monde</Text>
-        <Button size="xs" rightSection={<IconDownload size={14} />} bg={'blue'}>
-          save and publish
-        </Button>
+        <Group>
+          <Button
+            onClick={() => uploadTemplate(templateContent)}
+            size="xs"
+            rightSection={<IconEye size={14} />}
+            bg={'blue'}
+          >
+            upload template
+          </Button>
+          <Button size="xs" rightSection={<IconDownload size={14} />} bg={'blue'}>
+            save and publish
+          </Button>
+        </Group>
       </Group>
       {/* Main Content */}
       <Group>
@@ -261,6 +302,7 @@ export default function CreateTemplate() {
             data={variables}
             isLandscape={isLandScape}
             fonts={fontsSelected}
+            setTemplateContent={setTemplateContent}
           />
         </Box>
       </Group>

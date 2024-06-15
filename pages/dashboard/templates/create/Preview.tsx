@@ -9,6 +9,7 @@ interface PreviewProps {
   data?: Record<string, any>;
   fonts: string[];
   isLandscape?: boolean;
+  setTemplateContent? : (string :string) => void
 }
 
 const importFontCreation = (fonts: string[]) => {
@@ -36,6 +37,7 @@ const Preview: React.FC<PreviewProps> = ({
   data = {},
   fonts,
   isLandscape = false,
+  setTemplateContent
 }) => {
   const [renderedContent, setRenderedContent] = useState('');
   const [fontImport, setFontImport] = useState<string>('');
@@ -68,6 +70,39 @@ const Preview: React.FC<PreviewProps> = ({
     }
     try {
       const rendered = ejs.render(htmlContent, data);
+      const templateContent = `<!doctype html>
+      <html>
+      <head>
+          <title>Preview</title>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <script src="https://cdn.tailwindcss.com"></script>
+          ${fontImport}
+          <style>
+            ${fontStyle}
+            body {
+              margin: 0;
+              padding: 0;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              height: 100vh;
+              width: 100%;
+            }
+            .content {
+              width: 100%;
+              align-self: flex-start;
+              height: 100%;
+            }
+          </style>
+      </head>
+      <body class="overflow-x-hidden overflow-y-auto">
+        <div class="content">${htmlContent}</div>
+      </body>
+      </html>`
+      if (setTemplateContent) {
+        setTemplateContent(templateContent);
+      }
       const fullContent = `<!doctype html>
       <html>
       <head>
