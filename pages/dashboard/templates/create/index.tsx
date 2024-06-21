@@ -80,22 +80,22 @@ export default function CreateTemplate() {
         );
         const id = { major: 1, minor: 1 }; // unique identifier for the op
         let text = '';
-
+  
         switch (item.type) {
           case 'array':
             const objectConcerned = variables[item.varName][0];
             const firstKeyName = Object.keys(objectConcerned)[0];
-            text = `<% ${item.varName}.forEach((item) => { %>\n\t<%= item.${firstKeyName} %>\n<% }); %>`;
+            text = `{{#each ${item.varName}}}\n\t{{this.${firstKeyName}}}\n{{/each}}`;
             break;
           case 'object':
             const firstKey = Object.keys(variables[item.varName])[0];
-            text = `<%= ${item.varName}.${firstKey} %>`;
+            text = `{{${item.varName}.${firstKey}}}`;
             break;
           default:
-            text = `<%= ${item.varName} %>`;
+            text = `{{${item.varName}}}`;
             break;
         }
-
+  
         const op = { identifier: id, range: range, text: text, forceMoveMarkers: true };
         editorRef.current.executeEdits('my-source', [op]);
       }
@@ -104,6 +104,7 @@ export default function CreateTemplate() {
       isOver: !!monitor.isOver(),
     }),
   });
+  
 
   const handleBack = () => {
     router.back();
@@ -195,14 +196,14 @@ export default function CreateTemplate() {
       {/* Main Content */}
       <Group>
         {/* Editing configuration */}
-        <Stack w={'16%'} p={10} h={'95vh'} bg={'black'}>
+        <Stack w={'18%'} p={10} h={'95vh'} bg={'black'}>
           <Text size="sm" fw={'bold'} c={'white'}>
             Template settings
           </Text>
           <Group>
             <Select
               size="xs"
-              w={'30%'}
+              w={'45%'}
               onChange={(_, formatSelected) => {
                 console.log(formatSelected);
                 const format = (formatSelected.value as FormatType) || DEFAULT_FORMAT;
@@ -261,7 +262,7 @@ export default function CreateTemplate() {
           {fontsSelected.map((font, index) => (
             <Group justify="space-between">
               <Select
-                w={'60%'}
+                w={'55%'}
                 onChange={(_, fontSelected) => {
                   handleChangeFont(fontSelected, index);
                 }}
@@ -293,7 +294,7 @@ export default function CreateTemplate() {
           style={{
             backgroundColor: 'black',
           }}
-          w={'35%'}
+          w={'33%'}
           h={'95vh'}
         >
           <Preview

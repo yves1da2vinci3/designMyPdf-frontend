@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import ejs from 'ejs-browser';
+import Handlebars from 'handlebars';
 
 export type FormatType = 'a1' | 'a2' | 'a3' | 'a4' | 'a5' | 'a6';
 
@@ -69,7 +69,8 @@ const Preview: React.FC<PreviewProps> = ({
       document.head.appendChild(link);
     }
     try {
-      const rendered = ejs.render(htmlContent, data);
+      const template = Handlebars.compile(htmlContent);
+      const rendered = template(data);
       const templateContent = `<!doctype html>
       <html>
       <head>
@@ -99,7 +100,7 @@ const Preview: React.FC<PreviewProps> = ({
       <body class="overflow-x-hidden overflow-y-auto">
         <div class="content">${htmlContent}</div>
       </body>
-      </html>`
+      </html>`;
       if (setTemplateContent) {
         setTemplateContent(templateContent);
       }
@@ -135,7 +136,7 @@ const Preview: React.FC<PreviewProps> = ({
       </html>`;
       setRenderedContent(fullContent);
     } catch (error) {
-      console.error('Error rendering EJS template:', error);
+      console.error('Error rendering Handlebars template:', error);
     }
   }, [htmlContent, data, fontImport, fontStyle]);
 

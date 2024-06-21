@@ -16,30 +16,30 @@ export const DEFAULT_TEMPLATE = `
               <p class="text-sm font-normal text-slate-700">
                 Invoice Detail:
               </p>
-              <p><%= fromCompany.name %></p>
-              <p><%= fromCompany.street %></p>
-              <p><%= fromCompany.city %>, <%= fromCompany.country %></p>
-              <p><%= fromCompany.zip %></p>
+              <p>{{fromCompany.name}}</p>
+              <p>{{fromCompany.street}}</p>
+              <p>{{fromCompany.city}}, {{fromCompany.country}}</p>
+              <p>{{fromCompany.zip}}</p>
             </div>
             <div class="text-sm font-light text-slate-500">
               <p class="text-sm font-normal text-slate-700">Billed To</p>
-              <p><%= toCompany.name %></p>
-              <p><%= toCompany.street %></p>
-              <p><%= toCompany.city %>, <%= toCompany.country %></p>
-              <p><%= toCompany.zip %></p>
+              <p>{{toCompany.name}}</p>
+              <p>{{toCompany.street}}</p>
+              <p>{{toCompany.city}}, {{toCompany.country}}</p>
+              <p>{{toCompany.zip}}</p>
             </div>
             <div class="text-sm font-light text-slate-500">
               <p class="text-sm font-normal text-slate-700">Invoice Number</p>
-              <p><%= invoiceNumber %></p>
+              <p>{{invoiceNumber}}</p>
 
               <p class="mt-2 text-sm font-normal text-slate-700">
                 Date of Issue
               </p>
-              <p><%= issueDate %></p>
+              <p>{{issueDate}}</p>
             </div>
             <div class="text-sm font-light text-slate-500">
               <p class="text-sm font-normal text-slate-700">Due</p>
-              <p><%= dueDate %></p>
+              <p>{{dueDate}}</p>
             </div>
           </div>
         </div>
@@ -66,22 +66,22 @@ export const DEFAULT_TEMPLATE = `
             </thead>
             <tbody>
 
-              <% items.forEach(function(item) { %>
+              {{#each items}}
               <tr class="border-b border-slate-200">
                 <td class="py-4 pl-4 pr-3 text-sm sm:pl-6 md:pl-0">
-                  <div class="font-medium text-slate-700"><%= item.name %></div>
+                  <div class="font-medium text-slate-700">{{this.name}}</div>
                 </td>
                 <td class="hidden px-3 py-4 text-sm text-right text-slate-500 sm:table-cell">
-                  <%= item.quantity %>
+                  {{this.quantity}}
                 </td>
                 <td class="hidden px-3 py-4 text-sm text-right text-slate-500 sm:table-cell">
-                  <%= item.taxes %>
+                  {{this.taxes}}
                 </td>
                 <td class="py-4 pl-3 pr-4 text-sm text-right text-slate-500 sm:pr-6 md:pr-0">
-                  <%= item.price %>
+                  {{this.price}}
                 </td>
               </tr>
-              <% }); %>
+              {{/each}}
 
             </tbody>
             <tfoot>
@@ -93,7 +93,7 @@ export const DEFAULT_TEMPLATE = `
                   Subtotal
                 </th>
                 <td class="pt-6 pl-3 pr-4 text-sm text-right text-slate-500 sm:pr-6 md:pr-0">
-                  <%= prices.subtotal %>
+                  {{prices.subtotal}}
                 </td>
               </tr>
               <tr>
@@ -104,7 +104,7 @@ export const DEFAULT_TEMPLATE = `
                   Discount
                 </th>
                 <td class="pt-6 pl-3 pr-4 text-sm text-right text-slate-500 sm:pr-6 md:pr-0">
-                  <%= prices.discount %>
+                  {{prices.discount}}
                 </td>
               </tr>
               <tr>
@@ -115,7 +115,7 @@ export const DEFAULT_TEMPLATE = `
                   Tax
                 </th>
                 <td class="pt-4 pl-3 pr-4 text-sm text-right text-slate-500 sm:pr-6 md:pr-0">
-                  <%= prices.taxes %>
+                  {{prices.taxes}}
                 </td>
               </tr>
               <tr>
@@ -126,7 +126,7 @@ export const DEFAULT_TEMPLATE = `
                   Total
                 </th>
                 <td class="pt-4 pl-3 pr-4 text-sm font-normal text-right text-slate-700 sm:pr-6 md:pr-0">
-                  <%= prices.total %>
+                  {{prices.total}}
                 </td>
               </tr>
             </tfoot>
@@ -134,7 +134,7 @@ export const DEFAULT_TEMPLATE = `
         </div>
       </div>
 
-      <% if (showTerms) { %>
+      {{#if showTerms}}
       <div class="mt-48 p-9">
         <div class="border-t pt-9 border-slate-200">
           <div class="text-sm font-light text-slate-700">
@@ -144,12 +144,12 @@ export const DEFAULT_TEMPLATE = `
           </div>
         </div>
       </div>
-      <% } %>
+      {{/if}}
     </div>
   </article>
 </div>
-
 `;
+
 
 export const RESUME_TEMPLATE = `<div class="max-w-4xl mx-auto">
 <!-- Header -->
