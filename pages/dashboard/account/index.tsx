@@ -1,4 +1,4 @@
-import { updateUserDTO } from '@/api/authApi';
+import { authApi, updateUserDTO } from '@/api/authApi';
 import { RequestStatus } from '@/api/request-status.enum';
 import ManagedNamespaceItem from '@/components/ManageNamespaceItem/ManagedNamespaceItem';
 import { ModifyUserForm } from '@/forms/ModifyUser';
@@ -16,15 +16,7 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import {
-  IconPhoto,
-  IconMessageCircle,
-  IconSettings,
-  IconUserCircle,
-  IconFolderFilled,
-  IconTrashFilled,
-  IconTrash,
-} from '@tabler/icons-react';
+import { IconUserCircle, IconFolderFilled } from '@tabler/icons-react';
 import React, { useState } from 'react';
 
 const ACCOUNT_TAB_NAME = 'account';
@@ -48,7 +40,14 @@ export default function Account() {
   const [updateUserRequestStatus, setUserRequestStatus] = useState<RequestStatus>(
     RequestStatus.NotStated
   );
-  const updateUserHandler = (updateUser: updateUserDTO) => {
+  const updateUserHandler = async (updateUser: updateUserDTO) => {
+    setUserRequestStatus(RequestStatus.InProgress);
+    try {
+      await authApi.update(updateUser);
+      setUserRequestStatus(RequestStatus.Succeeded);
+    } catch (error) {
+      setUserRequestStatus(RequestStatus.Failed);
+    }
     console.log(updateUser);
   };
 
@@ -111,19 +110,19 @@ export default function Account() {
           </Text>
           {/* Namespaces  */}
           <Group>
-           <ManagedNamespaceItem />
-           <ManagedNamespaceItem />
-           <ManagedNamespaceItem />
-           <ManagedNamespaceItem />
-           <ManagedNamespaceItem />
-           <ManagedNamespaceItem />
-           <ManagedNamespaceItem />
-           <ManagedNamespaceItem />
-           <ManagedNamespaceItem />
-           <ManagedNamespaceItem />
-           <ManagedNamespaceItem />
-           <ManagedNamespaceItem />
-           <ManagedNamespaceItem />
+            <ManagedNamespaceItem />
+            <ManagedNamespaceItem />
+            <ManagedNamespaceItem />
+            <ManagedNamespaceItem />
+            <ManagedNamespaceItem />
+            <ManagedNamespaceItem />
+            <ManagedNamespaceItem />
+            <ManagedNamespaceItem />
+            <ManagedNamespaceItem />
+            <ManagedNamespaceItem />
+            <ManagedNamespaceItem />
+            <ManagedNamespaceItem />
+            <ManagedNamespaceItem />
           </Group>
         </Stack>
       </Tabs.Panel>

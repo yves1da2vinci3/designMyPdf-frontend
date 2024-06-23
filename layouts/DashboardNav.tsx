@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Group, Code, Title, Box } from '@mantine/core';
+import { Group, Code, Box,  } from '@mantine/core';
 import {
   IconKey,
-  IconSwitchHorizontal,
   IconLogout,
   IconWaveSawTool,
   IconReceipt,
@@ -11,7 +10,6 @@ import {
   IconBoxSeam,
 } from '@tabler/icons-react';
 import classes from './DashboardNav.module.css';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { authApi } from '@/api/authApi';
 
@@ -63,13 +61,9 @@ export function DashboardNav() {
       </div>
 
       <div className={classes.footer}>
-        <Link href={'/login'} className={classes.link} onClick={(event) => event.preventDefault()}>
-          <IconSwitchHorizontal className={classes.linkIcon} stroke={1.5} />
-          <span>Change account</span>
-        </Link>
-
         <Box
           className={classes.link}
+          
           onClick={(event) => {
             event.preventDefault();
             Logout();

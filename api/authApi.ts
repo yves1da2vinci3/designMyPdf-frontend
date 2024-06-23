@@ -12,14 +12,18 @@ export interface SignupDto {
   password: string;
   userName: string;
 }
+export interface updateUserDTO {
+  userName?: string;
+  password?: string;
+}
 
 export interface ChangePasswordDto {
   password: string;
-  token :string
+  token: string;
 }
 export interface ResetPasswordDto {
   newPassword: string;
-  confirmPassword :string
+  confirmPassword: string;
 }
 export interface ForgotPasswordDto {
   email: string;
@@ -85,10 +89,20 @@ export const authApi = {
       throw error; // Rethrow the error to propagate it further if needed
     }
   },
-  async Signup(signupDTO : SignupDto): Promise<void> {
+  async Signup(signupDTO: SignupDto): Promise<void> {
     try {
       await apiClient.post('/auth/register', signupDTO);
       notificationService.showSuccessNotification('register successful');
+    } catch (error) {
+      throw error; // Rethrow the error to propagate it further if needed
+    }
+  },
+  async update(updateDTO: updateUserDTO): Promise<void> {
+    try {
+      const updateResponse = await apiClient.put('/auth/update', updateDTO);
+      const userName = get(updateResponse, 'data.data.user_name');
+      localStorage.setItem('userSession', JSON.stringify({ ...this.getUserSession(), userName }));
+      notificationService.showSuccessNotification('user successful');
     } catch (error) {
       throw error; // Rethrow the error to propagate it further if needed
     }
