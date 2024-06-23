@@ -1,3 +1,5 @@
+'use client';
+
 import { apiClient } from './apiClient';
 import notificationService from '@/services/NotificationService';
 import { get } from 'lodash';
@@ -7,11 +9,13 @@ export interface LoginDto {
   password: string;
   rememberMe?: boolean;
 }
+
 export interface SignupDto {
   email: string;
   password: string;
   userName: string;
 }
+
 export interface updateUserDTO {
   userName?: string;
   password?: string;
@@ -21,10 +25,12 @@ export interface ChangePasswordDto {
   password: string;
   token: string;
 }
+
 export interface ResetPasswordDto {
   newPassword: string;
   confirmPassword: string;
 }
+
 export interface ForgotPasswordDto {
   email: string;
 }
@@ -48,8 +54,10 @@ export const authApi = {
         userName: get(loginResponse, 'data.data.user_name'),
       };
 
-      localStorage.setItem('userSession', JSON.stringify(userSession));
-      notificationService.showSuccessNotification('Login successful');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('userSession', JSON.stringify(userSession));
+        notificationService.showSuccessNotification('Login successful');
+      }
     } catch (error) {
       console.error('Login error:', error);
       throw error; // Rethrow the error to propagate it further if needed
@@ -67,12 +75,13 @@ export const authApi = {
       throw error; // Rethrow the error to propagate it further if needed
     }
   },
-  async ForgotPassword(forgotPasswordDTO: ForgotPasswordDto): Promise<void> {
+
+  async forgotPassword(forgotPasswordDTO: ForgotPasswordDto): Promise<void> {
     try {
-      const ForgotResponse = await apiClient.post('/auth/forgot-password', forgotPasswordDTO);
-      notificationService.showSuccessNotification('an email has been sent to your email');
+      const forgotResponse = await apiClient.post('/auth/forgot-password', forgotPasswordDTO);
+      notificationService.showSuccessNotification('An email has been sent to your email.');
     } catch (error) {
-      console.error('Password change error:', error);
+      console.error('Forgot password error:', error);
       throw error; // Rethrow the error to propagate it further if needed
     }
   },
@@ -82,35 +91,51 @@ export const authApi = {
       await apiClient.post('/auth/logout', {
         refreshToken: this.getUserSession()?.refreshToken,
       });
-      localStorage.clear();
-      notificationService.showSuccessNotification('Logout successful');
+
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        notificationService.showSuccessNotification('Logout successful');
+      }
     } catch (error) {
       console.error('Logout error:', error);
       throw error; // Rethrow the error to propagate it further if needed
     }
   },
-  async Signup(signupDTO: SignupDto): Promise<void> {
+
+  async signup(signupDTO: SignupDto): Promise<void> {
     try {
       await apiClient.post('/auth/register', signupDTO);
-      notificationService.showSuccessNotification('register successful');
+      notificationService.showSuccessNotification('Register successful');
     } catch (error) {
+      console.error('Signup error:', error);
       throw error; // Rethrow the error to propagate it further if needed
     }
   },
+
   async update(updateDTO: updateUserDTO): Promise<void> {
     try {
       const updateResponse = await apiClient.put('/auth/update', updateDTO);
       const userName = get(updateResponse, 'data.data.user_name');
-      localStorage.setItem('userSession', JSON.stringify({ ...this.getUserSession(), userName }));
-      notificationService.showSuccessNotification('user successful');
+
+      if (typeof window !== 'undefined') {
+        const userSession = this.getUserSession();
+        if (userSession) {
+          userSession.userName = userName;
+          localStorage.setItem('userSession', JSON.stringify(userSession));
+        }
+        notificationService.showSuccessNotification('User update successful');
+      }
     } catch (error) {
+      console.error('User update error:', error);
       throw error; // Rethrow the error to propagate it further if needed
     }
   },
 
   clearSession(): void {
-    localStorage.clear();
-    notificationService.showSuccessNotification('Session cleared.');
+    if (typeof window !== 'undefined') {
+      localStorage.clear();
+      notificationService.showSuccessNotification('Session cleared.');
+    }
   },
 
   async refreshAccessToken(): Promise<void> {
@@ -119,29 +144,32 @@ export const authApi = {
         refreshToken: this.getUserSession()?.refreshToken,
       });
 
-      const userSession = authApi.getUserSession();
-      if (userSession) {
-        userSession.accessToken = get(refreshTokenResponse, 'data.accessToken');
-        localStorage.setItem('userSession', JSON.stringify(userSession));
-        notificationService.showSuccessNotification('Access token refreshed.');
-      } else {
-        throw new Error('No user session found.');
+      if (typeof window !== 'undefined') {
+        const userSession = this.getUserSession();
+        if (userSession) {
+          userSession.accessToken = get(refreshTokenResponse, 'data.accessToken');
+          localStorage.setItem('userSession', JSON.stringify(userSession));
+          notificationService.showSuccessNotification('Access token refreshed.');
+        }
       }
     } catch (error) {
       console.error('Token refresh error:', error);
-      authApi.logout();
+      this.logout();
       document.location.href = '/auth/login';
       throw error; // Rethrow the error to propagate it further if needed
     }
   },
 
   getUserSession(): UserSession | null {
-    const userSession = localStorage.getItem('userSession');
-    return userSession ? (JSON.parse(userSession) as UserSession) : null;
+    if (typeof window !== 'undefined') {
+      const userSession = localStorage.getItem('userSession');
+      return userSession ? (JSON.parse(userSession) as UserSession) : null;
+    }
+    return null;
   },
 
   isAuthenticated(): boolean {
-    const userSession = authApi.getUserSession();
+    const userSession = this.getUserSession();
     return !!userSession?.accessToken;
   },
 };

@@ -36,7 +36,7 @@ export default function ForgotPassword() {
   const handleSubmit = async (values: ForgotPasswordDto) => {
     setIsLoading(RequestStatus.InProgress);
     try {
-      await authApi.ForgotPassword(values);
+      await authApi.forgotPassword(values);
       setIsLoading(RequestStatus.Succeeded);
       // Optionally, redirect or show success message
     } catch (error) {
