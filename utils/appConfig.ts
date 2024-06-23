@@ -19,7 +19,7 @@ export enum Environment {
     appBranch: (process.env.BRANCH as string) || "local",
     cookieKey: "fest_nat_data",
     apiBaseUrl:
-      (process.env.API_BASE_URL as string) || "http://localhost:5000/api",
+      (process.env.API_BASE_URL as string) ,
   
   };
   
