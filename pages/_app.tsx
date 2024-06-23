@@ -1,4 +1,5 @@
 import '@mantine/core/styles.css';
+import '@mantine/notifications/styles.css';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { MantineProvider } from '@mantine/core';
@@ -8,6 +9,7 @@ import { NextPage } from 'next';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ModalsProvider } from '@mantine/modals';
+import { Notifications } from '@mantine/notifications';
 type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
 };
@@ -22,9 +24,10 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
 
   return (
     <MantineProvider theme={theme}>
+      <Notifications />
       <ModalsProvider>
         <Head>
-          <title>transcational.dev</title>
+          <title>DesignMyPDF</title>
           <meta
             name="viewport"
             content="minimum-scale=1, initial-scale=1, width=device-width, user-scalable=no"

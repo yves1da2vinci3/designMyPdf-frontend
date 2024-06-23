@@ -7,6 +7,11 @@ export interface LoginDto {
   password: string;
   rememberMe?: boolean;
 }
+export interface SignupDto {
+  email: string;
+  password: string;
+  userName: string;
+}
 
 export interface ChangePasswordDto {
   currentPassword: string;
@@ -16,6 +21,7 @@ export interface ChangePasswordDto {
 
 export interface UserSession {
   accessToken: string;
+  refreshToken: string;
   email: string;
   userName: string;
 }
@@ -24,8 +30,10 @@ export const authApi = {
   async login(loginDto: LoginDto): Promise<void> {
     try {
       const loginResponse = await apiClient.post('/auth/login', loginDto);
+      console.log('login Response : ', loginResponse);
       const userSession: UserSession = {
         accessToken: get(loginResponse, 'data.accessToken'),
+        refreshToken: get(loginResponse, 'data.refreshToken'),
         email: get(loginResponse, 'data.data.email'),
         userName: get(loginResponse, 'data.data.user_name'),
       };
@@ -34,7 +42,6 @@ export const authApi = {
       notificationService.showSuccessNotification('Login successful');
     } catch (error) {
       console.error('Login error:', error);
-      notificationService.showErrorNotification('Login failed. Please check your credentials.');
       throw error; // Rethrow the error to propagate it further if needed
     }
   },
@@ -53,12 +60,21 @@ export const authApi = {
 
   async logout(): Promise<void> {
     try {
-      await apiClient.post('/auth/logout');
+      await apiClient.post('/auth/logout', {
+        refreshToken: this.getUserSession()?.refreshToken,
+      });
       localStorage.clear();
       notificationService.showSuccessNotification('Logout successful');
     } catch (error) {
       console.error('Logout error:', error);
-      notificationService.showErrorNotification('Logout failed.');
+      throw error; // Rethrow the error to propagate it further if needed
+    }
+  },
+  async Signup(signupDTO : SignupDto): Promise<void> {
+    try {
+      await apiClient.post('/auth/register', signupDTO);
+      notificationService.showSuccessNotification('register successful');
+    } catch (error) {
       throw error; // Rethrow the error to propagate it further if needed
     }
   },
@@ -70,13 +86,9 @@ export const authApi = {
 
   async refreshAccessToken(): Promise<void> {
     try {
-      const refreshTokenResponse = await apiClient.post(
-        '/auth/refresh-token',
-        {},
-        {
-          withCredentials: true,
-        }
-      );
+      const refreshTokenResponse = await apiClient.post('/auth/refresh-token', {
+        refreshToken: this.getUserSession()?.refreshToken,
+      });
 
       const userSession = authApi.getUserSession();
       if (userSession) {

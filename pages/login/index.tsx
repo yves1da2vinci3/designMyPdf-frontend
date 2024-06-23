@@ -16,6 +16,8 @@ import { useRouter } from 'next/router';
 import { Links } from '@/components/Navbar/Navbar';
 import { useForm } from '@mantine/form';
 import { LoginDto, authApi } from '@/api/authApi';
+import { useState } from 'react';
+import { RequestStatus } from '@/api/request-status.enum';
 
 export default function Login() {
   const router = useRouter();
@@ -32,9 +34,16 @@ export default function Login() {
     },
   });
 
-  const onSubmit = (loginInfo: LoginDto) => {
-    authApi.login(loginInfo);
-    router.push(Links.DASHBOARD);
+  const [isLoading, setIsLoading] = useState(RequestStatus.NotStated);
+  const onSubmit = async (loginInfo: LoginDto) => {
+    setIsLoading(RequestStatus.InProgress);
+    try {
+      const loginResponse = await authApi.login(loginInfo);
+      console.log(loginResponse);
+      router.push(Links.DASHBOARD);
+    } catch (error) {
+      setIsLoading(RequestStatus.Failed);
+    }
   };
 
   return (
@@ -66,12 +75,25 @@ export default function Login() {
               mt="md"
             />
             <Group justify="space-between" mt="lg">
-              <Checkbox {...loginForm.getInputProps('rememberMe', { type: 'checkbox' })} label="Remember me" />
-              <Anchor onClick={() => router.push(Links.FORGOT_PASSWORD)} component="button" size="sm">
+              <Checkbox
+                {...loginForm.getInputProps('rememberMe', { type: 'checkbox' })}
+                label="Remember me"
+              />
+              <Anchor
+                onClick={() => router.push(Links.FORGOT_PASSWORD)}
+                component="button"
+                size="sm"
+              >
                 Forgot password?
               </Anchor>
             </Group>
-            <Button type="submit" disabled={!loginForm.isValid()} fullWidth mt="xl">
+            <Button
+              type="submit"
+              loading={isLoading === RequestStatus.InProgress}
+              disabled={!loginForm.isValid()}
+              fullWidth
+              mt="xl"
+            >
               Sign in
             </Button>
           </form>

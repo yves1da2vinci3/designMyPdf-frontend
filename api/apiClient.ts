@@ -42,7 +42,7 @@ apiClient.interceptors.response.use(
     }
 
     if (error.response.status >= HttpStatusCode.BadRequest) {
-      const message = error?.response?.data?.message;
+      const message = error?.response?.data?.error;
 
       console.log('Request Error notify', message);
       notificationService.showErrorNotification(

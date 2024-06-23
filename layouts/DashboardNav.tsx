@@ -7,13 +7,13 @@ import {
   IconWaveSawTool,
   IconReceipt,
   IconNotebook,
-  IconSettingsAutomation,
   IconUserCircle,
   IconBoxSeam,
 } from '@tabler/icons-react';
 import classes from './DashboardNav.module.css';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { authApi } from '@/api/authApi';
 
 const data = [
   { link: '/dashboard/', label: 'Overview', icon: IconWaveSawTool },
@@ -27,6 +27,10 @@ export function DashboardNav() {
   const [active, setActive] = useState('Overview');
   const router = useRouter();
 
+  const Logout = async () => {
+    await authApi.logout();
+    router.push('/login');
+  };
   const navigate = (label: string, link: string) => {
     router.push(link);
     setActive(label);
@@ -50,7 +54,7 @@ export function DashboardNav() {
     <nav className={classes.navbar}>
       <div className={classes.navbarMain}>
         <Group className={classes.header} justify="space-between">
-          <IconBoxSeam style={{color : 'white'}} size={40} />
+          <IconBoxSeam style={{ color: 'white' }} size={40} />
           <Code fw={700} className={classes.version}>
             v0.5.2
           </Code>
@@ -64,10 +68,16 @@ export function DashboardNav() {
           <span>Change account</span>
         </Link>
 
-        <a href="#" className={classes.link} onClick={(event) => event.preventDefault()}>
+        <Box
+          className={classes.link}
+          onClick={(event) => {
+            event.preventDefault();
+            Logout();
+          }}
+        >
           <IconLogout className={classes.linkIcon} stroke={1.5} />
           <span>Logout</span>
-        </a>
+        </Box>
       </div>
     </nav>
   );
