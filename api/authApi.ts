@@ -14,9 +14,15 @@ export interface SignupDto {
 }
 
 export interface ChangePasswordDto {
-  currentPassword: string;
+  password: string;
+  token :string
+}
+export interface ResetPasswordDto {
   newPassword: string;
-  newConfirmPassword: string;
+  confirmPassword :string
+}
+export interface ForgotPasswordDto {
+  email: string;
 }
 
 export interface UserSession {
@@ -54,6 +60,15 @@ export const authApi = {
     } catch (error) {
       console.error('Password change error:', error);
       notificationService.showErrorNotification('Your password has not been updated.');
+      throw error; // Rethrow the error to propagate it further if needed
+    }
+  },
+  async ForgotPassword(forgotPasswordDTO: ForgotPasswordDto): Promise<void> {
+    try {
+      const ForgotResponse = await apiClient.post('/auth/forgot-password', forgotPasswordDTO);
+      notificationService.showSuccessNotification('an email has been sent to your email');
+    } catch (error) {
+      console.error('Password change error:', error);
       throw error; // Rethrow the error to propagate it further if needed
     }
   },

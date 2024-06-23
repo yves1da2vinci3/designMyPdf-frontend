@@ -67,7 +67,7 @@ import { useRouter } from 'next/router';
   export const Links = {
     LOGIN : '/login',
     SIGNUP: '/signup',
-    FORGOT_PASSWORD : '/forgotPassword',
+    FORGOT_PASSWORD : '/forgot-password',
     DASHBOARD : '/dashboard',
   }
   export function NavBar() {
