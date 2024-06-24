@@ -7,7 +7,7 @@ import { useDisclosure } from '@mantine/hooks';
 import NamespaceItem from '@/components/NamespaceItem/NamespaceItem';
 import AddNamespace from '@/modals/AddNamespace/AddNamespace';
 import { TemplateDTO, templateApi } from '@/api/templateApi';
-import { NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
+import { CreateNamespaceDto, NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
 import { RequestStatus } from '@/api/request-status.enum';
 import { useRouter } from 'next/router';
 
@@ -31,6 +31,7 @@ const TemplateHome = () => {
       const namespaces = await namespaceApi.getNamespaces();
       setTemplates(templates);
       setNamespaces(namespaces);
+      setSelectedNamespaceId(namespaces[0].ID);
       setFetchTemplatesRequestStatus(RequestStatus.Succeeded);
     } catch (error) {
       setFetchTemplatesRequestStatus(RequestStatus.Failed);
@@ -49,10 +50,31 @@ const TemplateHome = () => {
     ? templates.filter((template) => template.NamespaceID === selectedNamespaceId)
     : templates;
 
+  // Namespace Management
+  // Add namespace
+  const [addNamespaceRequestStatus, setAddNameSpaceRequestStatus] = useState(
+    RequestStatus.NotStated
+  );
+  const AddNamespaceHandler = async (nameSpaceDTO: CreateNamespaceDto) => {
+    try {
+      setAddNameSpaceRequestStatus(RequestStatus.InProgress);
+      const namespace = await namespaceApi.createNamespace(nameSpaceDTO);
+      setAddNameSpaceRequestStatus(RequestStatus.Succeeded);
+      setNamespaces([...namespaces, namespace]);
+      closeAddNamespace();
+    } catch (error) {
+      setAddNameSpaceRequestStatus(RequestStatus.Failed);
+    }
+  };
   return (
     <Stack h={'98vh'}>
       <AddTemplate opened={addTemplateOpened} onClose={closeAddTemplate} />
-      <AddNamespace opened={addNamespaceOpened} onClose={closeAddNamespace} />
+      <AddNamespace
+        opened={addNamespaceOpened}
+        onClose={closeAddNamespace}
+        addNamespaceHandler={AddNamespaceHandler}
+        addNamespaceRequestatus={addNamespaceRequestStatus}
+      />
       <Group style={{ borderBottom: 2, borderColor: 'red' }} justify="space-between">
         <Title>Templates</Title>
         <Button onClick={openAddTemplate}>Create New Template</Button>
@@ -71,7 +93,7 @@ const TemplateHome = () => {
                   key={namespace.ID}
                   id={namespace.ID}
                   selected={namespace.ID === selectedNamespaceId}
-                  onClick={() => handleNamespaceSelect(namespace.ID)}
+                  setNamespaceId={() => handleNamespaceSelect(namespace.ID)}
                   namespace={namespace}
                 />
               ))}
