@@ -101,16 +101,6 @@ const TemplateHome = () => {
     setTemplates(templates.filter((template) => template.ID !== id));
   };
 
-  // Delete template
-  const DeleteTemplate = async (id: number) => {
-    try {
-      await templateApi.deleteTemplate(id);
-      DeleteTemplateFromClient(id);
-    } catch (error) {
-      console.error('Error deleting template:', error);
-    }
-  };
-
   return (
     <Stack h={'98vh'}>
       <AddTemplate
@@ -172,7 +162,12 @@ const TemplateHome = () => {
             <>
               <Group flex={1} align="flex-start" justify="flex-start" gap={6}>
                 {filteredTemplates.map((template) => (
-                  <TemplateItem key={template?.ID} id={template?.ID} template={template} />
+                  <TemplateItem
+                    key={template?.ID}
+                    DeleteTemplateFromClient={DeleteTemplateFromClient}
+                    id={template?.ID}
+                    template={template}
+                  />
                 ))}
               </Group>
               <Pagination

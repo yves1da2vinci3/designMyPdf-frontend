@@ -108,6 +108,7 @@ export const templateApi = {
       const updateTemplateResponse = await apiClient.put(
         `/templates/${id}/namespace/${namespaceId}`
       );
+      notificationService.showSuccessNotification('template emplacement change successful');
     } catch (error) {
       throw new Error('Error updating template: ' + error);
     }
@@ -116,6 +117,7 @@ export const templateApi = {
   async deleteTemplate(id: number): Promise<void> {
     try {
       await apiClient.delete(`/templates/${id}`);
+      notificationService.showSuccessNotification('Template deleted successfully');
     } catch (error) {
       throw new Error('Error deleting template: ' + error);
     }
