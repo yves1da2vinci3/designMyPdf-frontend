@@ -19,12 +19,14 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconUserCircle, IconFolderFilled } from '@tabler/icons-react';
-import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
+import React, { useEffect, useMemo, useState } from 'react';
 
 const ACCOUNT_TAB_NAME = 'account';
 const NAMESPACE_TAB_NAME = 'namespace';
 export default function Account() {
   const theme = useMantineTheme();
+  const router = useRouter();
 
   const iconStyle = { width: rem(20), height: rem(20) };
   const iconStyleSelected = { width: rem(20), height: rem(20), color: 'white' };
@@ -59,7 +61,8 @@ export default function Account() {
   // Management namspace
   const [addNamespaceOpened, { open: openAddNamespace, close: closeAddNamespace }] =
     useDisclosure(false);
-  const [selectedTabName, setSelectedTabName] = useState<string | null>(ACCOUNT_TAB_NAME);
+  const tabName = useMemo(() => router.query.tabName, [router.query.tabName]) || ACCOUNT_TAB_NAME;
+  const [selectedTabName, setSelectedTabName] = useState<string | null>(tabName as string);
 
   // nameSpace management
 
@@ -107,7 +110,7 @@ export default function Account() {
       <Tabs
         flex={1}
         onChange={(value) => setSelectedTabName(value)}
-        defaultValue={ACCOUNT_TAB_NAME}
+        defaultValue={selectedTabName || ACCOUNT_TAB_NAME}
       >
         <Tabs.List>
           <Tabs.Tab

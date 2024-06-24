@@ -1,3 +1,5 @@
+import { NamespaceDTO } from '@/api/namespaceApi';
+import { limitText } from '@/utils/formatDate';
 import { Group, Text, rem, useMantineTheme } from '@mantine/core';
 import { IconFolderFilled } from '@tabler/icons-react';
 import React, { FC } from 'react';
@@ -7,9 +9,13 @@ import { useDrop } from 'react-dnd';
 interface NamespaceItemProps {
   id : number
   selected : boolean
+  namespace : NamespaceDTO
+  onClick : () => void
 }
-const NamespaceItem : FC<NamespaceItemProps> = ({ id, selected = false }) => {
+const NamespaceItem : FC<NamespaceItemProps> = ({ id, namespace, selected = false } : NamespaceItemProps) => {
   const theme = useMantineTheme();
+  const {name} = namespace
+  console.log("from namespace : ",namespace);
   const [{ canDrop, isOver }, drop] = useDrop(() => ({
     accept: 'TEMPLATE',
     drop: (item:{id:number}) => handleDrop(item.id),
@@ -39,7 +45,7 @@ const NamespaceItem : FC<NamespaceItemProps> = ({ id, selected = false }) => {
       h={rem(44)}
     >
       <IconFolderFilled />
-      <Text fw={'bold'}>Namespace</Text>
+      <Text fw={'bold'}>{limitText(name, 10)}</Text>
     </Group>
   );
 };

@@ -1,9 +1,17 @@
+import { TemplateDTO } from '@/api/templateApi';
+import { timeAgo } from '@/utils/formatDate';
 import { Paper, Box, Menu, rem, Avatar, Text } from '@mantine/core';
 import { IconDots, IconTrash } from '@tabler/icons-react';
 import React from 'react';
 import { useDrag } from 'react-dnd';
 
-export default function TemplateItem({ id }: { id: number }) {
+interface TemplateItemProps {
+  id: number;
+  template: TemplateDTO;
+}
+
+export default function TemplateItem({ id, template }: TemplateItemProps) {
+  const { name, CreatedAt } = template;
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'TEMPLATE',
     item: { id },
@@ -13,7 +21,14 @@ export default function TemplateItem({ id }: { id: number }) {
   }));
 
   return (
-    <Paper ref={drag} p={20} withBorder mt={0} shadow="sm" style={{ opacity: isDragging ? 0.5 : 1 }}>
+    <Paper
+      ref={drag}
+      p={20}
+      withBorder
+      mt={0}
+      shadow="sm"
+      style={{ opacity: isDragging ? 0.5 : 1 }}
+    >
       <Box style={{ position: 'relative' }}>
         <Menu shadow="md" width={200}>
           <Menu.Target>
@@ -30,8 +45,8 @@ export default function TemplateItem({ id }: { id: number }) {
         </Menu>
         <Avatar w={'100%'} h={122} radius={0} />
       </Box>
-      <Text>lolo domine le monde</Text>
-      <Text c={'gray'}>crée il y a 5 minutes</Text>
+      <Text>{name}</Text>
+      <Text c={'gray'}>created {timeAgo(CreatedAt)}</Text>
     </Paper>
   );
 }
