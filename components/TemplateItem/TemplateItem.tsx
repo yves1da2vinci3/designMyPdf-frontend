@@ -18,7 +18,7 @@ export default function TemplateItem({
   template,
   DeleteTemplateFromClient,
 }: TemplateItemProps) {
-  const { name, CreatedAt, content, variables, fonts } = template; // Destructure additional fields as needed
+  const { name, CreatedAt, content, variables, fonts } = template;
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'TEMPLATE',
     item: { id },
@@ -28,6 +28,7 @@ export default function TemplateItem({
   }));
 
   const router = useRouter();
+
   const navigateToTemplate = () => {
     router.push(`/dashboard/templates/create/${id}`);
   };
@@ -50,16 +51,23 @@ export default function TemplateItem({
       w={'30%'}
       h={200}
       shadow="sm"
-      style={{ opacity: isDragging ? 0.5 : 1 }}
+      style={{ opacity: isDragging ? 0.5 : 1, cursor: 'pointer' }}
+      onClick={navigateToTemplate} // Move navigation to Paper's onClick
     >
       <Box style={{ position: 'relative' }}>
         <Menu shadow="md" width={200}>
           <Menu.Target>
-            <IconDots style={{ position: 'absolute', top: 10, right: 10, zIndex: 100 }} />
+            <IconDots
+              style={{ position: 'absolute', top: 10, right: 10, zIndex: 100 }}
+              onClick={(e) => e.stopPropagation()} // Prevent propagation to avoid triggering Paper's onClick
+            />
           </Menu.Target>
           <Menu.Dropdown>
             <Menu.Item
-              onClick={() => deleteTemplate()}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent propagation to avoid triggering Paper's onClick
+                deleteTemplate();
+              }}
               color="red"
               leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
             >
@@ -68,7 +76,7 @@ export default function TemplateItem({
           </Menu.Dropdown>
         </Menu>
 
-        <Box style={{ cursor: 'pointer' }} onClick={() => navigateToTemplate()}>
+        <Box>
           <MiniPreview htmlContent={content} data={variables} fonts={fonts} />
         </Box>
       </Box>

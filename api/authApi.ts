@@ -149,7 +149,6 @@ export const authApi = {
         if (userSession) {
           userSession.accessToken = get(refreshTokenResponse, 'data.accessToken');
           localStorage.setItem('userSession', JSON.stringify(userSession));
-          notificationService.showSuccessNotification('Access token refreshed.');
         }
       }
     } catch (error) {
