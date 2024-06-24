@@ -66,6 +66,18 @@ const TemplateHome = () => {
       setAddNameSpaceRequestStatus(RequestStatus.Failed);
     }
   };
+
+  // Template management
+
+  const updateTemplateOnClient = (id: number, namespaceId: number) => {
+    const newTemplates = templates.map((template) => {
+      if (template.ID === id) {
+        return { ...template, NamespaceID: namespaceId };
+      }
+      return template;
+    });
+    setTemplates(newTemplates);
+  };
   return (
     <Stack h={'98vh'}>
       <AddTemplate opened={addTemplateOpened} onClose={closeAddTemplate} />
@@ -94,6 +106,7 @@ const TemplateHome = () => {
                   id={namespace.ID}
                   selected={namespace.ID === selectedNamespaceId}
                   setNamespaceId={() => handleNamespaceSelect(namespace.ID)}
+                  updateOnClient={updateTemplateOnClient}
                   namespace={namespace}
                 />
               ))}

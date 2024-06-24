@@ -1,4 +1,5 @@
 import { NamespaceDTO } from '@/api/namespaceApi';
+import { templateApi } from '@/api/templateApi';
 import { limitText } from '@/utils/formatDate';
 import { Group, Text, rem, useMantineTheme } from '@mantine/core';
 import { IconFolderFilled } from '@tabler/icons-react';
@@ -10,11 +11,13 @@ interface NamespaceItemProps {
   selected: boolean;
   namespace: NamespaceDTO;
   setNamespaceId: (id: number) => void;
+  updateOnClient : (id :number,namespaceId :number) => void;
 }
 const NamespaceItem: FC<NamespaceItemProps> = ({
   id,
   namespace,
   setNamespaceId,
+  updateOnClient,
   selected = false,
 }: NamespaceItemProps) => {
   const theme = useMantineTheme();
@@ -29,9 +32,12 @@ const NamespaceItem: FC<NamespaceItemProps> = ({
     }),
   }));
 
-  const handleDrop = (templateId: number) => {
+  const handleDrop = async (templateId: number) => {
+    try {
+      await templateApi.changeTemplateNamespace(templateId, id);
+      updateOnClient(templateId, id);
+    } catch (error) {}
     console.log(`Dropped template ${templateId} into namespace ${id}`);
-    // Handle the drop action here (e.g., update state or dispatch an action)
   };
 
   return (
