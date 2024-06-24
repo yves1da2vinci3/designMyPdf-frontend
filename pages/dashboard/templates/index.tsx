@@ -60,6 +60,10 @@ const TemplateHome = () => {
       setAddNameSpaceRequestStatus(RequestStatus.InProgress);
       const namespace = await namespaceApi.createNamespace(nameSpaceDTO);
       setAddNameSpaceRequestStatus(RequestStatus.Succeeded);
+      const newNamepsaces = [...namespaces, namespace];
+      if (newNamepsaces.length === 1) {
+        setSelectedNamespaceId(namespace.ID);
+      }
       setNamespaces([...namespaces, namespace]);
       closeAddNamespace();
     } catch (error) {
