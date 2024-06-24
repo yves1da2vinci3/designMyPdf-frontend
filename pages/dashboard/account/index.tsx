@@ -1,5 +1,5 @@
 import { authApi, updateUserDTO } from '@/api/authApi';
-import { NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
+import { CreateNamespaceDto, NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
 import { RequestStatus } from '@/api/request-status.enum';
 import ManagedNamespaceItem from '@/components/ManageNamespaceItem/ManagedNamespaceItem';
 import { ModifyUserForm } from '@/forms/ModifyUser';
@@ -80,6 +80,22 @@ export default function Account() {
   const DeleteFromClient = (id: number) => {
     setNamespaces(namespaces.filter((ns) => ns.ID !== id));
   };
+
+  // Add namespace
+  const [addNamespaceRequestStatus, setAddNameSpaceRequestStatus] = useState(
+    RequestStatus.NotStated
+  );
+  const AddNamespaceHandler = async (nameSpaceDTO: CreateNamespaceDto) => {
+    try {
+      setAddNameSpaceRequestStatus(RequestStatus.InProgress);
+      const namespace = await namespaceApi.createNamespace(nameSpaceDTO);
+      setAddNameSpaceRequestStatus(RequestStatus.Succeeded);
+      setNamespaces([...namespaces, namespace]);
+      closeAddNamespace();
+    } catch (error) {
+      setAddNameSpaceRequestStatus(RequestStatus.Failed);
+    }
+  };
   return (
     <>
       <LoadingOverlay
@@ -133,7 +149,12 @@ export default function Account() {
         </Tabs.Panel>
 
         <Tabs.Panel value={NAMESPACE_TAB_NAME}>
-          <AddNamespace opened={addNamespaceOpened} onClose={closeAddNamespace} />
+          <AddNamespace
+            opened={addNamespaceOpened}
+            onClose={closeAddNamespace}
+            addNamespaceHandler={AddNamespaceHandler}
+            addNamespaceRequestatus={addNamespaceRequestStatus}
+          />
 
           <Stack flex={1} h={'90vh'} mt={8}>
             <Group px={12} style={{ borderBottom: 2, borderColor: 'red' }} justify="space-between">

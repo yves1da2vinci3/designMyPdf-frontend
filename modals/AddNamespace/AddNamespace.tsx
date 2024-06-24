@@ -1,18 +1,20 @@
 import { CreateNamespaceDto, namespaceApi } from '@/api/namespaceApi';
 import { RequestStatus } from '@/api/request-status.enum';
 import { AddNamespaceForm } from '@/forms/AddNamespace';
-import {  Modal, ModalProps, Title } from '@mantine/core';
+import { Modal, ModalProps, Title } from '@mantine/core';
 import React from 'react';
 
-interface AddNamespaceModalProps extends ModalProps {}
+interface AddNamespaceModalProps extends ModalProps {
+  addNamespaceHandler: (values: CreateNamespaceDto) => void;
+  addNamespaceRequestatus: RequestStatus;
+}
 
-const AddNamespace: React.FC<AddNamespaceModalProps> = ({ onClose, ...modalProps }) => {
-  const addTemplateHandler = (values: CreateNamespaceDto) => {
-    namespaceApi.createNamespace(values);
-  };
-  const [addNamespaceRequestatus, setAddNamespaceRequestatatus] = React.useState(
-    RequestStatus.NotStated
-  );
+const AddNamespace: React.FC<AddNamespaceModalProps> = ({
+  onClose,
+  addNamespaceHandler,
+  addNamespaceRequestatus,
+  ...modalProps
+}) => {
   return (
     <Modal
       centered
@@ -26,7 +28,7 @@ const AddNamespace: React.FC<AddNamespaceModalProps> = ({ onClose, ...modalProps
     >
       <AddNamespaceForm
         onClose={onClose}
-        onSubmit={addTemplateHandler}
+        onSubmit={addNamespaceHandler}
         requestStatus={addNamespaceRequestatus}
       />
     </Modal>

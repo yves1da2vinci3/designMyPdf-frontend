@@ -1,5 +1,5 @@
-import notificationService from "@/services/NotificationService";
-import { apiClient } from "./apiClient";
+import notificationService from '@/services/NotificationService';
+import { apiClient } from './apiClient';
 
 export interface CreateNamespaceDto {
   name: string;
@@ -12,14 +12,15 @@ export interface UpdateNamespaceDto {
 export interface NamespaceDTO {
   ID: number;
   name: string;
-  templates: any[]; 
+  templates: any[];
 }
 
 export const namespaceApi = {
-  async createNamespace(namespace: CreateNamespaceDto): Promise<void> {
+  async createNamespace(namespace: CreateNamespaceDto): Promise<NamespaceDTO> {
     try {
       const nameResponse = await apiClient.post('/namespaces', namespace);
       notificationService.showSuccessNotification('Namespace has been created.');
+      return nameResponse.data.namespace;
     } catch (error) {
       console.error('Namespace creation error:', error);
       throw error; // Rethrow the error to propagate it further if needed
