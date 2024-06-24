@@ -29,25 +29,38 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response.status === HttpStatusCode.Forbidden && !originalRequest._retry) {
+
+    // Check if the error is due to an unauthorized request
+    if (error.response.status === HttpStatusCode.Unauthorized && !originalRequest._retry) {
       console.log('Unauthorized request');
 
-      await authApi.refreshAccessToken();
-      originalRequest._retry = true;
-      const accessToken = authApi?.getUserSession()?.accessToken;
-      originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+      originalRequest._retry = true; // Mark the request as retried to prevent infinite loops
 
-      console.log('Retrying request');
-      return axios(originalRequest);
+      try {
+        await authApi.refreshAccessToken();
+        const accessToken = authApi?.getUserSession()?.accessToken;
+        if (accessToken) {
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          console.log('Retrying request');
+          return axios(originalRequest);
+        } else {
+          throw new Error('No access token available after refresh');
+        }
+      } catch (refreshError) {
+        console.error('Error refreshing access token:', refreshError);
+        authApi.logout();
+        notificationService.showErrorNotification('Your session has expired. Please log in again.');
+        // Optionally, redirect to login page or handle session expiration here
+        return Promise.reject(refreshError);
+      }
     }
 
+    // Handle other errors
     if (error.response.status >= HttpStatusCode.BadRequest) {
-      const message = error?.response?.data?.error;
-
-      console.log('Request Error notify', message);
-      notificationService.showErrorNotification(
-        message || 'An error occurred when processing your request'
-      );
+      const message =
+        error?.response?.data?.error || 'An error occurred when processing your request';
+      console.log('Request Error notify:', message);
+      notificationService.showErrorNotification(message);
     }
 
     return Promise.reject(error);
