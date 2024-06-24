@@ -5,18 +5,17 @@ import { Button, Group, Modal, ModalProps, Title } from '@mantine/core';
 import { useRouter } from 'next/router';
 import React from 'react';
 
-interface AddTemplateModalProps extends ModalProps {}
+interface AddTemplateModalProps extends ModalProps {
+  addTemplateHandler: (values: CreateTemplateDto) => void;
+  addTemplateRequestatus: RequestStatus;
+}
 
-const AddTemplate: React.FC<AddTemplateModalProps> = ({ onClose, ...modalProps }) => {
-  const router = useRouter()
-  const addTemplateHandler = (values: CreateTemplateDto) => {
-    templateApi.createTemplate(values);
-    router.push('/dashboard/templates/create')
-
-  };
-  const [addTemplateRequestatus, setAddTemplateRequestatatus] = React.useState(
-    RequestStatus.NotStated
-  );
+const AddTemplate: React.FC<AddTemplateModalProps> = ({
+  onClose,
+  addTemplateHandler,
+  addTemplateRequestatus,
+  ...modalProps
+}) => {
   return (
     <Modal
       centered

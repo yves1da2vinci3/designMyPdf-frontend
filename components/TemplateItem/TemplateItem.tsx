@@ -2,6 +2,7 @@ import { TemplateDTO } from '@/api/templateApi';
 import { timeAgo } from '@/utils/formatDate';
 import { Paper, Box, Menu, rem, Avatar, Text } from '@mantine/core';
 import { IconDots, IconTrash } from '@tabler/icons-react';
+import { useRouter } from 'next/router';
 import React from 'react';
 import { useDrag } from 'react-dnd';
 
@@ -20,6 +21,10 @@ export default function TemplateItem({ id, template }: TemplateItemProps) {
     }),
   }));
 
+  const router = useRouter();
+  const navigateToTemplate = () => {
+    router.push(`/dashboard/templates/create/${id}`);
+  };
   return (
     <Paper
       ref={drag}
@@ -27,7 +32,8 @@ export default function TemplateItem({ id, template }: TemplateItemProps) {
       withBorder
       mt={0}
       shadow="sm"
-      style={{ opacity: isDragging ? 0.5 : 1 }}
+      style={{ opacity: isDragging ? 0.5 : 1, cursor: 'pointer' }}
+      onClick={() => navigateToTemplate()}
     >
       <Box style={{ position: 'relative' }}>
         <Menu shadow="md" width={200}>

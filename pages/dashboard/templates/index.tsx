@@ -6,7 +6,7 @@ import AddTemplate from '@/modals/AddTemplate/AddTemplate';
 import { useDisclosure } from '@mantine/hooks';
 import NamespaceItem from '@/components/NamespaceItem/NamespaceItem';
 import AddNamespace from '@/modals/AddNamespace/AddNamespace';
-import { TemplateDTO, templateApi } from '@/api/templateApi';
+import { CreateTemplateDto, TemplateDTO, templateApi } from '@/api/templateApi';
 import { CreateNamespaceDto, NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
 import { RequestStatus } from '@/api/request-status.enum';
 import { useRouter } from 'next/router';
@@ -78,9 +78,47 @@ const TemplateHome = () => {
     });
     setTemplates(newTemplates);
   };
+
+  // add Template
+  const [addTemplateRequestStatus, setAddTemplateRequestStatus] = useState(RequestStatus.NotStated);
+  const AddTemplateHandler = async (template: CreateTemplateDto) => {
+    try {
+      setAddTemplateRequestStatus(RequestStatus.InProgress);
+      const newTemplate = await templateApi.createTemplate(
+        template.name,
+        selectedNamespaceId as number
+      );
+      setAddTemplateRequestStatus(RequestStatus.Succeeded);
+      setTemplates([...templates, newTemplate]);
+      router.push(`/dashboard/templates/create/${newTemplate.ID}`);
+      closeAddTemplate();
+    } catch (error) {
+      setAddTemplateRequestStatus(RequestStatus.Failed);
+    }
+  };
+
+  const DeleteTemplateFromClient = (id: number) => {
+    setTemplates(templates.filter((template) => template.ID !== id));
+  };
+
+  // Delete template
+  const DeleteTemplate = async (id: number) => {
+    try {
+      await templateApi.deleteTemplate(id);
+      DeleteTemplateFromClient(id);
+    } catch (error) {
+      console.error('Error deleting template:', error);
+    }
+  };
+
   return (
     <Stack h={'98vh'}>
-      <AddTemplate opened={addTemplateOpened} onClose={closeAddTemplate} />
+      <AddTemplate
+        opened={addTemplateOpened}
+        onClose={closeAddTemplate}
+        addTemplateHandler={AddTemplateHandler}
+        addTemplateRequestatus={addTemplateRequestStatus}
+      />
       <AddNamespace
         opened={addNamespaceOpened}
         onClose={closeAddNamespace}
@@ -134,7 +172,7 @@ const TemplateHome = () => {
             <>
               <Group flex={1} align="flex-start" justify="flex-start" gap={6}>
                 {filteredTemplates.map((template) => (
-                  <TemplateItem key={template.ID} id={template.ID} template={template} />
+                  <TemplateItem key={template?.ID} id={template?.ID} template={template} />
                 ))}
               </Group>
               <Pagination
