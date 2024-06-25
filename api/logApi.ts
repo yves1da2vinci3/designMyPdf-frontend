@@ -3,11 +3,9 @@ import { apiClient } from './apiClient';
 import { KeyDTO } from './keyApi';
 import { TemplateDTO } from './templateApi';
 
-
 interface ResponseBody {
-  path :string
+  path: string;
 }
-
 
 export interface LogDTO {
   id: number;
@@ -33,9 +31,9 @@ export const logApi = {
       throw new Error('Error fetching keys:' + error);
     }
   },
-  async getLogsStats(): Promise<LogStatDTO[]> {
+  async getLogsStats(period: string): Promise<LogStatDTO[]> {
     try {
-      const getKeysResponse = await apiClient.get('/logs/stats');
+      const getKeysResponse = await apiClient.get(`/logs/stats?period=${period}`);
       return getKeysResponse.data.stats;
     } catch (error) {
       throw new Error('Error fetching keys:' + error);
