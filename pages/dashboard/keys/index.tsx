@@ -9,21 +9,29 @@ export default function Keys() {
     {
       createAt: '2023-02-28',
       name: 'Example Name 1',
+      keyCount: '15',
+      keyCountUsed: '10',
       key: 'abcde123fghij456k',
     },
     {
       createAt: '2023-02-27',
       name: 'Example Name 2',
+      keyCount: '15',
+      keyCountUsed: '10',
       key: 'fghij456klmno789n',
     },
     {
       createAt: '2023-02-26',
       name: 'Example Name 3',
+      keyCount: '15',
+      keyCountUsed: '10',
       key: 'klmno789npqrs890t',
     },
     {
       createAt: '2023-02-25',
       name: 'Example Name 4',
+      keyCount: '15',
+      keyCountUsed: '10',
       key: 'pqrs890tuvwxy123z',
     },
   ];
@@ -32,8 +40,10 @@ export default function Keys() {
     <Table.Tr key={element.name}>
       <Table.Td width={'10%'}>{element.createAt}</Table.Td>
       <Table.Td width={'20%'}>{element.name}</Table.Td>
-      <Table.Td width={'60%'}>{element.key}</Table.Td>
-      <Table.Td width={'10%'}>
+      <Table.Td width={'36%'}>{element.key}</Table.Td>
+      <Table.Td width={'10%'}>{element.keyCount}</Table.Td>
+      <Table.Td width={'10%'}>{element.keyCountUsed}</Table.Td>
+      <Table.Td width={'14%'}>
         <Button variant="outline" color="red" leftSection={<IconTrash />}>
           Delete
         </Button>
@@ -60,6 +70,8 @@ export default function Keys() {
             <Table.Th>Create At</Table.Th>
             <Table.Th>Name</Table.Th>
             <Table.Th>Key</Table.Th>
+            <Table.Th>Key Quota</Table.Th>
+            <Table.Th>Key Usage</Table.Th>
             <Table.Th>Actions</Table.Th>
           </Table.Tr>
         </Table.Thead>
