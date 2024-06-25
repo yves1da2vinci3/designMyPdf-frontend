@@ -1,22 +1,23 @@
 import { Button, Group, Paper, TextInput, useMantineTheme } from '@mantine/core';
 import { isNotEmpty, useForm } from '@mantine/form';
 import { RequestStatus } from '@/api/request-status.enum';
-import { CreateKeyDto } from '@/api/keyApi';
+import { CreateKeyDto, KeyDTO, UpdateKeyDto } from '@/api/keyApi';
 
-interface AddKeyProps {
+interface UpdateKeyProps {
   onClose: () => void;
-  onSubmit: (values: CreateKeyDto) => void;
+  onSubmit: (values: UpdateKeyDto) => void;
   requestStatus: RequestStatus;
+  Key?: KeyDTO;
 }
 
 const MARGIN_BOTTOM = 20;
 const MARGIN_TOP = 30;
 
-export function AddKeyForm({ onSubmit, onClose, requestStatus }: AddKeyProps) {
-  const addKeyForm = useForm<CreateKeyDto>({
+export function UpdateKeyForm({ onSubmit, Key, onClose, requestStatus }: UpdateKeyProps) {
+  const updateKeyForm = useForm<CreateKeyDto>({
     initialValues: {
-      name: '',
-      key_count: '0',
+      name: Key?.name || '',
+      key_count: Key?.key_count.toString() || '0',
     },
 
     clearInputErrorOnChange: false,
@@ -30,13 +31,13 @@ export function AddKeyForm({ onSubmit, onClose, requestStatus }: AddKeyProps) {
 
   return (
     <Paper maw={'100%'} p={30} radius="md">
-      <form onSubmit={addKeyForm.onSubmit((values: CreateKeyDto) => onSubmit({ ...values }))}>
+      <form onSubmit={updateKeyForm.onSubmit((values: UpdateKeyDto) => onSubmit({ ...values }))}>
         <TextInput
           label="Name"
           withAsterisk
           mb={MARGIN_BOTTOM}
           placeholder={'My Key '}
-          {...addKeyForm.getInputProps('name')}
+          {...updateKeyForm.getInputProps('name')}
         />
         <TextInput
           label="KeyCount"
@@ -44,7 +45,7 @@ export function AddKeyForm({ onSubmit, onClose, requestStatus }: AddKeyProps) {
           mb={MARGIN_BOTTOM}
           placeholder={'11'}
           type="number"
-          {...addKeyForm.getInputProps('key_count')}
+          {...updateKeyForm.getInputProps('key_count')}
         />
 
         <Group justify="flex-end" mt={MARGIN_TOP}>
@@ -56,10 +57,10 @@ export function AddKeyForm({ onSubmit, onClose, requestStatus }: AddKeyProps) {
             type="submit"
             w={'12rem'}
             size="md"
-            disabled={!addKeyForm.isValid()}
+            disabled={!updateKeyForm.isValid()}
             loading={requestStatus === RequestStatus.InProgress}
           >
-            Create key
+            Update key
           </Button>
         </Group>
       </form>

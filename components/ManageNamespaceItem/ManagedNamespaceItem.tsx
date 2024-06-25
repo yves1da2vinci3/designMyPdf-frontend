@@ -3,7 +3,6 @@ import { IconTrash } from '@tabler/icons-react';
 import { modals } from '@mantine/modals';
 import { NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
 import notificationService from '@/services/NotificationService';
-import { Sparkline } from '@mantine/charts';
 
 interface ManagedNamespaceItemProps {
   namespace: NamespaceDTO;

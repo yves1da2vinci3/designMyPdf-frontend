@@ -153,8 +153,8 @@ export const authApi = {
       }
     } catch (error) {
       console.error('Token refresh error:', error);
-      this.logout();
-      document.location.href = '/auth/login';
+      this.clearSession();
+      document.location.href = '/login';
       throw error; // Rethrow the error to propagate it further if needed
     }
   },

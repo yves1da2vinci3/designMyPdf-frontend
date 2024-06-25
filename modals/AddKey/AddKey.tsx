@@ -4,13 +4,17 @@ import { AddKeyForm } from '@/forms/AddKey';
 import { Modal, ModalProps, Title } from '@mantine/core';
 import React from 'react';
 
-interface AddKeyModalProps extends ModalProps {}
+interface AddKeyModalProps extends ModalProps {
+  addKeyHandler: (values: CreateKeyDto) => void;
+  addKeyRequestatus: RequestStatus;
+}
 
-const AddKeyModal: React.FC<AddKeyModalProps> = ({ onClose, ...modalProps }) => {
-  const addKeyHandler = (values: CreateKeyDto) => {
-    keyApi.createKey(values);
-  };
-  const [addKeyRequestatus, setAddKeyRequestatatus] = React.useState(RequestStatus.NotStated);
+const AddKeyModal: React.FC<AddKeyModalProps> = ({
+  onClose,
+  addKeyHandler,
+  addKeyRequestatus,
+  ...modalProps
+}) => {
   return (
     <Modal
       centered
