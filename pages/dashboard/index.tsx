@@ -7,6 +7,7 @@ import { LogStatDTO, logApi } from '@/api/logApi';
 import { RequestStatus } from '@/api/request-status.enum';
 import getFilledStats from '@/utils/filledStats';
 import { useRouter } from 'next/router';
+import { Links } from '@/components/Navbar/Navbar';
 const DEFAULT_PERIOD = 'week';
 
 export default function Overiew() {
@@ -73,12 +74,12 @@ export default function Overiew() {
         <Group>
           {' '}
           <Title order={4}>Create new Template</Title>{' '}
-          <Button onClick={() => router.push('/dashboard/temaplates')}>create</Button>{' '}
+          <Button onClick={() => router.push(Links.TEMPLATES)}>create</Button>{' '}
         </Group>{' '}
         <Group>
           {' '}
           <Title order={4}>Usage Logs</Title>{' '}
-          <Button onClick={() => router.push('/dashboard/backtrace')}>open</Button>{' '}
+          <Button onClick={() => router.push(Links.LOGS)}>open</Button>{' '}
         </Group>{' '}
       </Group>
     </Stack>

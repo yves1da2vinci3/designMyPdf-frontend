@@ -7,13 +7,13 @@ export function Welcome() {
       <Title className={classes.title} ta="center" >
         Welcome to{' '}
         <Text inherit variant="gradient" component="span" gradient={{ from: 'pink', to: 'yellow' }}>
-          Transactional{' '}
+          DesignMyPDF{' '}
         </Text>
       </Title>
       <Text color="dimmed" ta="center" size="lg" maw={580} mx="auto" mt="xl">
       Stop struggling with PDF in your projects{' '},this project is open source version of transactional.dev 
        
-        <Anchor href="https://transactional.dev/" size="lg">
+        <Anchor mx={7} href="https://transactional.dev/" size="lg">
           this one
         </Anchor>
       </Text>

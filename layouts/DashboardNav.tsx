@@ -12,6 +12,7 @@ import {
 import classes from './DashboardNav.module.css';
 import { useRouter } from 'next/router';
 import { authApi } from '@/api/authApi';
+import { Logo } from '@/components/AppLogo/AppLogo';
 
 const data = [
   { link: '/dashboard/', label: 'Overview', icon: IconWaveSawTool },
@@ -52,7 +53,7 @@ export function DashboardNav() {
     <nav className={classes.navbar}>
       <div className={classes.navbarMain}>
         <Group className={classes.header} justify="space-between">
-          <IconBoxSeam style={{ color: 'white' }} size={40} />
+          <Logo isWhite width={80} />
           <Code fw={700} className={classes.version}>
             v0.5.2
           </Code>
