@@ -60,7 +60,7 @@ export default function Log() {
 
   const currentLogs = logs.slice((currentPage - 1) * logsPerPage, currentPage * logsPerPage);
   const rows = currentLogs.map((log: LogDTO) => (
-    <Table.Tr key={log.id}>
+    <Table.Tr    key={log.id}>
       <Table.Td>{formatDate(log.called_at)}</Table.Td>
       <Table.Td>{log.template.name}</Table.Td>
       <Table.Td>{log.key.value}</Table.Td>
@@ -101,7 +101,7 @@ export default function Log() {
           <Title>Logs</Title>
 
           {/* Table */}
-          <Table flex={1} withRowBorders withColumnBorders>
+          <Table   withRowBorders withColumnBorders>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>
@@ -133,6 +133,7 @@ export default function Log() {
             </Table.Thead>
             <Table.Tbody>{rows}</Table.Tbody>
           </Table>
+          <Box flex={1} />
           <Pagination
             style={{ alignSelf: 'flex-end' }}
             total={Math.ceil(logs.length / logsPerPage)}
