@@ -9,7 +9,6 @@ import getFilledStats from '@/utils/filledStats';
 import { useRouter } from 'next/router';
 const DEFAULT_PERIOD = 'week';
 
-
 export default function Overiew() {
   const [LogsStats, setLogStats] = useState<LogStatDTO[]>([]);
   const [fetchLogStatsRequestStatus, setFetchLogStatsRequestStatus] = useState(
@@ -21,8 +20,8 @@ export default function Overiew() {
     setFetchLogStatsRequestStatus(RequestStatus.InProgress);
     try {
       const logStats = await logApi.getLogsStats(period);
-      setLogStats(logStats);
-      const filledStats = getFilledStats(logStats, period);
+      const newLogs = logStats ? logStats : [];
+      const filledStats = getFilledStats(newLogs, period);
       setLogStats(filledStats);
       setFetchLogStatsRequestStatus(RequestStatus.Succeeded);
     } catch (error) {
@@ -34,7 +33,7 @@ export default function Overiew() {
     fetchLogStats();
   }, [period]);
 
-  const router = useRouter()
+  const router = useRouter();
   return (
     <Stack>
       <Title>Overview</Title>
@@ -73,11 +72,13 @@ export default function Overiew() {
         {' '}
         <Group>
           {' '}
-          <Title order={4}>Create new Template</Title> <Button onClick={()=> router.push('/dashboard/temaplates')}>create</Button>{' '}
+          <Title order={4}>Create new Template</Title>{' '}
+          <Button onClick={() => router.push('/dashboard/temaplates')}>create</Button>{' '}
         </Group>{' '}
         <Group>
           {' '}
-          <Title order={4}>Usage Logs</Title> <Button onClick={()=> router.push('/dashboard/backtrace')} >open</Button>{' '}
+          <Title order={4}>Usage Logs</Title>{' '}
+          <Button onClick={() => router.push('/dashboard/backtrace')}>open</Button>{' '}
         </Group>{' '}
       </Group>
     </Stack>
