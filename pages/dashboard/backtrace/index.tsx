@@ -1,7 +1,6 @@
 import { LogDTO, logApi } from '@/api/logApi';
 import { RequestStatus } from '@/api/request-status.enum';
 import DashboardLayout from '@/layouts/DashboardLayout';
-import AddKeyModal from '@/modals/AddKey/AddKey';
 import ViewBacktrace from '@/modals/ViewBacktrace/ViewBacktrace';
 import { formatDate } from '@/utils/formatDate';
 import {
@@ -12,6 +11,7 @@ import {
   Group,
   Loader,
   Modal,
+  Pagination,
   Stack,
   Table,
   Text,
@@ -19,16 +19,16 @@ import {
   rem,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { Editor } from '@monaco-editor/react';
-import { IconEye, IconTrash } from '@tabler/icons-react';
+import { IconEye } from '@tabler/icons-react';
 import { HttpStatusCode } from 'axios';
 import React, { useEffect, useState } from 'react';
 
 export default function Log() {
   const [fetchLogRequestStatus, setFetchLogRequestStatus] = useState(RequestStatus.NotStated);
   const [logs, setLogs] = useState<LogDTO[]>([]);
-  const [rows, setRows] = useState<JSX.Element[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [log, setLog] = useState<LogDTO | null>(null);
+  const logsPerPage = 10;
 
   const viewLog = (log: LogDTO) => {
     setLog(log);
@@ -40,26 +40,6 @@ export default function Log() {
     try {
       const logs = await logApi.getLogs();
       setLogs(logs);
-      const rows = logs.map((log: LogDTO) => (
-        <Table.Tr key={log.id}>
-          <Table.Td>{formatDate(log.called_at)}</Table.Td>
-          <Table.Td>{log.template.name}</Table.Td>
-          <Table.Td>{log.key.value}</Table.Td>
-          <Table.Td>
-            {log.status_code === HttpStatusCode.Ok ? (
-              <Badge color="green">success</Badge>
-            ) : (
-              <Badge color="red">failed</Badge>
-            )}
-          </Table.Td>
-          <Table.Td style={{ justifyContent: 'flex-end', display: 'flex' }}>
-            <Button onClick={() => viewLog(log)} variant="outline" leftSection={<IconEye />}>
-              View backtrace
-            </Button>
-          </Table.Td>
-        </Table.Tr>
-      ));
-      setRows(rows);
       setFetchLogRequestStatus(RequestStatus.Succeeded);
     } catch (error) {
       console.error(error);
@@ -74,6 +54,31 @@ export default function Log() {
   const [viewBacktraceOpened, { open: openViewBacktrace, close: closeViewBacktrace }] =
     useDisclosure(false);
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const currentLogs = logs.slice((currentPage - 1) * logsPerPage, currentPage * logsPerPage);
+  const rows = currentLogs.map((log: LogDTO) => (
+    <Table.Tr key={log.id}>
+      <Table.Td>{formatDate(log.called_at)}</Table.Td>
+      <Table.Td>{log.template.name}</Table.Td>
+      <Table.Td>{log.key.value}</Table.Td>
+      <Table.Td>
+        {log.status_code === HttpStatusCode.Ok ? (
+          <Badge color="green">success</Badge>
+        ) : (
+          <Badge color="red">failed</Badge>
+        )}
+      </Table.Td>
+      <Table.Td style={{ justifyContent: 'flex-end', display: 'flex' }}>
+        <Button onClick={() => viewLog(log)} variant="outline" leftSection={<IconEye />}>
+          View backtrace
+        </Button>
+      </Table.Td>
+    </Table.Tr>
+  ));
+
   return (
     <>
       {fetchLogRequestStatus === RequestStatus.InProgress ||
@@ -82,7 +87,7 @@ export default function Log() {
           <Loader type="bars" size={'xl'} />
         </Center>
       ) : (
-        <Stack>
+        <Stack h={'95vh'}>
           {log && (
             <ViewBacktrace
               Log={log}
@@ -96,7 +101,7 @@ export default function Log() {
           <Title>Logs</Title>
 
           {/* Table */}
-          <Table withRowBorders withColumnBorders>
+          <Table flex={1} withRowBorders withColumnBorders>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>
@@ -128,6 +133,12 @@ export default function Log() {
             </Table.Thead>
             <Table.Tbody>{rows}</Table.Tbody>
           </Table>
+          <Pagination
+            style={{ alignSelf: 'flex-end' }}
+            total={Math.ceil(logs.length / logsPerPage)}
+            value={currentPage}
+            onChange={handlePageChange}
+          />
         </Stack>
       )}
     </>
