@@ -80,7 +80,7 @@ export default function CreateTemplate() {
   const fetchTemplate = async () => {
     try {
       setIsLoading(RequestStatus.InProgress);
-      const template = await templateApi.getTemplateById(+params.id);
+      const template = await templateApi.getTemplateById(params.id as string);
       setTemplate(template);
       setCode(template.content || DEFAULT_TEMPLATE);
       setJsonContent(JSON.stringify(template.variables || data, null, 2));

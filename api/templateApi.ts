@@ -49,6 +49,7 @@ export interface UpdateTemplateDto {
 export interface TemplateDTO {
   ID: number;
   name: string;
+  uuid: string;
   framework: string;
   content: string;
   fonts: string[];
@@ -85,7 +86,7 @@ export const templateApi = {
     }
   },
 
-  async getTemplateById(id: number): Promise<TemplateDTO> {
+  async getTemplateById(id: string): Promise<TemplateDTO> {
     try {
       const getTemplateResponse = await apiClient.get(`/templates/${id}`);
       return getTemplateResponse.data.template;

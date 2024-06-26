@@ -94,7 +94,7 @@ const TemplateHome = () => {
       );
       setAddTemplateRequestStatus(RequestStatus.Succeeded);
       setTemplates([...templates, newTemplate]);
-      router.push(`/dashboard/templates/create/${newTemplate.ID}`);
+      router.push(`/dashboard/templates/create/${newTemplate.uuid}`);
       closeAddTemplate();
     } catch (error) {
       setAddTemplateRequestStatus(RequestStatus.Failed);

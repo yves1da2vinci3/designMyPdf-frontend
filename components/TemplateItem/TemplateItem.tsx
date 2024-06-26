@@ -18,7 +18,7 @@ export default function TemplateItem({
   template,
   DeleteTemplateFromClient,
 }: TemplateItemProps) {
-  const { name, CreatedAt, content, variables, fonts } = template;
+  const { name, CreatedAt, content, variables, fonts, uuid } = template;
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'TEMPLATE',
     item: { id },
@@ -30,7 +30,7 @@ export default function TemplateItem({
   const router = useRouter();
 
   const navigateToTemplate = () => {
-    router.push(`/dashboard/templates/create/${id}`);
+    router.push(`/dashboard/templates/create/${uuid}`);
   };
 
   const deleteTemplate = async () => {

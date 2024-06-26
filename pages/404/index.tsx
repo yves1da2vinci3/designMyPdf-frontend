@@ -15,7 +15,7 @@ export default function Custom404() {
             Page you are trying to open does not exist. You may have mistyped the address, or the
             page has been moved to another URL. If you think this is an error contact support.
           </Text>
-          <Button onClick={() => router.push('/')} variant="outline" size="md" mt="xl" className={classes.control}>
+          <Button onClick={() => router.back()} variant="outline" size="md" mt="xl" className={classes.control}>
             Get back to home page
           </Button>
         </div>
