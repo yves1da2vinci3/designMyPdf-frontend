@@ -172,7 +172,7 @@ export default function CreateTemplate() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `template${Math.random()}.ejs`;
+    a.download = `template${Math.random()}.hbs`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -205,7 +205,7 @@ export default function CreateTemplate() {
             rightSection={<IconEye size={14} />}
             bg={'blue'}
           >
-            upload template
+            download template
           </Button>
           <Button
             onClick={updateTemplate}
