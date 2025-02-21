@@ -7,77 +7,108 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 function extractVariablesFromTemplate(template: string) {
   const variableRegex = /{{([^}]+)}}/g;
-  const variables = new Set<string>();
+  const variables = new Map<string, { type: 'array' | 'object' | 'value'; path: string[] }>();
   let match;
 
   while ((match = variableRegex.exec(template)) !== null) {
     let variable = match[1].trim();
+    
     // Remove helpers like #each, #if, else, /if, /each
     variable = variable.replace(/^#|^\/|else/g, '');
+    
     // Get the variable name before any operators or spaces
     variable = variable.split(' ')[0];
+    
     if (variable && !variable.includes('this.')) {
-      variables.add(variable);
+      // Check if it's inside an #each block
+      const eachBlockRegex = new RegExp(`{{#each\\s+${variable.split('.')[0]}}}([\\s\\S]*?){{/each}}`, 'g');
+      const isArray = eachBlockRegex.test(template);
+
+      // Split the path and store the structure
+      const path = variable.split('.');
+      if (!variables.has(path[0])) {
+        if (isArray) {
+          variables.set(path[0], { type: 'array', path: [path[0]] });
+        } else if (path.length > 1) {
+          variables.set(path[0], { type: 'object', path: [path[0]] });
+        } else {
+          variables.set(path[0], { type: 'value', path: [path[0]] });
+        }
+      }
+
+      // Store nested paths
+      if (path.length > 1) {
+        const parentVar = variables.get(path[0]);
+        if (parentVar && parentVar.type === 'object') {
+          variables.set(variable, { type: 'value', path });
+        }
+      }
     }
   }
 
-  return Array.from(variables);
+  return variables;
 }
 
-function analyzeVariableStructure(template: string, variables: string[]) {
+function buildVariableStructure(variables: Map<string, { type: 'array' | 'object' | 'value'; path: string[] }>) {
   const structure: Record<string, any> = {};
 
-  variables.forEach((variable) => {
-    // Check if it's used in an #each block
-    const eachRegex = new RegExp(`{{#each ${variable}}}([\\s\\S]*?){{/each}}`, 'g');
-    const isArray = eachRegex.test(template);
-
-    // Check if it's used with dot notation
-    const dotNotationRegex = new RegExp(`{{${variable}\\.(\\w+)}}`, 'g');
-    const hasNestedProps = dotNotationRegex.test(template);
-
-    if (isArray) {
-      // Find properties used inside the each block
-      const blockRegex = new RegExp(`{{#each ${variable}}}([\\s\\S]*?){{/each}}`, 'g');
-      const block = blockRegex.exec(template)?.[1] || '';
-      const propRegex = /{{this\.(\w+)}}/g;
-      const props = new Set<string>();
-      let propMatch;
-
-      while ((propMatch = propRegex.exec(block)) !== null) {
-        props.add(propMatch[1]);
+  // First pass: Create base structure
+  for (const [key, value] of variables.entries()) {
+    if (value.path.length === 1) {
+      if (value.type === 'array') {
+        structure[key] = [];
+      } else if (value.type === 'object') {
+        structure[key] = {};
+      } else {
+        structure[key] = getExampleValue(key);
       }
-
-      structure[variable] = [
-        Array.from(props).reduce(
-          (obj, prop) => {
-            obj[prop] = getExampleValue(prop);
-            return obj;
-          },
-          {} as Record<string, any>
-        ),
-      ];
-    } else if (hasNestedProps) {
-      // Find all nested properties
-      const propsRegex = new RegExp(`{{${variable}\\.(\\w+)}}`, 'g');
-      const props = new Set<string>();
-      let propMatch;
-
-      while ((propMatch = propsRegex.exec(template)) !== null) {
-        props.add(propMatch[1]);
-      }
-
-      structure[variable] = Array.from(props).reduce(
-        (obj, prop) => {
-          obj[prop] = getExampleValue(prop);
-          return obj;
-        },
-        {} as Record<string, any>
-      );
-    } else {
-      structure[variable] = getExampleValue(variable);
     }
-  });
+  }
+
+  // Second pass: Fill in nested values
+  for (const [key, value] of variables.entries()) {
+    if (value.path.length > 1) {
+      let current = structure;
+      const lastIndex = value.path.length - 1;
+      
+      // Navigate the path
+      for (let i = 0; i < lastIndex; i++) {
+        const segment = value.path[i];
+        if (!current[segment]) {
+          current[segment] = {};
+        }
+        current = current[segment];
+      }
+
+      // Set the value
+      const lastSegment = value.path[lastIndex];
+      current[lastSegment] = getExampleValue(lastSegment);
+    }
+  }
+
+  // Third pass: Handle arrays
+  for (const [key, value] of variables.entries()) {
+    if (value.type === 'array') {
+      // Find all properties used in the array items
+      const arrayProps = new Set<string>();
+      for (const [varKey, varValue] of variables.entries()) {
+        if (varValue.path[0] === key && varValue.path.length > 1) {
+          arrayProps.add(varValue.path[1]);
+        }
+      }
+
+      // Create array items with all properties
+      const arrayItem = Array.from(arrayProps).reduce((obj, prop) => {
+        obj[prop] = getExampleValue(prop);
+        return obj;
+      }, {} as Record<string, any>);
+
+      // Generate 2-3 items for the array
+      structure[key] = Array.from({ length: faker.number.int({ min: 2, max: 3 }) }, () => ({
+        ...arrayItem,
+      }));
+    }
+  }
 
   return structure;
 }
@@ -181,7 +212,7 @@ Return only the HTML code without any explanation or formatting.`;
 
     // Extract and analyze variables from the template
     const extractedVars = extractVariablesFromTemplate(template);
-    const suggestedVariables = analyzeVariableStructure(template, extractedVars);
+    const suggestedVariables = buildVariableStructure(extractedVars);
 
     // Return both the template and suggested variables
     return res.status(200).json({

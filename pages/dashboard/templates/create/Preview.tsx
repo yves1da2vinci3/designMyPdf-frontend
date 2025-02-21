@@ -9,13 +9,15 @@ interface PreviewProps {
   data?: Record<string, any>;
   fonts: string[];
   isLandscape?: boolean;
-  setTemplateContent? : (string :string) => void
+  setTemplateContent?: (string: string) => void;
 }
 
 const importFontCreation = (fonts: string[]) => {
   try {
     const encodedFont = encodeURIComponent(fonts[0]);
-    const fontUrl = `https://fonts.googleapis.com/css2?family=${encodedFont}:wght@100;200;300;400;500;600;700;800;900${fonts.slice(1).map((font) => `&display=swap&family=${encodeURIComponent(font)}`)}`;
+    const fontUrl = `https://fonts.googleapis.com/css2?family=${encodedFont}:wght@100;200;300;400;500;600;700;800;900${fonts
+      .slice(1)
+      .map((font) => `&display=swap&family=${encodeURIComponent(font)}`)}`;
     return `<link key="font-import" rel="stylesheet" href="${fontUrl}" />`;
   } catch (error) {
     console.error('Error generating font import:', error);
@@ -37,7 +39,7 @@ const Preview: React.FC<PreviewProps> = ({
   data = {},
   fonts,
   isLandscape = false,
-  setTemplateContent
+  setTemplateContent,
 }) => {
   const [renderedContent, setRenderedContent] = useState('');
   const [fontImport, setFontImport] = useState<string>('');
@@ -68,9 +70,12 @@ const Preview: React.FC<PreviewProps> = ({
       link.href = 'https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css';
       document.head.appendChild(link);
     }
+
     try {
       const template = Handlebars.compile(htmlContent);
       const rendered = template(data);
+
+      // Store the template content for download
       const templateContent = `<!doctype html>
       <html>
       <head>
@@ -101,10 +106,13 @@ const Preview: React.FC<PreviewProps> = ({
         <div class="content">${htmlContent}</div>
       </body>
       </html>`;
+
       if (setTemplateContent) {
         setTemplateContent(templateContent);
       }
-      const fullContent = `<!doctype html>
+
+      // Create the preview content with rendered variables
+      const previewContent = `<!doctype html>
       <html>
       <head>
           <title>Preview</title>
@@ -134,9 +142,24 @@ const Preview: React.FC<PreviewProps> = ({
         <div class="content">${rendered}</div>
       </body>
       </html>`;
-      setRenderedContent(fullContent);
-    } catch (error) {
+
+      setRenderedContent(previewContent);
+
+      // Force iframe refresh
+      if (iframeRef.current) {
+        const iframe = iframeRef.current;
+        iframe.srcdoc = previewContent;
+      }
+    } catch (error: any) {
       console.error('Error rendering Handlebars template:', error);
+      // Show error in preview
+      setRenderedContent(`
+        <html>
+          <body style="color: red; padding: 1rem;">
+            Error rendering template: ${error.message}
+          </body>
+        </html>
+      `);
     }
   }, [htmlContent, data, fontImport, fontStyle]);
 
@@ -168,8 +191,10 @@ const Preview: React.FC<PreviewProps> = ({
         paperRef.current.style.height = `${paperHeight}px`;
 
         const scale = paperWidth / (getSize().width * (96 / 25.4));
-        iframeRef.current!.style.transform = `scale(${scale})`;
-        iframeRef.current!.style.transformOrigin = 'top left';
+        if (iframeRef.current) {
+          iframeRef.current.style.transform = `scale(${scale})`;
+          iframeRef.current.style.transformOrigin = 'top left';
+        }
       }
     };
 
@@ -177,7 +202,7 @@ const Preview: React.FC<PreviewProps> = ({
     window.addEventListener('resize', updatePaperSize);
 
     return () => window.removeEventListener('resize', updatePaperSize);
-  }, [a4AspectRatio, getSize]);
+  }, [a4AspectRatio]);
 
   return (
     <div ref={containerRef} className="h-full w-full flex flex-col items-center justify-center">

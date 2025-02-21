@@ -235,11 +235,12 @@ export default function CreateTemplate() {
 
       const data = await response.json();
       if (data.content) {
-        setCode(data.content);
         if (data.suggestedVariables) {
-          setSuggestedVariables(data.suggestedVariables);
           handleVariablesUpdate(data.suggestedVariables);
+          setSuggestedVariables(data.suggestedVariables);
         }
+        
+        setCode(data.content);
         closePromptDrawer();
       }
     } catch (error: any) {
