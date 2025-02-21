@@ -856,14 +856,12 @@ export default function CreateTemplate() {
                       key={type}
                       onClick={() => {
                         if (editorRef.current) {
-                          const position = editorRef.current.getPosition();
-                          const range = new monaco.Range(
-                            position.lineNumber,
-                            position.column,
-                            position.lineNumber,
-                            position.column
-                          );
-                          const id = { major: 1, minor: 1 };
+                          const editor = editorRef.current;
+                          const model = editor.getModel();
+                          if (!model) return;
+
+                          const lastLine = model.getLineCount();
+                          const lastLineContent = model.getLineContent(lastLine);
                           const chartId = `${type}Chart${Math.random().toString(36).substr(2, 9)}`;
                           const chartData = generateChartData(type as keyof typeof CHART_TYPES);
                           
@@ -872,22 +870,42 @@ export default function CreateTemplate() {
                             ...variables,
                             charts: {
                               ...(variables.charts || {}),
-                              [type]: chartData
+                              [chartId]: chartData
                             }
                           };
                           handleVariablesUpdate(updatedVariables);
 
-                          // Insert chart canvas element with proper configuration
-                          const text = `<div class="w-full p-4 bg-white rounded-lg shadow-sm mb-4">
+                          // Insert chart canvas element at the end
+                          const text = `\n\n<!-- Chart Section -->
+<div class="w-full max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg mb-8">
   <canvas 
-    id="${chartId}" 
-    data-chart-type="${type}" 
-    data-chart-data='{{charts.${type}}}'
-    style="aspect-ratio: 16/9; width: 100%;"
+    id="${chartId}"
+    data-chart-type="${type}"
+    data-chart-data='{{charts.${chartId}}}'
+    class="w-full aspect-[16/9]"
   ></canvas>
 </div>`;
-                          const op = { identifier: id, range: range, text: text, forceMoveMarkers: true };
-                          editorRef.current.executeEdits('my-source', [op]);
+
+                          const position = {
+                            lineNumber: lastLine,
+                            column: lastLineContent.length + 1
+                          };
+                          
+                          const range = new monaco.Range(
+                            position.lineNumber,
+                            position.column,
+                            position.lineNumber,
+                            position.column
+                          );
+                          
+                          const op = {
+                            identifier: { major: 1, minor: 1 },
+                            range: range,
+                            text: text,
+                            forceMoveMarkers: true
+                          };
+                          
+                          editor.executeEdits('chart-insert', [op]);
                         }
                       }}
                       style={{

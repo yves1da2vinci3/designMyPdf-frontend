@@ -109,15 +109,32 @@ const Preview: React.FC<PreviewProps> = ({
       <body>
         <div class="content">${rendered}</div>
         <script>
-          // Initialize all charts
-          document.addEventListener('DOMContentLoaded', function() {
+          // Wait for both DOM and Chart.js to be ready
+          window.onload = function() {
+            if (typeof Chart === 'undefined') {
+              console.error('Chart.js not loaded');
+              return;
+            }
+
             const chartElements = document.querySelectorAll('canvas[data-chart-type]');
             chartElements.forEach(element => {
               try {
                 const type = element.getAttribute('data-chart-type');
-                const rawData = element.getAttribute('data-chart-data') || '{}';
-                const data = JSON.parse(rawData);
+                const rawData = element.getAttribute('data-chart-data');
                 
+                if (!type || !rawData) {
+                  console.error('Missing chart type or data attributes');
+                  return;
+                }
+
+                let data;
+                try {
+                  data = JSON.parse(rawData);
+                } catch (e) {
+                  console.error('Invalid chart data JSON:', e);
+                  return;
+                }
+
                 // Default options for all charts
                 const defaultOptions = {
                   responsive: true,
@@ -148,108 +165,33 @@ const Preview: React.FC<PreviewProps> = ({
                   }
                 };
 
-                // Specific options based on chart type
-                const typeSpecificOptions = {
-                  line: {
-                    tension: 0.4,
-                    borderWidth: 2,
-                    pointRadius: 3,
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        grid: {
-                          drawBorder: false
-                        }
-                      },
-                      x: {
-                        grid: {
-                          display: false
-                        }
-                      }
-                    }
-                  },
-                  bar: {
-                    borderRadius: 4,
-                    borderWidth: 0,
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        grid: {
-                          drawBorder: false
-                        }
-                      },
-                      x: {
-                        grid: {
-                          display: false
-                        }
-                      }
-                    }
-                  },
-                  pie: {
-                    cutout: '0%',
-                    radius: '90%'
-                  },
-                  doughnut: {
-                    cutout: '60%',
-                    radius: '90%'
-                  },
-                  radar: {
-                    elements: {
-                      line: {
-                        borderWidth: 2
-                      }
-                    }
-                  },
-                  polarArea: {
-                    scales: {
-                      r: {
-                        beginAtZero: true
-                      }
-                    }
-                  },
-                  bubble: {
-                    scales: {
-                      y: {
-                        beginAtZero: true
-                      },
-                      x: {
-                        beginAtZero: true
-                      }
-                    }
-                  },
-                  scatter: {
-                    scales: {
-                      y: {
-                        beginAtZero: true
-                      },
-                      x: {
-                        beginAtZero: true
-                      }
-                    }
-                  }
-                };
-
-                // Merge default options with type-specific options
-                const options = {
-                  ...defaultOptions,
-                  ...(typeSpecificOptions[type as keyof typeof typeSpecificOptions] || {})
-                };
-
                 // Create and render the chart
-                new Chart(element, {
+                const chart = new Chart(element, {
                   type,
                   data,
-                  options
+                  options: defaultOptions
                 });
+
+                // Store chart instance for cleanup
+                element.chart = chart;
               } catch (error) {
                 console.error('Error initializing chart:', error);
-                // Show error message in the canvas
                 const ctx = element.getContext('2d');
                 if (ctx) {
                   ctx.fillStyle = '#FF4444';
                   ctx.font = '14px Arial';
                   ctx.fillText('Error loading chart', 10, 30);
                 }
+              }
+            });
+          };
+
+          // Cleanup old charts before reinitializing
+          document.addEventListener('beforeunload', function() {
+            const chartElements = document.querySelectorAll('canvas[data-chart-type]');
+            chartElements.forEach(element => {
+              if (element.chart) {
+                element.chart.destroy();
               }
             });
           });
@@ -291,15 +233,32 @@ const Preview: React.FC<PreviewProps> = ({
       <body>
         <div class="content">${htmlContent}</div>
         <script>
-          // Initialize all charts
-          document.addEventListener('DOMContentLoaded', function() {
+          // Wait for both DOM and Chart.js to be ready
+          window.onload = function() {
+            if (typeof Chart === 'undefined') {
+              console.error('Chart.js not loaded');
+              return;
+            }
+
             const chartElements = document.querySelectorAll('canvas[data-chart-type]');
             chartElements.forEach(element => {
               try {
                 const type = element.getAttribute('data-chart-type');
-                const rawData = element.getAttribute('data-chart-data') || '{}';
-                const data = JSON.parse(rawData);
+                const rawData = element.getAttribute('data-chart-data');
                 
+                if (!type || !rawData) {
+                  console.error('Missing chart type or data attributes');
+                  return;
+                }
+
+                let data;
+                try {
+                  data = JSON.parse(rawData);
+                } catch (e) {
+                  console.error('Invalid chart data JSON:', e);
+                  return;
+                }
+
                 // Default options for all charts
                 const defaultOptions = {
                   responsive: true,
@@ -330,108 +289,33 @@ const Preview: React.FC<PreviewProps> = ({
                   }
                 };
 
-                // Specific options based on chart type
-                const typeSpecificOptions = {
-                  line: {
-                    tension: 0.4,
-                    borderWidth: 2,
-                    pointRadius: 3,
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        grid: {
-                          drawBorder: false
-                        }
-                      },
-                      x: {
-                        grid: {
-                          display: false
-                        }
-                      }
-                    }
-                  },
-                  bar: {
-                    borderRadius: 4,
-                    borderWidth: 0,
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        grid: {
-                          drawBorder: false
-                        }
-                      },
-                      x: {
-                        grid: {
-                          display: false
-                        }
-                      }
-                    }
-                  },
-                  pie: {
-                    cutout: '0%',
-                    radius: '90%'
-                  },
-                  doughnut: {
-                    cutout: '60%',
-                    radius: '90%'
-                  },
-                  radar: {
-                    elements: {
-                      line: {
-                        borderWidth: 2
-                      }
-                    }
-                  },
-                  polarArea: {
-                    scales: {
-                      r: {
-                        beginAtZero: true
-                      }
-                    }
-                  },
-                  bubble: {
-                    scales: {
-                      y: {
-                        beginAtZero: true
-                      },
-                      x: {
-                        beginAtZero: true
-                      }
-                    }
-                  },
-                  scatter: {
-                    scales: {
-                      y: {
-                        beginAtZero: true
-                      },
-                      x: {
-                        beginAtZero: true
-                      }
-                    }
-                  }
-                };
-
-                // Merge default options with type-specific options
-                const options = {
-                  ...defaultOptions,
-                  ...(typeSpecificOptions[type as keyof typeof typeSpecificOptions] || {})
-                };
-
                 // Create and render the chart
-                new Chart(element, {
+                const chart = new Chart(element, {
                   type,
                   data,
-                  options
+                  options: defaultOptions
                 });
+
+                // Store chart instance for cleanup
+                element.chart = chart;
               } catch (error) {
                 console.error('Error initializing chart:', error);
-                // Show error message in the canvas
                 const ctx = element.getContext('2d');
                 if (ctx) {
                   ctx.fillStyle = '#FF4444';
                   ctx.font = '14px Arial';
                   ctx.fillText('Error loading chart', 10, 30);
                 }
+              }
+            });
+          };
+
+          // Cleanup old charts before reinitializing
+          document.addEventListener('beforeunload', function() {
+            const chartElements = document.querySelectorAll('canvas[data-chart-type]');
+            chartElements.forEach(element => {
+              if (element.chart) {
+                element.chart.destroy();
               }
             });
           });
