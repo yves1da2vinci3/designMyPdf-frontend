@@ -11,12 +11,25 @@ import {
   rem,
   Loader,
   Center,
+  Drawer,
+  TextInput,
+  Textarea,
+  ActionIcon,
+  Tooltip,
 } from '@mantine/core';
 import { useRouter, useParams } from 'next/navigation';
 import { useDisclosure } from '@mantine/hooks';
 import { DndProvider, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { IconChevronLeft, IconDownload, IconEye, IconMinus, IconPlus } from '@tabler/icons-react';
+import {
+  IconChevronLeft,
+  IconDownload,
+  IconEye,
+  IconMinus,
+  IconPlus,
+  IconWand,
+  IconBrandGoogle,
+} from '@tabler/icons-react';
 import IDE from './CodeEditor';
 import Preview, { FormatType } from './Preview';
 import AddVariable from '@/modals/AddVariable/AddVariable';
@@ -76,6 +89,9 @@ export default function CreateTemplate() {
   const [isLandScape, setIsLandScape] = useState<boolean>(false);
   const [fontsSelected, setFontsSelected] = useState([DEFAULT_FONT]);
   const [templateContent, setTemplateContent] = useState('');
+  const [prompt, setPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [promptDrawerOpened, { open: openPromptDrawer, close: closePromptDrawer }] = useDisclosure(false);
 
   const fetchTemplate = async () => {
     try {
@@ -183,6 +199,35 @@ export default function CreateTemplate() {
     openAddVariable();
   };
 
+  const generateTemplateFromPrompt = async () => {
+    if (!prompt) return;
+
+    setIsGenerating(true);
+    try {
+      const response = await fetch('/api/generate-template', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          prompt,
+          variables: variables // Send current variables for context
+        }),
+      });
+
+      const data = await response.json();
+      if (data.content) {
+        setCode(data.content);
+        setTemplateContent(data.content);
+        closePromptDrawer();
+      }
+    } catch (error) {
+      console.error('Error generating template:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <Stack style={{ overflow: 'hidden' }} gap={0}>
       {/* Manage variable */}
@@ -192,6 +237,49 @@ export default function CreateTemplate() {
         jsonContent={jsonContent}
         setJsonContent={setJsonContent}
       />
+
+      {/* AI Prompt Drawer */}
+      <Drawer
+        opened={promptDrawerOpened}
+        onClose={closePromptDrawer}
+        title="Generate Template with AI"
+        position="right"
+        size="lg"
+      >
+        <Stack gap="md" p="md">
+          <Text size="sm" c="dimmed">
+            Describe your template and the AI will generate it based on your current variables and requirements.
+          </Text>
+          
+          <Box>
+            <Text size="sm" fw="bold" mb={5}>Available Variables</Text>
+            <Group gap="xs">
+              {Object.entries(variables).map(([varName, value]) => {
+                let type = Array.isArray(value) ? 'array' : typeof value === 'object' ? 'object' : 'key-value';
+                return <Badge key={varName}>{`${varName} (${type})`}</Badge>;
+              })}
+            </Group>
+          </Box>
+
+          <Textarea
+            label="Template Description"
+            placeholder="Describe your template (e.g., Create an invoice template with a modern design using the company information and items list...)"
+            minRows={4}
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+          />
+
+          <Button
+            onClick={generateTemplateFromPrompt}
+            loading={isGenerating}
+            disabled={!prompt}
+            leftSection={<IconWand size={16} />}
+          >
+            Generate Template
+          </Button>
+        </Stack>
+      </Drawer>
+
       {/* NavBar */}
       <Group h={rem(40)} px={10} bg={'black'} justify="space-between">
         <Button onClick={handleBack} leftSection={<IconChevronLeft size={14} />} bg={'black'}>
@@ -199,6 +287,14 @@ export default function CreateTemplate() {
         </Button>
         <Text c={'white'}>{template?.name || 'example'}</Text>
         <Group>
+          <Button
+            onClick={openPromptDrawer}
+            size="xs"
+            leftSection={<IconWand size={14} />}
+            bg={'blue'}
+          >
+            AI Generate
+          </Button>
           <Button
             onClick={() => uploadTemplate(templateContent)}
             size="xs"
@@ -217,6 +313,7 @@ export default function CreateTemplate() {
           </Button>
         </Group>
       </Group>
+
       {/* Main Content */}
       {isLoading === RequestStatus.InProgress ? (
         <Center h={'95vh'} w={'100%'}>
@@ -254,6 +351,8 @@ export default function CreateTemplate() {
                 label="landscape"
               />
             </Group>
+            
+            {/* Variables */}
             <Group justify="space-between">
               <Text size="sm" fw={'bold'} c={'white'}>
                 Template variables
@@ -262,7 +361,6 @@ export default function CreateTemplate() {
                 <IconPlus color="white" />
               </Box>
             </Group>
-            {/* Variables */}
             <Group>
               {Object.entries(variables).map(([varName, value]) => {
                 let type = 'object';
@@ -286,7 +384,6 @@ export default function CreateTemplate() {
                 <IconPlus color="white" />
               </Box>
             </Group>
-            {/* Selected Fonts */}
             {fontsSelected.map((font, index) => (
               <Group key={font} justify="space-between">
                 <Select
@@ -303,8 +400,9 @@ export default function CreateTemplate() {
               </Group>
             ))}
           </Stack>
-          {/* Code editor */}
-          <Box flex={1} h={'95vh'}  ref={drop} style={{ position: 'relative' }}>
+          
+          {/* Rest of the existing layout */}
+          <Box flex={1} h={'95vh'} ref={drop} style={{ position: 'relative' }}>
             <DndProvider backend={HTML5Backend}>
               <IDE
                 onChange={setCode}
