@@ -163,22 +163,29 @@ const TemplateHome = () => {
             </Center>
           ) : (
             <>
-              <Group flex={1} align="flex-start" justify="flex-start" gap={6}>
-                {filteredTemplates.map((template) => (
-                  <TemplateItem
-                    key={template?.ID}
-                    DeleteTemplateFromClient={DeleteTemplateFromClient}
-                    id={template?.ID}
-                    template={template}
-                  />
-                ))}
-              </Group>
-              <Pagination
-                style={{ alignSelf: 'self-end' }}
-                total={Math.ceil(filteredTemplates.length / 10)}
-              />
+              <Stack>
+                <Group flex={1} align="flex-start" justify="flex-start" gap={6}>
+                  {filteredTemplates.map((template, index) => (
+                    <React.Fragment key={template?.ID}>
+                      <TemplateItem
+                        DeleteTemplateFromClient={DeleteTemplateFromClient}
+                        id={template?.ID}
+                        template={template}
+                      />
+                      {/* Create a new row every three items */}
+                      {(index + 1) % 3 === 0 && <Group style={{ width: '100%' }} />}
+                    </React.Fragment>
+                  ))}
+                </Group>
+              </Stack>
             </>
           )}
+          <Stack style={{ flex: 1, justifyContent: 'flex-end' }}>
+            <Pagination
+              style={{ alignSelf: 'self-end' }}
+              total={Math.ceil(filteredTemplates.length / 10)}
+            />
+          </Stack>
         </Stack>
       </Group>
     </Stack>

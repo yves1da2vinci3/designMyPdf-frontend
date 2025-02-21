@@ -48,7 +48,7 @@ export default function TemplateItem({
       p={20}
       withBorder
       mt={0}
-      w={'30%'}
+      w="30%"
       h={200}
       shadow="sm"
       style={{ opacity: isDragging ? 0.5 : 1, cursor: 'pointer' }}
@@ -81,7 +81,7 @@ export default function TemplateItem({
         </Box>
       </Box>
       <Text>{name}</Text>
-      <Text c={'gray'}>created {timeAgo(CreatedAt)}</Text>
+      <Text c="gray">created {timeAgo(CreatedAt)}</Text>
     </Paper>
   );
 }
