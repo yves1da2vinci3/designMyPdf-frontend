@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from '@/layouts/DashboardLayout';
-import { Button, Group, Pagination, Stack, Title, rem, Loader, Center } from '@mantine/core';
-import TemplateItem from '@/components/TemplateItem/TemplateItem';
-import AddTemplate from '@/modals/AddTemplate/AddTemplate';
+import { Group, Stack, Loader, Center, Tabs, rem } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import NamespaceItem from '@/components/NamespaceItem/NamespaceItem';
-import AddNamespace from '@/modals/AddNamespace/AddNamespace';
 import { CreateTemplateDto, TemplateDTO, templateApi } from '@/api/templateApi';
 import { CreateNamespaceDto, NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
 import { RequestStatus } from '@/api/request-status.enum';
 import { useRouter } from 'next/router';
+import { TemplateGrid } from '@/components/TemplateGrid/TemplateGrid';
+import AddTemplate from '@/modals/AddTemplate/AddTemplate';
+import AddNamespace from '@/modals/AddNamespace/AddNamespace';
+import { IconFolder } from '@tabler/icons-react';
 
 const TemplateHome = () => {
   const router = useRouter();
@@ -31,7 +31,7 @@ const TemplateHome = () => {
       const namespaces = await namespaceApi.getNamespaces();
       setTemplates(templates);
       setNamespaces(namespaces);
-      setSelectedNamespaceId(namespaces[0].ID);
+      setSelectedNamespaceId(namespaces[0]?.ID || null);
       setFetchTemplatesRequestStatus(RequestStatus.Succeeded);
     } catch (error) {
       setFetchTemplatesRequestStatus(RequestStatus.Failed);
@@ -51,20 +51,20 @@ const TemplateHome = () => {
     : templates;
 
   // Namespace Management
-  // Add namespace
   const [addNamespaceRequestStatus, setAddNameSpaceRequestStatus] = useState(
     RequestStatus.NotStated
   );
+  
   const AddNamespaceHandler = async (nameSpaceDTO: CreateNamespaceDto) => {
     try {
       setAddNameSpaceRequestStatus(RequestStatus.InProgress);
       const namespace = await namespaceApi.createNamespace(nameSpaceDTO);
       setAddNameSpaceRequestStatus(RequestStatus.Succeeded);
-      const newNamepsaces = [...namespaces, namespace];
-      if (newNamepsaces.length === 1) {
+      const newNamespaces = [...namespaces, namespace];
+      if (newNamespaces.length === 1) {
         setSelectedNamespaceId(namespace.ID);
       }
-      setNamespaces([...namespaces, namespace]);
+      setNamespaces(newNamespaces);
       closeAddNamespace();
     } catch (error) {
       setAddNameSpaceRequestStatus(RequestStatus.Failed);
@@ -72,19 +72,8 @@ const TemplateHome = () => {
   };
 
   // Template management
-
-  const updateTemplateOnClient = (id: number, namespaceId: number) => {
-    const newTemplates = templates.map((template) => {
-      if (template.ID === id) {
-        return { ...template, NamespaceID: namespaceId };
-      }
-      return template;
-    });
-    setTemplates(newTemplates);
-  };
-
-  // add Template
   const [addTemplateRequestStatus, setAddTemplateRequestStatus] = useState(RequestStatus.NotStated);
+  
   const AddTemplateHandler = async (template: CreateTemplateDto) => {
     try {
       setAddTemplateRequestStatus(RequestStatus.InProgress);
@@ -101,12 +90,21 @@ const TemplateHome = () => {
     }
   };
 
-  const DeleteTemplateFromClient = (id: number) => {
-    setTemplates(templates.filter((template) => template.ID !== id));
+  const handleTemplateSelect = (template: TemplateDTO) => {
+    router.push(`/dashboard/templates/create/${template.uuid}`);
+  };
+
+  const handleTemplateDelete = async (id: number) => {
+    try {
+      await templateApi.deleteTemplate(id);
+      setTemplates(templates.filter((template) => template.ID !== id));
+    } catch (error) {
+      console.error('Failed to delete template:', error);
+    }
   };
 
   return (
-    <Stack h={'98vh'}>
+    <Stack h="100vh" p="md">
       <AddTemplate
         opened={addTemplateOpened}
         onClose={closeAddTemplate}
@@ -119,69 +117,43 @@ const TemplateHome = () => {
         addNamespaceHandler={AddNamespaceHandler}
         addNamespaceRequestatus={addNamespaceRequestStatus}
       />
-      <Group style={{ borderBottom: 2, borderColor: 'red' }} justify="space-between">
-        <Title>Templates</Title>
-        <Button onClick={openAddTemplate}>Create New Template</Button>
-      </Group>
-      <Group gap={4} flex={1}>
-        {/* NameSpaces management */}
-        <Stack px={rem(12)} gap={2} flex={1} w={'100%'} h={'100%'}>
-          {fetchTemplatesRequestStatus === RequestStatus.InProgress ? (
-            <Center>
-              <Loader size="lg" />
-            </Center>
-          ) : (
-            <>
-              {namespaces.map((namespace) => (
-                <NamespaceItem
-                  key={namespace.ID}
-                  id={namespace.ID}
-                  selected={namespace.ID === selectedNamespaceId}
-                  setNamespaceId={() => handleNamespaceSelect(namespace.ID)}
-                  updateOnClient={updateTemplateOnClient}
-                  namespace={namespace}
-                />
-              ))}
-              <Button onClick={openAddNamespace} size="xs" bg={'dark'} w={rem(164)}>
-                Add Namespace
-              </Button>
-              <Button
-                onClick={() => router.push('/dashboard/account?tabName=namespace')}
-                size="xs"
-                bg={'dark'}
-                w={rem(164)}
-              >
-                Manage Namespaces
-              </Button>
-            </>
-          )}
-        </Stack>
-        {/* Templates element */}
-        <Stack h={'100%'} flex={4}>
-          {fetchTemplatesRequestStatus === RequestStatus.InProgress ? (
-            <Center>
-              <Loader size="lg" />
-            </Center>
-          ) : (
-            <>
-              <Group flex={1} align="flex-start" justify="flex-start" gap={6}>
-                {filteredTemplates.map((template) => (
-                  <TemplateItem
-                    key={template?.ID}
-                    DeleteTemplateFromClient={DeleteTemplateFromClient}
-                    id={template?.ID}
-                    template={template}
-                  />
+
+      {fetchTemplatesRequestStatus === RequestStatus.InProgress ? (
+        <Center style={{ height: '100%' }}>
+          <Loader size="lg" />
+        </Center>
+      ) : (
+        <Group align="flex-start" h="100%" spacing="lg">
+          <Stack style={{ width: rem(250) }}>
+            <Tabs
+              variant="outline"
+              value={selectedNamespaceId?.toString()}
+              onChange={(value) => handleNamespaceSelect(Number(value))}
+            >
+              <Tabs.List>
+                {namespaces.map((namespace) => (
+                  <Tabs.Tab
+                    key={namespace.ID}
+                    value={namespace.ID.toString()}
+                    leftSection={<IconFolder size={rem(16)} />}
+                  >
+                    {namespace.name}
+                  </Tabs.Tab>
                 ))}
-              </Group>
-              <Pagination
-                style={{ alignSelf: 'self-end' }}
-                total={Math.ceil(filteredTemplates.length / 10)}
-              />
-            </>
-          )}
-        </Stack>
-      </Group>
+              </Tabs.List>
+            </Tabs>
+          </Stack>
+
+          <Stack style={{ flex: 1 }}>
+            <TemplateGrid
+              templates={filteredTemplates}
+              onCreateTemplate={openAddTemplate}
+              onTemplateSelect={handleTemplateSelect}
+              onTemplateDelete={handleTemplateDelete}
+            />
+          </Stack>
+        </Group>
+      )}
     </Stack>
   );
 };

@@ -1,0 +1,29 @@
+.root {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.stat {
+  text-align: center;
+  padding: var(--mantine-spacing-xl);
+}
+
+.value {
+  font-size: rem(36px);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.label {
+  margin-top: var(--mantine-spacing-md);
+  font-size: rem(14px);
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--mantine-color-dimmed);
+} 

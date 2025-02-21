@@ -1,0 +1,86 @@
+.wrapper {
+  padding: rem(20px);
+}
+
+.title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: rem(32px);
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: rem(4px);
+}
+
+.description {
+  color: var(--text-gray);
+  font-size: rem(16px);
+}
+
+.createButton {
+  background: var(--primary-color);
+  
+  &:hover {
+    background: var(--primary-light);
+  }
+}
+
+.template {
+  background: white;
+  border-radius: rem(12px);
+  overflow: hidden;
+  box-shadow: var(--mantine-shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  position: relative;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--mantine-shadow-md);
+
+    .deleteButton {
+      opacity: 1;
+    }
+  }
+}
+
+.templatePreview {
+  height: rem(160px);
+  background: var(--background-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.previewPlaceholder {
+  width: rem(60px);
+  height: rem(60px);
+  border-radius: 50%;
+  background: var(--primary-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.templateInfo {
+  padding: rem(16px);
+}
+
+.templateName {
+  font-weight: 600;
+  font-size: rem(16px);
+  color: var(--text-dark);
+  margin-bottom: rem(4px);
+}
+
+.templateMeta {
+  font-size: rem(14px);
+  color: var(--text-gray);
+}
+
+.deleteButton {
+  position: absolute;
+  top: rem(8px);
+  right: rem(8px);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+} 

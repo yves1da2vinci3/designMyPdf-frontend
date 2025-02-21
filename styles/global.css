@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary-color: #228be6;
+  --primary-light: #15aabf;
+  --background-light: #e7f5ff;
+  --text-dark: #1a1b1e;
+  --text-gray: var(--mantine-color-gray-7);
+}
+
+body {
+  font-family: 'Space Grotesk', var(--mantine-font-family);
+  background-color: var(--background-light);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-light);
+} 
