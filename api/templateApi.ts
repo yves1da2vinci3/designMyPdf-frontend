@@ -39,23 +39,41 @@ export interface CreateTemplateDto {
 
 export interface UpdateTemplateDto {
   name?: string;
+  description?: string;
   content?: string;
+  variables?: any;
   fonts?: string[];
-  variables?: object;
-  framework?: string;
-  NamespaceID?: number;
+  preview?: string;
+  price?: number;
 }
 
 export interface TemplateDTO {
   ID: number;
   name: string;
-  uuid: string;
-  framework: string;
+  description?: string;
+  content?: string;
+  variables?: any;
+  fonts?: string[];
+  preview?: string;
+  price?: number;
+  rating?: number;
+  reviewCount?: number;
+  author?: {
+    name: string;
+    avatar: string;
+  };
+  features?: string[];
+}
+
+export interface PublishToMarketplaceDto {
+  templateId: string;
+  price: number;
+  name: string;
+  description: string;
+  preview: string;
   content: string;
+  variables: any;
   fonts: string[];
-  variables: object; // Use object instead of JSON
-  NamespaceID: number;
-  CreatedAt: string;
 }
 
 export const templateApi = {
@@ -122,5 +140,33 @@ export const templateApi = {
     } catch (error) {
       throw new Error('Error deleting template: ' + error);
     }
+  },
+
+  async publishToMarketplace(data: PublishToMarketplaceDto): Promise<TemplateDTO> {
+    const response = await fetch('/api/templates/marketplace/publish', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  },
+
+  async getMarketplaceTemplates(): Promise<TemplateDTO[]> {
+    const response = await fetch('/api/templates/marketplace');
+    return response.json();
+  },
+
+  async getMarketplaceTemplate(id: string): Promise<TemplateDTO> {
+    const response = await fetch(`/api/templates/marketplace/${id}`);
+    return response.json();
+  },
+
+  async purchaseTemplate(id: string): Promise<TemplateDTO> {
+    const response = await fetch(`/api/templates/marketplace/${id}/purchase`, {
+      method: 'POST',
+    });
+    return response.json();
   },
 };

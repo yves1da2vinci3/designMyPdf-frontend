@@ -1,5 +1,7 @@
 import { Card, Image, Text, Badge, Button, Group, Stack, Rating } from '@mantine/core';
 import { Template } from '../../services/templateService';
+import { useRouter } from 'next/router';
+import { IconEye } from '@tabler/icons-react';
 
 interface TemplateCardProps {
   template: Template;
@@ -7,6 +9,7 @@ interface TemplateCardProps {
 }
 
 export default function TemplateCard({ template, onDownload }: TemplateCardProps) {
+  const router = useRouter();
   return (
     <Card shadow="sm" padding="lg" radius="md" withBorder>
       <Card.Section>
@@ -49,8 +52,13 @@ export default function TemplateCard({ template, onDownload }: TemplateCardProps
           <Button variant="filled" onClick={onDownload} fullWidth>
             Buy Now
           </Button>
-          <Button variant="light" fullWidth>
-            Add to Cart
+          <Button
+            leftSection={<IconEye size={16} />}
+            onClick={() => router.push(`/marketplace/templates/${template.id}`)}
+            variant="light"
+            fullWidth
+          >
+            See Details
           </Button>
         </Group>
       </Stack>

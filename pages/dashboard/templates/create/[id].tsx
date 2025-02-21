@@ -32,6 +32,7 @@ import {
   IconWand,
   IconSparkles,
   IconChartDots,
+  IconShoppingCart,
 } from '@tabler/icons-react';
 import IDE from './CodeEditor';
 import Preview, { FormatType } from './Preview';
@@ -202,6 +203,7 @@ export default function CreateTemplate() {
   const [promptDrawerOpened, { open: openPromptDrawer, close: closePromptDrawer }] =
     useDisclosure(false);
   const [isImproving, setIsImproving] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   const fetchTemplate = async () => {
     try {
@@ -383,6 +385,29 @@ export default function CreateTemplate() {
       notificationService.showErrorNotification(error?.message || 'Error improving template');
     } finally {
       setIsImproving(false);
+    }
+  };
+
+  const publishToMarketplace = async () => {
+    try {
+      setIsPublishing(true);
+      await templateApi.publishToMarketplace({
+        templateId: params.id as string,
+        price: 499,
+        name: template?.name || 'Untitled Template',
+        description: template?.description || '',
+        preview: template?.preview || '',
+        content: code,
+        variables: variables,
+        fonts: fontsSelected,
+      });
+      notificationService.showSuccessNotification('Template published to marketplace successfully');
+    } catch (error: any) {
+      notificationService.showErrorNotification(
+        error?.message || 'Error publishing to marketplace'
+      );
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -602,6 +627,23 @@ export default function CreateTemplate() {
           >
             Download
           </Button>
+          <Tooltip label="Publish to Marketplace">
+            <Button
+              onClick={publishToMarketplace}
+              loading={isPublishing}
+              leftSection={<IconShoppingCart size={16} />}
+              variant="light"
+              color="green"
+              styles={{
+                root: {
+                  transition: 'all 0.2s ease',
+                  '&:hover': { transform: 'translateY(-1px)' },
+                },
+              }}
+            >
+              Publish to Marketplace
+            </Button>
+          </Tooltip>
           <Button
             onClick={updateTemplate}
             variant="filled"
@@ -613,7 +655,7 @@ export default function CreateTemplate() {
               },
             }}
           >
-            Save and publish
+            Save
           </Button>
         </Group>
       </Group>
@@ -897,7 +939,7 @@ export default function CreateTemplate() {
   <canvas 
     id="${chartId}"
     data-chart-type="${type}"
-    data-chart-data='${JSON.stringify(chartData).replace(/'/g, "&apos;")}'
+    data-chart-data='${JSON.stringify(chartData).replace(/'/g, '&apos;')}'
     class="w-full aspect-[16/9]"
   ></canvas>
 </div>`;
