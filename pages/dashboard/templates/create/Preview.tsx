@@ -63,6 +63,7 @@ const Preview: React.FC<PreviewProps> = ({
   }, [fonts]);
 
   useEffect(() => {
+    // Append Tailwind CSS if not already present in the parent document.
     if (!document.getElementById('tailwind-cdn')) {
       const link = document.createElement('link');
       link.id = 'tailwind-cdn';
@@ -72,280 +73,233 @@ const Preview: React.FC<PreviewProps> = ({
     }
 
     try {
+      // Compile the Handlebars template with provided data.
       const template = Handlebars.compile(htmlContent);
       const rendered = template(data);
 
-      // Create the preview content with rendered variables and Chart.js
+      // Chart initialization script.
+      const chartScript = `
+        (function() {
+          function initializeCharts() {
+            if (typeof Chart === 'undefined') {
+              console.error('Chart.js not loaded');
+              return;
+            }
+            var chartElements = document.querySelectorAll('canvas[data-chart-type]');
+            chartElements.forEach(function(element) {
+              try {
+                var type = element.getAttribute('data-chart-type');
+                var rawData = element.getAttribute('data-chart-data');
+                
+                if (!type || !rawData) {
+                  console.error('Missing chart type or data attributes');
+                  return;
+                }
+
+                var chartData;
+                try {
+                  // The data is already JSON stringified in the attribute
+                  chartData = JSON.parse(rawData);
+                } catch (e) {
+                  console.error('Invalid chart data JSON:', e);
+                  return;
+                }
+
+                var defaultOptions = {
+                  responsive: true,
+                  maintainAspectRatio: true,
+                  plugins: {
+                    legend: {
+                      position: 'top',
+                      labels: {
+                        padding: 20,
+                        font: {
+                          size: 12,
+                          family: "'${fonts[0]}', sans-serif"
+                        }
+                      }
+                    },
+                    tooltip: {
+                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                      padding: 12,
+                      titleFont: {
+                        size: 14,
+                        family: "'${fonts[0]}', sans-serif"
+                      },
+                      bodyFont: {
+                        size: 12,
+                        family: "'${fonts[0]}', sans-serif"
+                      }
+                    }
+                  }
+                };
+
+                // Add type-specific options
+                if (type === 'line' || type === 'bar') {
+                  defaultOptions.scales = {
+                    y: {
+                      beginAtZero: true,
+                      grid: {
+                        drawBorder: false
+                      }
+                    },
+                    x: {
+                      grid: {
+                        display: false
+                      }
+                    }
+                  };
+                }
+
+                if (type === 'pie' || type === 'doughnut') {
+                  defaultOptions.cutout = type === 'doughnut' ? '60%' : '0%';
+                  defaultOptions.radius = '90%';
+                }
+
+                // Create and render the chart
+                var chartInstance = new Chart(element, {
+                  type: type,
+                  data: chartData,
+                  options: defaultOptions
+                });
+
+                // Store chart instance for cleanup
+                element.chart = chartInstance;
+              } catch (error) {
+                console.error('Error initializing chart:', error);
+                var ctx = element.getContext('2d');
+                if (ctx) {
+                  ctx.fillStyle = '#FF4444';
+                  ctx.font = '14px Arial';
+                  ctx.fillText('Error loading chart: ' + error.message, 10, 30);
+                }
+              }
+            });
+          }
+
+          // Initialize charts when DOM is ready
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeCharts);
+          } else {
+            initializeCharts();
+          }
+
+          // Cleanup charts before unloading
+          window.addEventListener('beforeunload', function() {
+            var chartElements = document.querySelectorAll('canvas[data-chart-type]');
+            chartElements.forEach(function(element) {
+              if (element.chart) {
+                element.chart.destroy();
+              }
+            });
+          });
+        })();
+      `;
+
+      // Build the complete preview HTML.
       const previewContent = `<!doctype html>
-      <html>
-      <head>
-          <title>Preview</title>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <script src="https://cdn.tailwindcss.com"></script>
-          <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-          ${fontImport}
-          <style>
-            ${fontStyle}
-            body {
-              margin: 0;
-              padding: 0;
-              min-height: 100vh;
-              width: 100%;
-              background: white;
-            }
-            .content {
-              width: 100%;
-              height: auto;
-              min-height: 100vh;
-              padding: 2rem;
-            }
-            canvas {
-              max-width: 100%;
-              margin: 0 auto;
-            }
-          </style>
-      </head>
-      <body>
-        <div class="content">${rendered}</div>
-        <script>
-          // Wait for both DOM and Chart.js to be ready
-          window.onload = function() {
-            if (typeof Chart === 'undefined') {
-              console.error('Chart.js not loaded');
-              return;
-            }
+<html>
+  <head>
+    <title>Preview</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    ${fontImport}
+    <style>
+      ${fontStyle}
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        width: 100%;
+        background: white;
+      }
+      .content {
+        width: 100%;
+        height: auto;
+        min-height: 100vh;
+        padding: 2rem;
+      }
+      canvas {
+        max-width: 100%;
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="content">
+      ${rendered}
+    </div>
+    <script>
+      ${chartScript}
+    </script>
+  </body>
+</html>`;
 
-            const chartElements = document.querySelectorAll('canvas[data-chart-type]');
-            chartElements.forEach(element => {
-              try {
-                const type = element.getAttribute('data-chart-type');
-                const rawData = element.getAttribute('data-chart-data');
-                
-                if (!type || !rawData) {
-                  console.error('Missing chart type or data attributes');
-                  return;
-                }
-
-                let data;
-                try {
-                  data = JSON.parse(rawData);
-                } catch (e) {
-                  console.error('Invalid chart data JSON:', e);
-                  return;
-                }
-
-                // Default options for all charts
-                const defaultOptions = {
-                  responsive: true,
-                  maintainAspectRatio: true,
-                  plugins: {
-                    legend: {
-                      position: 'top',
-                      labels: {
-                        padding: 20,
-                        font: {
-                          size: 12,
-                          family: "'${fonts[0]}', sans-serif"
-                        }
-                      }
-                    },
-                    tooltip: {
-                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                      padding: 12,
-                      titleFont: {
-                        size: 14,
-                        family: "'${fonts[0]}', sans-serif"
-                      },
-                      bodyFont: {
-                        size: 12,
-                        family: "'${fonts[0]}', sans-serif"
-                      }
-                    }
-                  }
-                };
-
-                // Create and render the chart
-                const chart = new Chart(element, {
-                  type,
-                  data,
-                  options: defaultOptions
-                });
-
-                // Store chart instance for cleanup
-                element.chart = chart;
-              } catch (error) {
-                console.error('Error initializing chart:', error);
-                const ctx = element.getContext('2d');
-                if (ctx) {
-                  ctx.fillStyle = '#FF4444';
-                  ctx.font = '14px Arial';
-                  ctx.fillText('Error loading chart', 10, 30);
-                }
-              }
-            });
-          };
-
-          // Cleanup old charts before reinitializing
-          document.addEventListener('beforeunload', function() {
-            const chartElements = document.querySelectorAll('canvas[data-chart-type]');
-            chartElements.forEach(element => {
-              if (element.chart) {
-                element.chart.destroy();
-              }
-            });
-          });
-        </script>
-      </body>
-      </html>`;
-
-      // Store the template content for download
+      // Build template content for download using the raw htmlContent.
       const templateContent = `<!doctype html>
-      <html>
-      <head>
-          <title>Preview</title>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <script src="https://cdn.tailwindcss.com"></script>
-          <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-          ${fontImport}
-          <style>
-            ${fontStyle}
-            body {
-              margin: 0;
-              padding: 0;
-              min-height: 100vh;
-              width: 100%;
-              background: white;
-            }
-            .content {
-              width: 100%;
-              height: auto;
-              min-height: 100vh;
-              padding: 2rem;
-            }
-            canvas {
-              max-width: 100%;
-              margin: 0 auto;
-            }
-          </style>
-      </head>
-      <body>
-        <div class="content">${htmlContent}</div>
-        <script>
-          // Wait for both DOM and Chart.js to be ready
-          window.onload = function() {
-            if (typeof Chart === 'undefined') {
-              console.error('Chart.js not loaded');
-              return;
-            }
+<html>
+  <head>
+    <title>Preview</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    ${fontImport}
+    <style>
+      ${fontStyle}
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        width: 100%;
+        background: white;
+      }
+      .content {
+        width: 100%;
+        height: auto;
+        min-height: 100vh;
+        padding: 2rem;
+      }
+      canvas {
+        max-width: 100%;
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="content">
+      ${htmlContent}
+    </div>
+    <script>
+      ${chartScript}
+    </script>
+  </body>
+</html>`;
 
-            const chartElements = document.querySelectorAll('canvas[data-chart-type]');
-            chartElements.forEach(element => {
-              try {
-                const type = element.getAttribute('data-chart-type');
-                const rawData = element.getAttribute('data-chart-data');
-                
-                if (!type || !rawData) {
-                  console.error('Missing chart type or data attributes');
-                  return;
-                }
-
-                let data;
-                try {
-                  data = JSON.parse(rawData);
-                } catch (e) {
-                  console.error('Invalid chart data JSON:', e);
-                  return;
-                }
-
-                // Default options for all charts
-                const defaultOptions = {
-                  responsive: true,
-                  maintainAspectRatio: true,
-                  plugins: {
-                    legend: {
-                      position: 'top',
-                      labels: {
-                        padding: 20,
-                        font: {
-                          size: 12,
-                          family: "'${fonts[0]}', sans-serif"
-                        }
-                      }
-                    },
-                    tooltip: {
-                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                      padding: 12,
-                      titleFont: {
-                        size: 14,
-                        family: "'${fonts[0]}', sans-serif"
-                      },
-                      bodyFont: {
-                        size: 12,
-                        family: "'${fonts[0]}', sans-serif"
-                      }
-                    }
-                  }
-                };
-
-                // Create and render the chart
-                const chart = new Chart(element, {
-                  type,
-                  data,
-                  options: defaultOptions
-                });
-
-                // Store chart instance for cleanup
-                element.chart = chart;
-              } catch (error) {
-                console.error('Error initializing chart:', error);
-                const ctx = element.getContext('2d');
-                if (ctx) {
-                  ctx.fillStyle = '#FF4444';
-                  ctx.font = '14px Arial';
-                  ctx.fillText('Error loading chart', 10, 30);
-                }
-              }
-            });
-          };
-
-          // Cleanup old charts before reinitializing
-          document.addEventListener('beforeunload', function() {
-            const chartElements = document.querySelectorAll('canvas[data-chart-type]');
-            chartElements.forEach(element => {
-              if (element.chart) {
-                element.chart.destroy();
-              }
-            });
-          });
-        </script>
-      </body>
-      </html>`;
-
+      // Pass the template content back if required.
       if (setTemplateContent) {
         setTemplateContent(templateContent);
       }
 
       setRenderedContent(previewContent);
 
-      // Force iframe refresh
+      // Force iframe refresh.
       if (iframeRef.current) {
-        const iframe = iframeRef.current;
-        iframe.srcdoc = previewContent;
+        iframeRef.current.srcdoc = previewContent;
       }
     } catch (error: any) {
       console.error('Error rendering Handlebars template:', error);
-      // Show error in preview
       setRenderedContent(`
-        <html>
-          <body style="color: red; padding: 1rem;">
-            Error rendering template: ${error.message}
-          </body>
-        </html>
+<html>
+  <body style="color: red; padding: 1rem;">
+    Error rendering template: ${error.message}
+  </body>
+</html>
       `);
     }
-  }, [htmlContent, data, fontImport, fontStyle]);
+  }, [htmlContent, data, fontImport, fontStyle, fonts, setTemplateContent]);
 
   const getSize = () => {
     const selectedSize = formatToSize[format];
@@ -362,18 +316,14 @@ const Preview: React.FC<PreviewProps> = ({
       if (containerRef.current && paperRef.current) {
         const containerWidth = containerRef.current.clientWidth * 0.8;
         const containerHeight = containerRef.current.clientHeight * 0.8;
-
         let paperWidth = containerWidth;
         let paperHeight = containerWidth * a4AspectRatio;
-
         if (paperHeight > containerHeight) {
           paperHeight = containerHeight;
           paperWidth = containerHeight / a4AspectRatio;
         }
-
         paperRef.current.style.width = `${paperWidth}px`;
         paperRef.current.style.height = `${paperHeight}px`;
-
         const scale = paperWidth / (getSize().width * (96 / 25.4));
         if (iframeRef.current) {
           iframeRef.current.style.transform = `scale(${scale})`;
@@ -384,12 +334,14 @@ const Preview: React.FC<PreviewProps> = ({
 
     updatePaperSize();
     window.addEventListener('resize', updatePaperSize);
-
     return () => window.removeEventListener('resize', updatePaperSize);
-  }, [a4AspectRatio]);
+  }, [a4AspectRatio, getSize]);
 
   return (
-    <div ref={containerRef} className="h-full w-full flex flex-col items-center justify-center overflow-visible">
+    <div
+      ref={containerRef}
+      className="h-full w-full flex flex-col items-center justify-center overflow-visible"
+    >
       <div ref={paperRef} className="shadow-lg bg-white rounded overflow-visible relative">
         <iframe
           ref={iframeRef}

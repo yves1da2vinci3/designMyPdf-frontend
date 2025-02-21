@@ -89,7 +89,7 @@ const CHART_TYPES = {
 
 function generateChartData(type: keyof typeof CHART_TYPES) {
   const labels = Array.from({ length: 6 }, (_, i) => `Label ${i + 1}`);
-  
+
   switch (type) {
     case 'line':
     case 'bar':
@@ -110,61 +110,71 @@ function generateChartData(type: keyof typeof CHART_TYPES) {
           },
         ],
       };
-    
+
     case 'pie':
     case 'doughnut':
     case 'polarArea':
       return {
         labels: labels.slice(0, 4),
-        datasets: [{
-          data: Array.from({ length: 4 }, () => Math.floor(Math.random() * 100)),
-          backgroundColor: ['#3B82F6', '#10B981', '#6366F1', '#EC4899'],
-        }],
+        datasets: [
+          {
+            data: Array.from({ length: 4 }, () => Math.floor(Math.random() * 100)),
+            backgroundColor: ['#3B82F6', '#10B981', '#6366F1', '#EC4899'],
+          },
+        ],
       };
-    
+
     case 'radar':
       return {
         labels: Array.from({ length: 5 }, (_, i) => `Category ${i + 1}`),
-        datasets: [{
-          label: 'Dataset',
-          data: Array.from({ length: 5 }, () => Math.floor(Math.random() * 100)),
-          borderColor: '#3B82F6',
-          backgroundColor: 'rgba(59, 130, 246, 0.2)',
-        }],
+        datasets: [
+          {
+            label: 'Dataset',
+            data: Array.from({ length: 5 }, () => Math.floor(Math.random() * 100)),
+            borderColor: '#3B82F6',
+            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+          },
+        ],
       };
-    
+
     case 'bubble':
       return {
-        datasets: [{
-          label: 'Dataset',
-          data: Array.from({ length: 10 }, () => ({
-            x: Math.floor(Math.random() * 200) - 100,
-            y: Math.floor(Math.random() * 200) - 100,
-            r: Math.floor(Math.random() * 15) + 5,
-          })),
-          backgroundColor: 'rgba(59, 130, 246, 0.5)',
-        }],
+        datasets: [
+          {
+            label: 'Dataset',
+            data: Array.from({ length: 10 }, () => ({
+              x: Math.floor(Math.random() * 200) - 100,
+              y: Math.floor(Math.random() * 200) - 100,
+              r: Math.floor(Math.random() * 15) + 5,
+            })),
+            backgroundColor: 'rgba(59, 130, 246, 0.5)',
+          },
+        ],
       };
-    
+
     case 'scatter':
       return {
-        datasets: [{
-          label: 'Dataset',
-          data: Array.from({ length: 10 }, () => ({
-            x: Math.floor(Math.random() * 200) - 100,
-            y: Math.floor(Math.random() * 200) - 100,
-          })),
-          backgroundColor: '#3B82F6',
-        }],
+        datasets: [
+          {
+            label: 'Dataset',
+            data: Array.from({ length: 10 }, () => ({
+              x: Math.floor(Math.random() * 200) - 100,
+              y: Math.floor(Math.random() * 200) - 100,
+            })),
+            backgroundColor: '#3B82F6',
+          },
+        ],
       };
-    
+
     default:
       return {
         labels,
-        datasets: [{
-          label: 'Dataset',
-          data: labels.map(() => Math.floor(Math.random() * 100)),
-        }],
+        datasets: [
+          {
+            label: 'Dataset',
+            data: labels.map(() => Math.floor(Math.random() * 100)),
+          },
+        ],
       };
   }
 }
@@ -181,14 +191,16 @@ export default function CreateTemplate() {
   const [jsonContent, setJsonContent] = useState<string>(JSON.stringify(data, null, 2));
   const [variables, setVariables] = useState<any>({});
   const [suggestedVariables, setSuggestedVariables] = useState<any>(null);
-  const [addVariableOpened, { open: openAddVariable, close: closeAddVariable }] = useDisclosure(false);
+  const [addVariableOpened, { open: openAddVariable, close: closeAddVariable }] =
+    useDisclosure(false);
   const [format, setFormat] = useState<FormatType>(DEFAULT_FORMAT);
   const [isLandScape, setIsLandScape] = useState<boolean>(false);
   const [fontsSelected, setFontsSelected] = useState([DEFAULT_FONT]);
   const [templateContent, setTemplateContent] = useState('');
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [promptDrawerOpened, { open: openPromptDrawer, close: closePromptDrawer }] = useDisclosure(false);
+  const [promptDrawerOpened, { open: openPromptDrawer, close: closePromptDrawer }] =
+    useDisclosure(false);
   const [isImproving, setIsImproving] = useState(false);
 
   const fetchTemplate = async () => {
@@ -335,7 +347,7 @@ export default function CreateTemplate() {
           handleVariablesUpdate(data.suggestedVariables);
           setSuggestedVariables(data.suggestedVariables);
         }
-        
+
         setCode(data.content);
         closePromptDrawer();
       }
@@ -357,9 +369,9 @@ export default function CreateTemplate() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           template: code,
-          variables: variables 
+          variables: variables,
         }),
       });
 
@@ -414,8 +426,8 @@ export default function CreateTemplate() {
       >
         <Stack gap="xl" p="xl">
           <Text size="sm" c="dimmed">
-            Describe your template and the AI will generate it along with suggested variables.
-            The existing variables will be replaced with AI-generated ones with realistic sample data.
+            Describe your template and the AI will generate it along with suggested variables. The
+            existing variables will be replaced with AI-generated ones with realistic sample data.
           </Text>
 
           <Textarea
@@ -483,8 +495,8 @@ export default function CreateTemplate() {
                 Suggested Variables
               </Text>
               <Text size="xs" c="dimmed" mb="md">
-                The AI has generated a set of variables with realistic sample data.
-                You can review and modify them in the variables panel.
+                The AI has generated a set of variables with realistic sample data. You can review
+                and modify them in the variables panel.
               </Text>
               <Button
                 onClick={mergeSuggestedVariables}
@@ -534,8 +546,12 @@ export default function CreateTemplate() {
           >
             Return to dashboard
           </Button>
-          <Text c="dimmed" span>/</Text>
-          <Text c="white" style={{ fontWeight: 500 }}>{template?.name || 'Report_template'}</Text>
+          <Text c="dimmed" span>
+            /
+          </Text>
+          <Text c="white" style={{ fontWeight: 500 }}>
+            {template?.name || 'Report_template'}
+          </Text>
         </Group>
 
         <Group gap="md">
@@ -684,7 +700,7 @@ export default function CreateTemplate() {
                   }}
                 />
               </Group>
-            </Box>  
+            </Box>
 
             {/* Variables section */}
             <Box>
@@ -864,14 +880,14 @@ export default function CreateTemplate() {
                           const lastLineContent = model.getLineContent(lastLine);
                           const chartId = `${type}Chart${Math.random().toString(36).substr(2, 9)}`;
                           const chartData = generateChartData(type as keyof typeof CHART_TYPES);
-                          
+
                           // Update variables with new chart data
                           const updatedVariables = {
                             ...variables,
                             charts: {
                               ...(variables.charts || {}),
-                              [chartId]: chartData
-                            }
+                              [chartId]: chartData,
+                            },
                           };
                           handleVariablesUpdate(updatedVariables);
 
@@ -881,30 +897,30 @@ export default function CreateTemplate() {
   <canvas 
     id="${chartId}"
     data-chart-type="${type}"
-    data-chart-data='{{charts.${chartId}}}'
+    data-chart-data='${JSON.stringify(chartData).replace(/'/g, "&apos;")}'
     class="w-full aspect-[16/9]"
   ></canvas>
 </div>`;
 
                           const position = {
                             lineNumber: lastLine,
-                            column: lastLineContent.length + 1
+                            column: lastLineContent.length + 1,
                           };
-                          
+
                           const range = new monaco.Range(
                             position.lineNumber,
                             position.column,
                             position.lineNumber,
                             position.column
                           );
-                          
+
                           const op = {
                             identifier: { major: 1, minor: 1 },
                             range: range,
                             text: text,
-                            forceMoveMarkers: true
+                            forceMoveMarkers: true,
                           };
-                          
+
                           editor.executeEdits('chart-insert', [op]);
                         }
                       }}
@@ -921,7 +937,7 @@ export default function CreateTemplate() {
                           transform: 'translateY(-2px)',
                           backgroundColor: '#2C2E33',
                           borderColor: '#3B82F6',
-                        }
+                        },
                       }}
                     >
                       <Stack gap={4} align="center">
