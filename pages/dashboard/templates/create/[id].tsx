@@ -28,7 +28,7 @@ import {
   IconMinus,
   IconPlus,
   IconWand,
-  IconBrandGoogle,
+  IconSparkles,
 } from '@tabler/icons-react';
 import IDE from './CodeEditor';
 import Preview, { FormatType } from './Preview';
@@ -39,6 +39,7 @@ import { DEFAULT_TEMPLATE } from '@/constants/template';
 import { DEFAULT_FONT, fonts } from '@/constants/fonts';
 import { RequestStatus } from '@/api/request-status.enum';
 import { TemplateDTO, templateApi } from '@/api/templateApi';
+import notificationService from '@/services/NotificationService';
 
 const DEFAULT_FORMAT = 'a4';
 const data = {
@@ -83,8 +84,8 @@ export default function CreateTemplate() {
   const [code, setCode] = useState<string>(DEFAULT_TEMPLATE);
   const [jsonContent, setJsonContent] = useState<string>(JSON.stringify(data, null, 2));
   const [variables, setVariables] = useState<any>({});
-  const [addVariableOpened, { open: openAddVariable, close: closeAddVariable }] =
-    useDisclosure(false);
+  const [suggestedVariables, setSuggestedVariables] = useState<any>(null);
+  const [addVariableOpened, { open: openAddVariable, close: closeAddVariable }] = useDisclosure(false);
   const [format, setFormat] = useState<FormatType>(DEFAULT_FORMAT);
   const [isLandScape, setIsLandScape] = useState<boolean>(false);
   const [fontsSelected, setFontsSelected] = useState([DEFAULT_FONT]);
@@ -92,7 +93,7 @@ export default function CreateTemplate() {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [promptDrawerOpened, { open: openPromptDrawer, close: closePromptDrawer }] = useDisclosure(false);
-  const [suggestedVariables, setSuggestedVariables] = useState<any>(null);
+  const [isImproving, setIsImproving] = useState(false);
 
   const fetchTemplate = async () => {
     try {
@@ -101,6 +102,7 @@ export default function CreateTemplate() {
       setTemplate(template);
       setCode(template.content || DEFAULT_TEMPLATE);
       setJsonContent(JSON.stringify(template.variables || data, null, 2));
+      setVariables(template.variables || data);
       setFontsSelected(template.fonts || [DEFAULT_FONT]);
       setIsLoading(RequestStatus.Succeeded);
     } catch (error) {
@@ -113,8 +115,26 @@ export default function CreateTemplate() {
   }, []);
 
   useEffect(() => {
-    setVariables(JSON.parse(jsonContent));
+    try {
+      const parsedVariables = JSON.parse(jsonContent);
+      setVariables(parsedVariables);
+    } catch (error) {
+      console.error('Error parsing JSON content:', error);
+    }
   }, [jsonContent]);
+
+  const handleVariablesUpdate = (newVariables: any) => {
+    setVariables(newVariables);
+    setJsonContent(JSON.stringify(newVariables, null, 2));
+  };
+
+  const mergeSuggestedVariables = () => {
+    if (suggestedVariables) {
+      const mergedVariables = { ...variables, ...suggestedVariables };
+      handleVariablesUpdate(mergedVariables);
+      setSuggestedVariables(null);
+    }
+  };
 
   const handleBack = () => {
     router.push('/dashboard/templates');
@@ -217,16 +237,43 @@ export default function CreateTemplate() {
       if (data.content) {
         setCode(data.content);
         if (data.suggestedVariables) {
-          const newJsonContent = JSON.stringify(data.suggestedVariables, null, 2);
-          setJsonContent(newJsonContent);
           setSuggestedVariables(data.suggestedVariables);
+          handleVariablesUpdate(data.suggestedVariables);
         }
         closePromptDrawer();
       }
-    } catch (error) {
+    } catch (error: any) {
+      notificationService.showErrorNotification(error?.message || 'Error generating template');
       console.error('Error generating template:', error);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const improveTemplateUI = async () => {
+    if (!code) return;
+
+    setIsImproving(true);
+    try {
+      const response = await fetch('/api/improve-template', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          template: code,
+          variables: variables 
+        }),
+      });
+
+      const data = await response.json();
+      if (data.content) {
+        setCode(data.content);
+      }
+    } catch (error: any) {
+      notificationService.showErrorNotification(error?.message || 'Error improving template');
+    } finally {
+      setIsImproving(false);
     }
   };
 
@@ -247,153 +294,456 @@ export default function CreateTemplate() {
         title="Generate Template with AI"
         position="right"
         size="lg"
+        styles={{
+          header: {
+            backgroundColor: '#1A1B1E',
+            color: 'white',
+            padding: '1rem',
+            borderBottom: '1px solid #373A40',
+          },
+          content: {
+            backgroundColor: '#1A1B1E',
+            color: 'white',
+          },
+          close: {
+            color: 'white',
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              transform: 'scale(1.1)',
+            },
+          },
+        }}
       >
-        <Stack gap="md" p="md">
+        <Stack gap="xl" p="xl">
           <Text size="sm" c="dimmed">
             Describe your template and the AI will generate it along with suggested variables.
-            The existing variables will be replaced with the AI-generated ones.
+            The existing variables will be replaced with AI-generated ones with realistic sample data.
           </Text>
 
           <Textarea
             label="Template Description"
-            placeholder="Describe your template (e.g., Create an invoice template with a modern design, including a header with company logo, billing details, items table, and totals section...)"
+            description="Be specific about the layout, sections, and design elements you want"
+            placeholder="Create a modern invoice template with a clean header, company details section, itemized table with calculations, and a professional footer..."
             minRows={4}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
+            styles={{
+              root: {
+                '& label': {
+                  color: 'white',
+                  marginBottom: '0.5rem',
+                },
+                '& .mantine-Textarea-description': {
+                  color: '#909296',
+                },
+              },
+              input: {
+                backgroundColor: '#25262B',
+                color: 'white',
+                border: '1px solid #373A40',
+                transition: 'all 0.2s ease',
+                '&:focus': {
+                  borderColor: '#3B82F6',
+                  boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.2)',
+                },
+              },
+            }}
           />
 
           <Button
             onClick={generateTemplateFromPrompt}
             loading={isGenerating}
+            loaderProps={{ type: 'dots' }}
             disabled={!prompt}
             leftSection={<IconWand size={16} />}
+            variant="filled"
+            color="blue"
+            fullWidth
+            styles={{
+              root: {
+                height: '2.75rem',
+                transition: 'all 0.2s ease',
+                '&:not(:disabled):hover': {
+                  transform: 'translateY(-1px)',
+                },
+              },
+            }}
           >
             Generate Template
           </Button>
+
+          {suggestedVariables && (
+            <Box
+              style={{
+                backgroundColor: '#25262B',
+                padding: '1rem',
+                borderRadius: '8px',
+                border: '1px solid #373A40',
+              }}
+            >
+              <Text size="sm" fw={500} c="white" mb="md">
+                Suggested Variables
+              </Text>
+              <Text size="xs" c="dimmed" mb="md">
+                The AI has generated a set of variables with realistic sample data.
+                You can review and modify them in the variables panel.
+              </Text>
+              <Button
+                onClick={mergeSuggestedVariables}
+                variant="light"
+                color="blue"
+                fullWidth
+                styles={{
+                  root: {
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      transform: 'translateY(-1px)',
+                    },
+                  },
+                }}
+              >
+                Use Suggested Variables
+              </Button>
+            </Box>
+          )}
         </Stack>
       </Drawer>
 
       {/* NavBar */}
-      <Group h={rem(40)} px={10} bg={'black'} justify="space-between">
-        <Button onClick={handleBack} leftSection={<IconChevronLeft size={14} />} bg={'black'}>
-          return to dashboard
-        </Button>
-        <Text c={'white'}>{template?.name || 'example'}</Text>
-        <Group>
+      <Group
+        h={rem(60)}
+        px="xl"
+        bg="#1A1B1E"
+        justify="space-between"
+        style={{ borderBottom: '1px solid #373A40' }}
+      >
+        <Group gap="md">
           <Button
-            onClick={openPromptDrawer}
-            size="xs"
-            leftSection={<IconWand size={14} />}
-            bg={'blue'}
+            onClick={handleBack}
+            leftSection={<IconChevronLeft size={16} />}
+            variant="subtle"
+            color="gray"
+            styles={{
+              root: {
+                color: '#909296',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  backgroundColor: '#25262B',
+                  transform: 'translateX(-2px)',
+                },
+              },
+            }}
           >
-            AI Generate
+            Return to dashboard
           </Button>
+          <Text c="dimmed" span>/</Text>
+          <Text c="white" style={{ fontWeight: 500 }}>{template?.name || 'Report_template'}</Text>
+        </Group>
+
+        <Group gap="md">
+          <Tooltip label="Improve design with AI">
+            <Button
+              onClick={improveTemplateUI}
+              loading={isImproving}
+              leftSection={<IconSparkles size={16} />}
+              variant="light"
+              color="teal"
+              styles={{
+                root: {
+                  transition: 'all 0.2s ease',
+                  '&:hover': { transform: 'translateY(-1px)' },
+                },
+              }}
+            >
+              Improve Design
+            </Button>
+          </Tooltip>
+          <Tooltip label="Generate with AI">
+            <Button
+              onClick={openPromptDrawer}
+              leftSection={<IconWand size={16} />}
+              variant="light"
+              color="blue"
+              styles={{
+                root: {
+                  transition: 'all 0.2s ease',
+                  '&:hover': { transform: 'translateY(-1px)' },
+                },
+              }}
+            >
+              AI Generate
+            </Button>
+          </Tooltip>
           <Button
             onClick={() => uploadTemplate(templateContent)}
-            size="xs"
-            rightSection={<IconEye size={14} />}
-            bg={'blue'}
+            leftSection={<IconDownload size={16} />}
+            variant="light"
+            color="gray"
+            styles={{
+              root: {
+                transition: 'all 0.2s ease',
+                '&:hover': { transform: 'translateY(-1px)' },
+              },
+            }}
           >
-            download template
+            Download
           </Button>
           <Button
             onClick={updateTemplate}
-            size="xs"
-            rightSection={<IconDownload size={14} />}
-            bg={'blue'}
+            variant="filled"
+            color="blue"
+            styles={{
+              root: {
+                transition: 'all 0.2s ease',
+                '&:hover': { transform: 'translateY(-1px)' },
+              },
+            }}
           >
-            save and publish
+            Save and publish
           </Button>
         </Group>
       </Group>
 
       {/* Main Content */}
       {isLoading === RequestStatus.InProgress ? (
-        <Center h={'95vh'} w={'100%'}>
-          <Loader />
+        <Center h={'calc(100vh - 60px)'} w={'100%'}>
+          <Loader size="lg" color="blue" />
         </Center>
       ) : (
-        <Group gap={0} style={{ height: 'calc(100vh - 40px)', flexWrap: 'nowrap' }}>
-          {/* Editing configuration */}
-          <Stack w={'18%'} p={10} h={'100%'} bg={'black'}>
-            <Text size="sm" fw={'bold'} c={'white'}>
-              Template settings
-            </Text>
-            <Group>
-              <Select
-                size="xs"
-                w={'45%'}
-                onChange={(_, formatSelected) => {
-                  const format = (formatSelected.value as FormatType) || DEFAULT_FORMAT;
-                  setFormat(format);
-                }}
-                defaultValue={DEFAULT_FORMAT}
-                data={[
-                  { label: 'A1', value: 'a1' },
-                  { label: 'A2', value: 'a2' },
-                  { label: 'A3', value: 'a3' },
-                  { label: 'A4', value: 'a4' },
-                  { label: 'A5', value: 'a5' },
-                  { label: 'A6', value: 'a6' },
-                ]}
-              />
-              <Checkbox
-                checked={isLandScape}
-                c={'white'}
-                onChange={(event) => setIsLandScape(event.currentTarget.checked)}
-                label="landscape"
-              />
-            </Group>
-            
-            {/* Variables */}
-            <Group justify="space-between">
-              <Text size="sm" fw={'bold'} c={'white'}>
-                Template variables
+        <Group gap={0} style={{ height: 'calc(100vh - 60px)', flexWrap: 'nowrap' }}>
+          {/* Sidebar */}
+          <Stack
+            w={'18%'}
+            p="xl"
+            h={'100%'}
+            bg="#1A1B1E"
+            style={{ borderRight: '1px solid #373A40' }}
+            gap="xl"
+          >
+            <Box>
+              <Text size="sm" fw={600} c="white" mb="md" transform="uppercase">
+                Template settings
               </Text>
-              <Box onClick={handleAddVariable} component="button">
-                <IconPlus color="white" />
-              </Box>
-            </Group>
-            <Group>
-              {Object.entries(variables).map(([varName, value]) => {
-                let type = 'object';
-                if (Array.isArray(value)) {
-                  type = 'array';
-                } else if (typeof value === 'object' && value !== null) {
-                  type = 'object';
-                } else {
-                  type = 'key-value';
-                }
-                return <VariableBadge key={varName} varName={varName} type={type} />;
-              })}
-            </Group>
 
-            {/* Fonts */}
-            <Group justify="space-between">
-              <Text size="sm" fw={'bold'} c={'white'}>
-                Fonts
-              </Text>
-              <Box onClick={addFont} component="button">
-                <IconPlus color="white" />
-              </Box>
-            </Group>
-            {fontsSelected.map((font, index) => (
-              <Group key={font} justify="space-between">
+              {/* Paper size and orientation */}
+              <Group align="center" mb="lg">
                 <Select
-                  w={'55%'}
-                  onChange={(_, fontSelected) => handleChangeFont(fontSelected, index)}
-                  searchable
-                  placeholder={font}
-                  defaultValue={font}
-                  data={fonts}
+                  size="sm"
+                  label="Paper Size"
+                  w={120}
+                  onChange={(_, formatSelected) => {
+                    const format = (formatSelected.value as FormatType) || DEFAULT_FORMAT;
+                    setFormat(format);
+                  }}
+                  defaultValue={DEFAULT_FORMAT}
+                  data={[
+                    { label: 'A1', value: 'a1' },
+                    { label: 'A2', value: 'a2' },
+                    { label: 'A3', value: 'a3' },
+                    { label: 'A4', value: 'a4' },
+                    { label: 'A5', value: 'a5' },
+                    { label: 'A6', value: 'a6' },
+                  ]}
+                  styles={{
+                    root: { marginBottom: 0 },
+                    input: {
+                      backgroundColor: '#25262B',
+                      border: '1px solid #373A40',
+                      color: 'white',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        borderColor: '#3B82F6',
+                      },
+                    },
+                    label: {
+                      color: '#909296',
+                      fontSize: '0.75rem',
+                      marginBottom: '0.25rem',
+                    },
+                    dropdown: {
+                      backgroundColor: '#25262B',
+                      border: '1px solid #373A40',
+                    },
+                    option: {
+                      '&[data-selected]': {
+                        '&, &:hover': {
+                          backgroundColor: '#3B82F6',
+                          color: 'white',
+                        },
+                      },
+                    },
+                  }}
                 />
-                <Box onClick={() => removeFont(font)} component="button">
-                  <IconMinus color="white" />
-                </Box>
+                <Checkbox
+                  checked={isLandScape}
+                  onChange={(event) => setIsLandScape(event.currentTarget.checked)}
+                  label="Landscape"
+                  styles={{
+                    label: {
+                      color: '#909296',
+                    },
+                  }}
+                />
               </Group>
-            ))}
+            </Box>
+
+            {/* Variables section */}
+            <Box>
+              <Group justify="space-between" mb="xs">
+                <Text size="sm" fw={600} c="white" transform="uppercase">
+                  Variables
+                </Text>
+                <Tooltip label="Add variables">
+                  <ActionIcon
+                    variant="subtle"
+                    color="blue"
+                    onClick={handleAddVariable}
+                    style={{
+                      transition: 'all 0.2s ease',
+                      '&:hover': { transform: 'scale(1.1)' },
+                    }}
+                  >
+                    <IconPlus size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+              <Text size="xs" c="dimmed" mb="md">
+                How to use variables?
+              </Text>
+
+              {/* Variables list */}
+              <Box
+                style={{
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                  padding: '0.5rem',
+                  backgroundColor: '#25262B',
+                  borderRadius: '8px',
+                }}
+              >
+                <Group gap="xs" style={{ flexWrap: 'wrap' }}>
+                  {Object.entries(variables).map(([varName, value]) => {
+                    let type = 'object';
+                    if (Array.isArray(value)) {
+                      type = 'array';
+                    } else if (typeof value === 'object' && value !== null) {
+                      type = 'object';
+                    } else {
+                      type = 'key-value';
+                    }
+                    return <VariableBadge key={varName} varName={varName} type={type} />;
+                  })}
+                </Group>
+              </Box>
+            </Box>
+
+            {/* Stylesheet section */}
+            <Box>
+              <Text size="sm" fw={600} c="white" mb="md" transform="uppercase">
+                Stylesheet
+              </Text>
+              <Select
+                value="tailwind"
+                data={[{ value: 'tailwind', label: 'Tailwind CSS' }]}
+                styles={{
+                  input: {
+                    backgroundColor: '#25262B',
+                    border: '1px solid #373A40',
+                    color: 'white',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      borderColor: '#3B82F6',
+                    },
+                  },
+                  dropdown: {
+                    backgroundColor: '#25262B',
+                    border: '1px solid #373A40',
+                  },
+                  option: {
+                    '&[data-selected]': {
+                      '&, &:hover': {
+                        backgroundColor: '#3B82F6',
+                        color: 'white',
+                      },
+                    },
+                  },
+                }}
+              />
+            </Box>
+
+            {/* Fonts section */}
+            <Box>
+              <Group justify="space-between" mb="xs">
+                <Text size="sm" fw={600} c="white" transform="uppercase">
+                  Fonts
+                </Text>
+                <Tooltip label="Add font">
+                  <ActionIcon
+                    variant="subtle"
+                    color="blue"
+                    onClick={addFont}
+                    style={{
+                      transition: 'all 0.2s ease',
+                      '&:hover': { transform: 'scale(1.1)' },
+                    }}
+                  >
+                    <IconPlus size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+              <Stack gap="xs">
+                {fontsSelected.map((font, index) => (
+                  <Group key={font} align="center">
+                    <Select
+                      size="sm"
+                      value={font}
+                      onChange={(value) => handleChangeFont({ value }, index)}
+                      data={fonts}
+                      style={{ flex: 1 }}
+                      styles={{
+                        input: {
+                          backgroundColor: '#25262B',
+                          border: '1px solid #373A40',
+                          color: 'white',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            borderColor: '#3B82F6',
+                          },
+                        },
+                        dropdown: {
+                          backgroundColor: '#25262B',
+                          border: '1px solid #373A40',
+                        },
+                        option: {
+                          '&[data-selected]': {
+                            '&, &:hover': {
+                              backgroundColor: '#3B82F6',
+                              color: 'white',
+                            },
+                          },
+                        },
+                      }}
+                    />
+                    {index !== 0 && (
+                      <ActionIcon
+                        variant="subtle"
+                        color="red"
+                        onClick={() => removeFont(font)}
+                        style={{
+                          transition: 'all 0.2s ease',
+                          '&:hover': { transform: 'scale(1.1)' },
+                        }}
+                      >
+                        <IconMinus size={16} />
+                      </ActionIcon>
+                    )}
+                  </Group>
+                ))}
+              </Stack>
+            </Box>
           </Stack>
-          
+
           {/* Code editor */}
           <Box style={{ width: '49%', height: '100%' }} ref={drop}>
             <DndProvider backend={HTML5Backend}>
@@ -411,15 +761,35 @@ export default function CreateTemplate() {
           </Box>
 
           {/* Preview */}
-          <Box style={{ width: '33%', height: '100%', backgroundColor: 'black' }}>
-            <Preview
-              format={format}
-              htmlContent={code}
-              data={variables}
-              isLandscape={isLandScape}
-              fonts={fontsSelected}
-              setTemplateContent={setTemplateContent}
-            />
+          <Box
+            style={{
+              width: '33%',
+              height: '100%',
+              backgroundColor: '#1A1B1E',
+              borderLeft: '1px solid #373A40',
+              position: 'relative',
+            }}
+          >
+            <Box
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                overflow: 'auto',
+                padding: '1rem',
+              }}
+            >
+              <Preview
+                format={format}
+                htmlContent={code}
+                data={variables}
+                isLandscape={isLandScape}
+                fonts={fontsSelected}
+                setTemplateContent={setTemplateContent}
+              />
+            </Box>
           </Box>
         </Group>
       )}
