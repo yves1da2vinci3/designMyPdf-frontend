@@ -2,46 +2,151 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { faker } from '@faker-js/faker';
 import notificationService from '@/services/NotificationService';
-// Initialize Gemini API
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+
+// Add chart types
+const CHART_TYPES = {
+  line: 'line',
+  bar: 'bar',
+  pie: 'pie',
+  doughnut: 'doughnut',
+  radar: 'radar',
+  polarArea: 'polarArea',
+  bubble: 'bubble',
+  scatter: 'scatter',
+} as const;
+
+function generateChartData(type: keyof typeof CHART_TYPES) {
+  const labels = Array.from({ length: 6 }, (_, i) => faker.date.month());
+  
+  switch (type) {
+    case 'line':
+    case 'bar':
+      return {
+        labels,
+        datasets: [
+          {
+            label: faker.commerce.department(),
+            data: labels.map(() => faker.number.int({ min: 0, max: 100 })),
+            borderColor: faker.color.rgb(),
+            backgroundColor: faker.color.rgb(),
+          },
+          {
+            label: faker.commerce.department(),
+            data: labels.map(() => faker.number.int({ min: 0, max: 100 })),
+            borderColor: faker.color.rgb(),
+            backgroundColor: faker.color.rgb(),
+          },
+        ],
+      };
+    
+    case 'pie':
+    case 'doughnut':
+    case 'polarArea':
+      return {
+        labels: labels.slice(0, 4),
+        datasets: [{
+          data: Array.from({ length: 4 }, () => faker.number.int({ min: 10, max: 100 })),
+          backgroundColor: Array.from({ length: 4 }, () => faker.color.rgb()),
+        }],
+      };
+    
+    case 'radar':
+      return {
+        labels: Array.from({ length: 5 }, () => faker.commerce.department()),
+        datasets: [{
+          label: faker.commerce.department(),
+          data: Array.from({ length: 5 }, () => faker.number.int({ min: 0, max: 100 })),
+          borderColor: faker.color.rgb(),
+          backgroundColor: faker.color.rgb({ alpha: 0.2 }),
+        }],
+      };
+    
+    case 'bubble':
+      return {
+        datasets: [{
+          label: faker.commerce.department(),
+          data: Array.from({ length: 10 }, () => ({
+            x: faker.number.int({ min: -100, max: 100 }),
+            y: faker.number.int({ min: -100, max: 100 }),
+            r: faker.number.int({ min: 5, max: 20 }),
+          })),
+          backgroundColor: faker.color.rgb({ alpha: 0.5 }),
+        }],
+      };
+    
+    case 'scatter':
+      return {
+        datasets: [{
+          label: faker.commerce.department(),
+          data: Array.from({ length: 10 }, () => ({
+            x: faker.number.int({ min: -100, max: 100 }),
+            y: faker.number.int({ min: -100, max: 100 }),
+          })),
+          backgroundColor: faker.color.rgb(),
+        }],
+      };
+    
+    default:
+      return {
+        labels,
+        datasets: [{
+          label: faker.commerce.department(),
+          data: labels.map(() => faker.number.int({ min: 0, max: 100 })),
+        }],
+      };
+  }
+}
 
 function extractVariablesFromTemplate(template: string) {
   const variableRegex = /{{([^}]+)}}/g;
-  const variables = new Map<string, { type: 'array' | 'object' | 'value'; path: string[] }>();
+  const variables = new Map<string, { type: 'array' | 'object' | 'value'; path: string[]; arrayItemStructure?: Record<string, any> }>();
   let match;
 
   while ((match = variableRegex.exec(template)) !== null) {
     let variable = match[1].trim();
-    
-    // Remove helpers like #each, #if, else, /if, /each
     variable = variable.replace(/^#|^\/|else/g, '');
-    
-    // Get the variable name before any operators or spaces
     variable = variable.split(' ')[0];
     
     if (variable && !variable.includes('this.')) {
-      // Check if it's inside an #each block
-      const eachBlockRegex = new RegExp(`{{#each\\s+${variable.split('.')[0]}}}([\\s\\S]*?){{/each}}`, 'g');
-      const isArray = eachBlockRegex.test(template);
-
-      // Split the path and store the structure
       const path = variable.split('.');
-      if (!variables.has(path[0])) {
-        if (isArray) {
-          variables.set(path[0], { type: 'array', path: [path[0]] });
-        } else if (path.length > 1) {
-          variables.set(path[0], { type: 'object', path: [path[0]] });
-        } else {
-          variables.set(path[0], { type: 'value', path: [path[0]] });
+      const rootVar = path[0];
+      
+      // Check if it's inside an #each block
+      const eachBlockRegex = new RegExp(`{{#each\\s+${rootVar}}}([\\s\\S]*?){{/each}}`, 'g');
+      const eachMatch = eachBlockRegex.exec(template);
+      
+      if (eachMatch) {
+        // Extract array item structure
+        const blockContent = eachMatch[1];
+        const itemProps = new Set<string>();
+        const thisRegex = /{{this\.(\w+)}}/g;
+        let propMatch;
+        
+        while ((propMatch = thisRegex.exec(blockContent)) !== null) {
+          itemProps.add(propMatch[1]);
         }
-      }
-
-      // Store nested paths
-      if (path.length > 1) {
-        const parentVar = variables.get(path[0]);
-        if (parentVar && parentVar.type === 'object') {
-          variables.set(variable, { type: 'value', path });
+        
+        // Create array item structure
+        const arrayItemStructure = Array.from(itemProps).reduce((obj, prop) => {
+          obj[prop] = getExampleValue(prop);
+          return obj;
+        }, {} as Record<string, any>);
+        
+        variables.set(rootVar, {
+          type: 'array',
+          path: [rootVar],
+          arrayItemStructure,
+        });
+      } else if (path.length > 1) {
+        // Handle nested object
+        if (!variables.has(rootVar)) {
+          variables.set(rootVar, { type: 'object', path: [rootVar] });
         }
+        variables.set(variable, { type: 'value', path });
+      } else {
+        variables.set(variable, { type: 'value', path: [variable] });
       }
     }
   }
@@ -49,14 +154,23 @@ function extractVariablesFromTemplate(template: string) {
   return variables;
 }
 
-function buildVariableStructure(variables: Map<string, { type: 'array' | 'object' | 'value'; path: string[] }>) {
+function buildVariableStructure(variables: Map<string, { type: 'array' | 'object' | 'value'; path: string[]; arrayItemStructure?: Record<string, any> }>) {
   const structure: Record<string, any> = {};
 
   // First pass: Create base structure
   for (const [key, value] of variables.entries()) {
     if (value.path.length === 1) {
       if (value.type === 'array') {
-        structure[key] = [];
+        // Generate 2-4 items for the array using the extracted structure
+        const itemCount = faker.number.int({ min: 2, max: 4 });
+        structure[key] = Array.from({ length: itemCount }, () => {
+          const baseItem = value.arrayItemStructure || {};
+          // Add some variation to each item
+          return Object.entries(baseItem).reduce((obj, [prop, val]) => {
+            obj[prop] = getExampleValue(prop);
+            return obj;
+          }, {} as Record<string, any>);
+        });
       } else if (value.type === 'object') {
         structure[key] = {};
       } else {
@@ -71,7 +185,6 @@ function buildVariableStructure(variables: Map<string, { type: 'array' | 'object
       let current = structure;
       const lastIndex = value.path.length - 1;
       
-      // Navigate the path
       for (let i = 0; i < lastIndex; i++) {
         const segment = value.path[i];
         if (!current[segment]) {
@@ -80,35 +193,19 @@ function buildVariableStructure(variables: Map<string, { type: 'array' | 'object
         current = current[segment];
       }
 
-      // Set the value
       const lastSegment = value.path[lastIndex];
       current[lastSegment] = getExampleValue(lastSegment);
     }
   }
 
-  // Third pass: Handle arrays
-  for (const [key, value] of variables.entries()) {
-    if (value.type === 'array') {
-      // Find all properties used in the array items
-      const arrayProps = new Set<string>();
-      for (const [varKey, varValue] of variables.entries()) {
-        if (varValue.path[0] === key && varValue.path.length > 1) {
-          arrayProps.add(varValue.path[1]);
-        }
-      }
-
-      // Create array items with all properties
-      const arrayItem = Array.from(arrayProps).reduce((obj, prop) => {
-        obj[prop] = getExampleValue(prop);
-        return obj;
-      }, {} as Record<string, any>);
-
-      // Generate 2-3 items for the array
-      structure[key] = Array.from({ length: faker.number.int({ min: 2, max: 3 }) }, () => ({
-        ...arrayItem,
-      }));
+  // Add chart data if template contains chart placeholders
+  const chartTypes = Object.keys(CHART_TYPES) as Array<keyof typeof CHART_TYPES>;
+  chartTypes.forEach(type => {
+    if (structure.charts?.[type] || structure[`${type}Chart`]) {
+      structure.charts = structure.charts || {};
+      structure.charts[type] = generateChartData(type);
     }
-  }
+  });
 
   return structure;
 }
@@ -187,10 +284,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    // Initialize the model
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    // Generate the template first
     const templatePrompt = `Generate only the inner HTML content (without <!DOCTYPE>, <html>, <head>, or <body> tags) for a template with this requirement: ${prompt}
 
 Requirements:
@@ -201,8 +296,13 @@ Requirements:
 5. Use Tailwind CSS classes for styling
 6. Add comments for major sections
 7. Make it responsive with Tailwind classes
-8. Do not include any <html>, <head>, <body> tags or scripts
-9. Only return the inner HTML that would go inside the content div
+8. Include Chart.js canvas elements where appropriate (e.g., for statistics, data visualization)
+9. Use chart data from the 'charts' object (e.g., {{charts.pie}} for pie chart data)
+10. Do not include any <html>, <head>, <body> tags or scripts
+11. Only return the inner HTML that would go inside the content div
+
+Example of chart usage:
+<canvas id="myChart" data-chart-type="pie" data-chart-data='{{charts.pie}}'></canvas>
 
 Return only the HTML code without any explanation or formatting.`;
 

@@ -16,6 +16,8 @@ import {
   Textarea,
   ActionIcon,
   Tooltip,
+  ScrollArea,
+  SimpleGrid,
 } from '@mantine/core';
 import { useRouter, useParams } from 'next/navigation';
 import { useDisclosure } from '@mantine/hooks';
@@ -29,6 +31,7 @@ import {
   IconPlus,
   IconWand,
   IconSparkles,
+  IconChartDots,
 } from '@tabler/icons-react';
 import IDE from './CodeEditor';
 import Preview, { FormatType } from './Preview';
@@ -72,6 +75,99 @@ const data = {
   },
   showTerms: true,
 };
+
+const CHART_TYPES = {
+  line: 'Line Chart',
+  bar: 'Bar Chart',
+  pie: 'Pie Chart',
+  doughnut: 'Doughnut Chart',
+  radar: 'Radar Chart',
+  polarArea: 'Polar Area',
+  bubble: 'Bubble Chart',
+  scatter: 'Scatter Plot',
+} as const;
+
+function generateChartData(type: keyof typeof CHART_TYPES) {
+  const labels = Array.from({ length: 6 }, (_, i) => `Label ${i + 1}`);
+  
+  switch (type) {
+    case 'line':
+    case 'bar':
+      return {
+        labels,
+        datasets: [
+          {
+            label: 'Dataset 1',
+            data: labels.map(() => Math.floor(Math.random() * 100)),
+            borderColor: '#3B82F6',
+            backgroundColor: '#60A5FA',
+          },
+          {
+            label: 'Dataset 2',
+            data: labels.map(() => Math.floor(Math.random() * 100)),
+            borderColor: '#10B981',
+            backgroundColor: '#34D399',
+          },
+        ],
+      };
+    
+    case 'pie':
+    case 'doughnut':
+    case 'polarArea':
+      return {
+        labels: labels.slice(0, 4),
+        datasets: [{
+          data: Array.from({ length: 4 }, () => Math.floor(Math.random() * 100)),
+          backgroundColor: ['#3B82F6', '#10B981', '#6366F1', '#EC4899'],
+        }],
+      };
+    
+    case 'radar':
+      return {
+        labels: Array.from({ length: 5 }, (_, i) => `Category ${i + 1}`),
+        datasets: [{
+          label: 'Dataset',
+          data: Array.from({ length: 5 }, () => Math.floor(Math.random() * 100)),
+          borderColor: '#3B82F6',
+          backgroundColor: 'rgba(59, 130, 246, 0.2)',
+        }],
+      };
+    
+    case 'bubble':
+      return {
+        datasets: [{
+          label: 'Dataset',
+          data: Array.from({ length: 10 }, () => ({
+            x: Math.floor(Math.random() * 200) - 100,
+            y: Math.floor(Math.random() * 200) - 100,
+            r: Math.floor(Math.random() * 15) + 5,
+          })),
+          backgroundColor: 'rgba(59, 130, 246, 0.5)',
+        }],
+      };
+    
+    case 'scatter':
+      return {
+        datasets: [{
+          label: 'Dataset',
+          data: Array.from({ length: 10 }, () => ({
+            x: Math.floor(Math.random() * 200) - 100,
+            y: Math.floor(Math.random() * 200) - 100,
+          })),
+          backgroundColor: '#3B82F6',
+        }],
+      };
+    
+    default:
+      return {
+        labels,
+        datasets: [{
+          label: 'Dataset',
+          data: labels.map(() => Math.floor(Math.random() * 100)),
+        }],
+      };
+  }
+}
 
 export default function CreateTemplate() {
   const params = useParams();
@@ -515,6 +611,7 @@ export default function CreateTemplate() {
         <Group gap={0} style={{ height: 'calc(100vh - 60px)', flexWrap: 'nowrap' }}>
           {/* Sidebar */}
           <Stack
+            component={ScrollArea}
             w={'18%'}
             p="xl"
             h={'100%'}
@@ -523,7 +620,7 @@ export default function CreateTemplate() {
             gap="xl"
           >
             <Box>
-              <Text size="sm" fw={600} c="white" mb="md" transform="uppercase">
+              <Text size="sm" fw={600} c="white" mb="md" fs="uppercase">
                 Template settings
               </Text>
 
@@ -587,12 +684,12 @@ export default function CreateTemplate() {
                   }}
                 />
               </Group>
-            </Box>
+            </Box>  
 
             {/* Variables section */}
             <Box>
               <Group justify="space-between" mb="xs">
-                <Text size="sm" fw={600} c="white" transform="uppercase">
+                <Text size="sm" fw={600} c="white" fs="uppercase">
                   Variables
                 </Text>
                 <Tooltip label="Add variables">
@@ -641,7 +738,7 @@ export default function CreateTemplate() {
 
             {/* Stylesheet section */}
             <Box>
-              <Text size="sm" fw={600} c="white" mb="md" transform="uppercase">
+              <Text size="sm" fw={600} c="white" mb="md" fs="uppercase">
                 Stylesheet
               </Text>
               <Select
@@ -676,7 +773,7 @@ export default function CreateTemplate() {
             {/* Fonts section */}
             <Box>
               <Group justify="space-between" mb="xs">
-                <Text size="sm" fw={600} c="white" transform="uppercase">
+                <Text size="sm" fw={600} c="white" fs="uppercase">
                   Fonts
                 </Text>
                 <Tooltip label="Add font">
@@ -743,6 +840,83 @@ export default function CreateTemplate() {
                 ))}
               </Stack>
             </Box>
+
+            {/* Charts section */}
+            <Stack h={300}>
+              <Box p="xs">
+                <Text size="sm" fw={600} c="white" mb="md" tt="uppercase">
+                  Charts
+                </Text>
+                <Text size="xs" c="dimmed" mb="md">
+                  Click on a chart type to add it to your template
+                </Text>
+                <SimpleGrid cols={2} spacing="xs">
+                  {Object.entries(CHART_TYPES).map(([type, label]) => (
+                    <Box
+                      key={type}
+                      onClick={() => {
+                        if (editorRef.current) {
+                          const position = editorRef.current.getPosition();
+                          const range = new monaco.Range(
+                            position.lineNumber,
+                            position.column,
+                            position.lineNumber,
+                            position.column
+                          );
+                          const id = { major: 1, minor: 1 };
+                          const chartId = `${type}Chart${Math.random().toString(36).substr(2, 9)}`;
+                          const chartData = generateChartData(type as keyof typeof CHART_TYPES);
+                          
+                          // Update variables with new chart data
+                          const updatedVariables = {
+                            ...variables,
+                            charts: {
+                              ...(variables.charts || {}),
+                              [type]: chartData
+                            }
+                          };
+                          handleVariablesUpdate(updatedVariables);
+
+                          // Insert chart canvas element with proper configuration
+                          const text = `<div class="w-full p-4 bg-white rounded-lg shadow-sm mb-4">
+  <canvas 
+    id="${chartId}" 
+    data-chart-type="${type}" 
+    data-chart-data='{{charts.${type}}}'
+    style="aspect-ratio: 16/9; width: 100%;"
+  ></canvas>
+</div>`;
+                          const op = { identifier: id, range: range, text: text, forceMoveMarkers: true };
+                          editorRef.current.executeEdits('my-source', [op]);
+                        }
+                      }}
+                      style={{
+                        backgroundColor: '#25262B',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        border: '1px solid #373A40',
+                        transition: 'all 0.2s ease',
+                      }}
+                      sx={{
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          backgroundColor: '#2C2E33',
+                          borderColor: '#3B82F6',
+                        }
+                      }}
+                    >
+                      <Stack gap={4} align="center">
+                        <IconChartDots size={24} style={{ color: '#3B82F6' }} />
+                        <Text size="xs" c="white" ta="center">
+                          {label}
+                        </Text>
+                      </Stack>
+                    </Box>
+                  ))}
+                </SimpleGrid>
+              </Box>
+            </Stack>
           </Stack>
 
           {/* Code editor */}
