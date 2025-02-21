@@ -92,6 +92,7 @@ export default function CreateTemplate() {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [promptDrawerOpened, { open: openPromptDrawer, close: closePromptDrawer }] = useDisclosure(false);
+  const [suggestedVariables, setSuggestedVariables] = useState<any>(null);
 
   const fetchTemplate = async () => {
     try {
@@ -209,16 +210,17 @@ export default function CreateTemplate() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          prompt,
-          variables: variables // Send current variables for context
-        }),
+        body: JSON.stringify({ prompt }),
       });
 
       const data = await response.json();
       if (data.content) {
         setCode(data.content);
-        setTemplateContent(data.content);
+        if (data.suggestedVariables) {
+          const newJsonContent = JSON.stringify(data.suggestedVariables, null, 2);
+          setJsonContent(newJsonContent);
+          setSuggestedVariables(data.suggestedVariables);
+        }
         closePromptDrawer();
       }
     } catch (error) {
@@ -248,22 +250,13 @@ export default function CreateTemplate() {
       >
         <Stack gap="md" p="md">
           <Text size="sm" c="dimmed">
-            Describe your template and the AI will generate it based on your current variables and requirements.
+            Describe your template and the AI will generate it along with suggested variables.
+            The existing variables will be replaced with the AI-generated ones.
           </Text>
-          
-          <Box>
-            <Text size="sm" fw="bold" mb={5}>Available Variables</Text>
-            <Group gap="xs">
-              {Object.entries(variables).map(([varName, value]) => {
-                let type = Array.isArray(value) ? 'array' : typeof value === 'object' ? 'object' : 'key-value';
-                return <Badge key={varName}>{`${varName} (${type})`}</Badge>;
-              })}
-            </Group>
-          </Box>
 
           <Textarea
             label="Template Description"
-            placeholder="Describe your template (e.g., Create an invoice template with a modern design using the company information and items list...)"
+            placeholder="Describe your template (e.g., Create an invoice template with a modern design, including a header with company logo, billing details, items table, and totals section...)"
             minRows={4}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
@@ -320,9 +313,9 @@ export default function CreateTemplate() {
           <Loader />
         </Center>
       ) : (
-        <Group>
+        <Group gap={0} style={{ height: 'calc(100vh - 40px)', flexWrap: 'nowrap' }}>
           {/* Editing configuration */}
-          <Stack w={'18%'} p={10} h={'95vh'} bg={'black'}>
+          <Stack w={'18%'} p={10} h={'100%'} bg={'black'}>
             <Text size="sm" fw={'bold'} c={'white'}>
               Template settings
             </Text>
@@ -401,11 +394,14 @@ export default function CreateTemplate() {
             ))}
           </Stack>
           
-          {/* Rest of the existing layout */}
-          <Box flex={1} h={'95vh'} ref={drop} style={{ position: 'relative' }}>
+          {/* Code editor */}
+          <Box style={{ width: '49%', height: '100%' }} ref={drop}>
             <DndProvider backend={HTML5Backend}>
               <IDE
-                onChange={setCode}
+                onChange={(newCode) => {
+                  setCode(newCode);
+                  setTemplateContent(newCode);
+                }}
                 defaultValue={code}
                 editorDidMount={(editor) => {
                   editorRef.current = editor;
@@ -413,14 +409,9 @@ export default function CreateTemplate() {
               />
             </DndProvider>
           </Box>
+
           {/* Preview */}
-          <Box
-            style={{
-              backgroundColor: 'black',
-            }}
-            w={'33%'}
-            h={'95vh'}
-          >
+          <Box style={{ width: '33%', height: '100%', backgroundColor: 'black' }}>
             <Preview
               format={format}
               htmlContent={code}

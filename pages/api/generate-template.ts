@@ -10,49 +10,60 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { prompt, variables } = req.body;
+    const { prompt } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
     // Initialize the model
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-    // Create a description of available variables
-    const variableDescriptions = Object.entries(variables || {}).map(([key, value]) => {
-      const type = Array.isArray(value) ? 'array' : typeof value === 'object' ? 'object' : 'key-value';
-      const example = JSON.stringify(value, null, 2);
-      return `${key} (${type}): ${example}`;
-    }).join('\n');
+    // First, generate a structure of variables that would be needed
+    const variablesPrompt = `Based on this template requirement: "${prompt}"
+    Generate a JSON structure of variables that would be needed to make this template dynamic.
+    The response should be valid JSON only, with example values.
+    Include arrays for repeatable elements and nested objects for grouped data.
+    Do not include any explanation, just the JSON.`;
 
-    // Create the prompt for generating an HTML template
-    const templatePrompt = `Generate a Handlebars HTML template for the following requirement: ${prompt}. 
+    const variablesResult = await model.generateContent(variablesPrompt);
+    const variablesResponse = await variablesResult.response;
+    let suggestedVariables;
+    try {
+      suggestedVariables = JSON.parse(variablesResponse.text());
+    } catch (e) {
+      console.error('Failed to parse variables JSON:', e);
+      suggestedVariables = {};
+    }
 
-Available variables and their structure:
-${variableDescriptions}
+    // Then generate the template using these variables
+    const templatePrompt = `Generate only the inner HTML content (without <!DOCTYPE>, <html>, <head>, or <body> tags) for a template with this requirement: ${prompt}
 
-The template should:
-1. Use the provided variables with proper Handlebars syntax ({{variable}})
-2. For arrays, use {{#each}} helper
-3. For nested objects, use dot notation (e.g., {{company.name}})
-4. Use modern HTML5 and CSS
-5. Be responsive
-6. Follow best practices for accessibility
-7. Include appropriate semantic HTML tags
-8. Use Tailwind CSS classes for styling
-9. Be well-structured and properly indented
-10. Include appropriate comments for major sections
+Use these variables in your template (using Handlebars syntax):
+${JSON.stringify(suggestedVariables, null, 2)}
 
-Only return the Handlebars template code without any explanation or markdown formatting.`;
+Requirements:
+1. Use Handlebars syntax for variables: {{variable}}
+2. For arrays, use {{#each arrayName}} helper
+3. For nested objects, use dot notation: {{object.property}}
+4. Use semantic HTML elements
+5. Use Tailwind CSS classes for styling
+6. Add comments for major sections
+7. Make it responsive with Tailwind classes
+8. Do not include any <html>, <head>, <body> tags or scripts
+9. Only return the inner HTML that would go inside the content div
 
-    // Generate the template
-    const result = await model.generateContent(templatePrompt);
-    const response = await result.response;
-    const template = response.text();
+Return only the HTML code without any explanation or formatting.`;
 
-    // Return the generated template
-    return res.status(200).json({ content: template });
+    const templateResult = await model.generateContent(templatePrompt);
+    const templateResponse = await templateResult.response;
+    const template = templateResponse.text();
+
+    // Return both the template and suggested variables
+    return res.status(200).json({
+      content: template,
+      suggestedVariables: suggestedVariables
+    });
   } catch (error) {
     console.error('Error generating template:', error);
     return res.status(500).json({ error: 'Failed to generate template' });
