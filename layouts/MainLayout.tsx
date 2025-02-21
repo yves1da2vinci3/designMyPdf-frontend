@@ -1,17 +1,16 @@
-import { AppShell, Header, Container, Group, Text } from '@mantine/core';
+import { AppShell, Container, Group, Text } from '@mantine/core';
 import Link from 'next/link';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AppShell
-      header={{ height: 60 }}
-      padding="md"
-    >
+    <AppShell header={{ height: 60 }} padding="md">
       <AppShell.Header>
         <Container size="xl">
           <Group h="100%" px="md" justify="space-between">
             <Link href="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-              <Text size="xl" fw={700}>DesignMyPDF</Text>
+              <Text size="xl" fw={700}>
+                DesignMyPDF
+              </Text>
             </Link>
             <Group>
               <Link href="/marketplace" style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -24,9 +23,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </Group>
         </Container>
       </AppShell.Header>
-      <AppShell.Main>
-        {children}
-      </AppShell.Main>
+      <AppShell.Main>{children}</AppShell.Main>
     </AppShell>
   );
-} 
+}

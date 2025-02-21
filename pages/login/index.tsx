@@ -1,6 +1,7 @@
-import { Box, Stack } from '@mantine/core';
-import styles from './login.module.css';
+import { useState } from 'react';
+import { useRouter } from 'next/router';
 import {
+  Box,
   TextInput,
   PasswordInput,
   Checkbox,
@@ -12,12 +13,11 @@ import {
   Group,
   Button,
 } from '@mantine/core';
-import { useRouter } from 'next/router';
-import { Links } from '@/components/Navbar/Navbar';
 import { useForm } from '@mantine/form';
 import { LoginDto, authApi } from '@/api/authApi';
-import { useState } from 'react';
 import { RequestStatus } from '@/api/request-status.enum';
+import { Links } from '@/components/Navbar/Navbar';
+import styles from './login.module.css';
 
 export default function Login() {
   const router = useRouter();
@@ -29,8 +29,9 @@ export default function Login() {
     },
 
     validate: {
-      email: (val) => (/^\S+@\S+$/.test(val) ? null : 'Invalid email'),
-      password: (val) => (val.length <= 6 ? 'Password should include at least 6 characters' : null),
+      email: (val: string) => (/^\S+@\S+$/.test(val) ? null : 'Invalid email'),
+      password: (val: string) =>
+        val.length <= 6 ? 'Password should include at least 6 characters' : null,
     },
   });
 
@@ -38,8 +39,7 @@ export default function Login() {
   const onSubmit = async (loginInfo: LoginDto) => {
     setIsLoading(RequestStatus.InProgress);
     try {
-      const loginResponse = await authApi.login(loginInfo);
-      console.log(loginResponse);
+      await authApi.login(loginInfo);
       router.push(Links.DASHBOARD);
     } catch (error) {
       setIsLoading(RequestStatus.Failed);

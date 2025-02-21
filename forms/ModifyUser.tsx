@@ -23,12 +23,12 @@ export function ModifyUserForm({ onSubmit, requestStatus }: ModifyUserProps) {
     validateInputOnBlur: true,
 
     validate: {
-      confirmPassword: (value, values) =>
+      confirmPassword: (value: string, values: { password: string }) =>
         value === values.password ? null : 'Passwords do not match',
     },
   });
   return (
-    <Paper withBorder maw={'100%'} miw={rem(400)} p={30} radius="md">
+    <Paper withBorder maw="100%" miw={rem(400)} p={30} radius="md">
       <form onSubmit={form.onSubmit((values: updateUserDTO) => onSubmit(values))}>
         <TextInput label="Username" mb={MARGIN_BOTTOM} {...form.getInputProps('userName')} />
         <PasswordInput
@@ -47,7 +47,7 @@ export function ModifyUserForm({ onSubmit, requestStatus }: ModifyUserProps) {
         <Group justify="flex-end" mt={MARGIN_TOP}>
           <Button
             type="submit"
-            w={'12rem'}
+            w="12rem"
             size="md"
             loading={requestStatus === RequestStatus.InProgress}
           >

@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { useRouter } from 'next/router';
 import {
   Paper,
   Title,
@@ -11,14 +13,12 @@ import {
   Box,
   Stack,
 } from '@mantine/core';
-import { IconArrowLeft } from '@tabler/icons-react';
-import classes from './forgotPassword.module.css';
-import { useRouter } from 'next/router';
-import { Links } from '@/components/Navbar/Navbar';
 import { useForm } from '@mantine/form';
-import { useState } from 'react';
-import { RequestStatus } from '@/api/request-status.enum';
+import { IconArrowLeft } from '@tabler/icons-react';
 import { ForgotPasswordDto, authApi } from '@/api/authApi';
+import { RequestStatus } from '@/api/request-status.enum';
+import { Links } from '@/components/Navbar/Navbar';
+import classes from './forgotPassword.module.css';
 
 export default function ForgotPassword() {
   const router = useRouter();
@@ -29,7 +29,7 @@ export default function ForgotPassword() {
       email: '',
     },
     validate: {
-      email: (value) => (/^\S+@\S+$/.test(value) ? null : 'Invalid email'),
+      email: (value: string) => (/^\S+@\S+$/.test(value) ? null : 'Invalid email'),
     },
   });
 

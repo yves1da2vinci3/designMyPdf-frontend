@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { faker } from '@faker-js/faker';
@@ -17,9 +18,9 @@ const CHART_TYPES = {
   scatter: 'scatter',
 } as const;
 
-function generateChartData(type: keyof typeof CHART_TYPES) {
-  const labels = Array.from({ length: 6 }, (_, i) => faker.date.month());
-  
+function generateChartData(type: keyof typeof CHART_TYPES): { labels: string[]; datasets: any[] } {
+  const labels = Array.from({ length: 6 }, () => faker.date.month());
+
   switch (type) {
     case 'line':
     case 'bar':
@@ -40,100 +41,123 @@ function generateChartData(type: keyof typeof CHART_TYPES) {
           },
         ],
       };
-    
+
     case 'pie':
     case 'doughnut':
     case 'polarArea':
       return {
         labels: labels.slice(0, 4),
-        datasets: [{
-          data: Array.from({ length: 4 }, () => faker.number.int({ min: 10, max: 100 })),
-          backgroundColor: Array.from({ length: 4 }, () => faker.color.rgb()),
-        }],
+        datasets: [
+          {
+            data: Array.from({ length: 4 }, () => faker.number.int({ min: 10, max: 100 })),
+            backgroundColor: Array.from({ length: 4 }, () => faker.color.rgb()),
+          },
+        ],
       };
-    
+
     case 'radar':
       return {
         labels: Array.from({ length: 5 }, () => faker.commerce.department()),
-        datasets: [{
-          label: faker.commerce.department(),
-          data: Array.from({ length: 5 }, () => faker.number.int({ min: 0, max: 100 })),
-          borderColor: faker.color.rgb(),
-          backgroundColor: faker.color.rgb({ alpha: 0.2 }),
-        }],
+        datasets: [
+          {
+            label: faker.commerce.department(),
+            data: Array.from({ length: 5 }, () => faker.number.int({ min: 0, max: 100 })),
+            borderColor: faker.color.rgb(),
+            backgroundColor: faker.color.rgb(),
+          },
+        ],
       };
-    
+
     case 'bubble':
       return {
-        datasets: [{
-          label: faker.commerce.department(),
-          data: Array.from({ length: 10 }, () => ({
-            x: faker.number.int({ min: -100, max: 100 }),
-            y: faker.number.int({ min: -100, max: 100 }),
-            r: faker.number.int({ min: 5, max: 20 }),
-          })),
-          backgroundColor: faker.color.rgb({ alpha: 0.5 }),
-        }],
+        labels: [],
+        datasets: [
+          {
+            label: faker.commerce.department(),
+            data: Array.from({ length: 10 }, () => ({
+              x: faker.number.int({ min: -100, max: 100 }),
+              y: faker.number.int({ min: -100, max: 100 }),
+              r: faker.number.int({ min: 5, max: 20 }),
+            })),
+            backgroundColor: faker.color.rgb(),
+          },
+        ],
       };
-    
+
     case 'scatter':
       return {
-        datasets: [{
-          label: faker.commerce.department(),
-          data: Array.from({ length: 10 }, () => ({
-            x: faker.number.int({ min: -100, max: 100 }),
-            y: faker.number.int({ min: -100, max: 100 }),
-          })),
-          backgroundColor: faker.color.rgb(),
-        }],
+        labels: [],
+        datasets: [
+          {
+            label: faker.commerce.department(),
+            data: Array.from({ length: 10 }, () => ({
+              x: faker.number.int({ min: -100, max: 100 }),
+              y: faker.number.int({ min: -100, max: 100 }),
+            })),
+            backgroundColor: faker.color.rgb(),
+          },
+        ],
       };
-    
+
     default:
       return {
         labels,
-        datasets: [{
-          label: faker.commerce.department(),
-          data: labels.map(() => faker.number.int({ min: 0, max: 100 })),
-        }],
+        datasets: [
+          {
+            label: faker.commerce.department(),
+            data: labels.map(() => faker.number.int({ min: 0, max: 100 })),
+          },
+        ],
       };
   }
 }
 
-function extractVariablesFromTemplate(template: string) {
+function extractVariablesFromTemplate(
+  template: string
+): Map<
+  string,
+  { type: 'array' | 'object' | 'value'; path: string[]; arrayItemStructure?: Record<string, any> }
+> {
   const variableRegex = /{{([^}]+)}}/g;
-  const variables = new Map<string, { type: 'array' | 'object' | 'value'; path: string[]; arrayItemStructure?: Record<string, any> }>();
+  const variables = new Map<
+    string,
+    { type: 'array' | 'object' | 'value'; path: string[]; arrayItemStructure?: Record<string, any> }
+  >();
   let match;
 
   while ((match = variableRegex.exec(template)) !== null) {
-    let variable = match[1].trim();
-    variable = variable.replace(/^#|^\/|else/g, '');
-    variable = variable.split(' ')[0];
-    
-    if (variable && !variable.includes('this.')) {
-      const path = variable.split('.');
+    const [rawVariable] = match[1]
+      .trim()
+      .replace(/^#|^\/|else/g, '')
+      .split(' ');
+    if (rawVariable && !rawVariable.includes('this.')) {
+      const path = rawVariable.split('.');
       const rootVar = path[0];
-      
+
       // Check if it's inside an #each block
       const eachBlockRegex = new RegExp(`{{#each\\s+${rootVar}}}([\\s\\S]*?){{/each}}`, 'g');
       const eachMatch = eachBlockRegex.exec(template);
-      
+
       if (eachMatch) {
         // Extract array item structure
         const blockContent = eachMatch[1];
         const itemProps = new Set<string>();
         const thisRegex = /{{this\.(\w+)}}/g;
         let propMatch;
-        
+
         while ((propMatch = thisRegex.exec(blockContent)) !== null) {
           itemProps.add(propMatch[1]);
         }
-        
+
         // Create array item structure
-        const arrayItemStructure = Array.from(itemProps).reduce((obj, prop) => {
-          obj[prop] = getExampleValue(prop);
-          return obj;
-        }, {} as Record<string, any>);
-        
+        const arrayItemStructure = Array.from(itemProps).reduce(
+          (obj, prop) => {
+            obj[prop] = getExampleValue(prop);
+            return obj;
+          },
+          {} as Record<string, any>
+        );
+
         variables.set(rootVar, {
           type: 'array',
           path: [rootVar],
@@ -144,9 +168,9 @@ function extractVariablesFromTemplate(template: string) {
         if (!variables.has(rootVar)) {
           variables.set(rootVar, { type: 'object', path: [rootVar] });
         }
-        variables.set(variable, { type: 'value', path });
+        variables.set(rawVariable, { type: 'value', path });
       } else {
-        variables.set(variable, { type: 'value', path: [variable] });
+        variables.set(rawVariable, { type: 'value', path: [rawVariable] });
       }
     }
   }
@@ -154,11 +178,16 @@ function extractVariablesFromTemplate(template: string) {
   return variables;
 }
 
-function buildVariableStructure(variables: Map<string, { type: 'array' | 'object' | 'value'; path: string[]; arrayItemStructure?: Record<string, any> }>) {
+function buildVariableStructure(
+  variables: Map<
+    string,
+    { type: 'array' | 'object' | 'value'; path: string[]; arrayItemStructure?: Record<string, any> }
+  >
+): Record<string, any> {
   const structure: Record<string, any> = {};
 
   // First pass: Create base structure
-  for (const [key, value] of variables.entries()) {
+  for (const [key, value] of Array.from(variables.entries())) {
     if (value.path.length === 1) {
       if (value.type === 'array') {
         // Generate 2-4 items for the array using the extracted structure
@@ -166,10 +195,13 @@ function buildVariableStructure(variables: Map<string, { type: 'array' | 'object
         structure[key] = Array.from({ length: itemCount }, () => {
           const baseItem = value.arrayItemStructure || {};
           // Add some variation to each item
-          return Object.entries(baseItem).reduce((obj, [prop, val]) => {
-            obj[prop] = getExampleValue(prop);
-            return obj;
-          }, {} as Record<string, any>);
+          return Object.entries(baseItem).reduce(
+            (obj, [prop]) => {
+              obj[prop] = getExampleValue(prop);
+              return obj;
+            },
+            {} as Record<string, any>
+          );
         });
       } else if (value.type === 'object') {
         structure[key] = {};
@@ -180,27 +212,24 @@ function buildVariableStructure(variables: Map<string, { type: 'array' | 'object
   }
 
   // Second pass: Fill in nested values
-  for (const [key, value] of variables.entries()) {
+  for (const [, value] of Array.from(variables.entries())) {
     if (value.path.length > 1) {
       let current = structure;
-      const lastIndex = value.path.length - 1;
-      
-      for (let i = 0; i < lastIndex; i++) {
-        const segment = value.path[i];
+      for (const segment of value.path.slice(0, -1)) {
         if (!current[segment]) {
           current[segment] = {};
         }
         current = current[segment];
       }
-
-      const lastSegment = value.path[lastIndex];
-      current[lastSegment] = getExampleValue(lastSegment);
+      current[value.path[value.path.length - 1]] = getExampleValue(
+        value.path[value.path.length - 1]
+      );
     }
   }
 
   // Add chart data if template contains chart placeholders
   const chartTypes = Object.keys(CHART_TYPES) as Array<keyof typeof CHART_TYPES>;
-  chartTypes.forEach(type => {
+  chartTypes.forEach((type) => {
     if (structure.charts?.[type] || structure[`${type}Chart`]) {
       structure.charts = structure.charts || {};
       structure.charts[type] = generateChartData(type);
@@ -237,16 +266,16 @@ function getExampleValue(prop: string): any {
   if (propLower.includes('position')) return faker.person.jobTitle();
 
   // Commerce related fields
-  if (propLower.includes('price') || propLower.includes('amount')) return Number(faker.commerce.price());
-  if (propLower.includes('product')) return faker.commerce.productName();
-  if (propLower.includes('description')) return faker.commerce.productDescription();
-  if (propLower.includes('quantity') || propLower.includes('count')) return faker.number.int({ min: 1, max: 100 });
-  if (propLower.includes('total')) return Number(faker.commerce.price({ min: 100, max: 1000 }));
-  if (propLower.includes('currency')) return faker.finance.currencyCode();
+  if (propLower.includes('price') || propLower.includes('amount')) { return Number(faker.commerce.price()); }
+  if (propLower.includes('product')) { return faker.commerce.productName(); }
+  if (propLower.includes('description')) { return faker.commerce.productDescription(); }
+  if (propLower.includes('quantity') || propLower.includes('count')) { return faker.number.int({ min: 1, max: 100 }); }
+  if (propLower.includes('total')) { return Number(faker.commerce.price({ min: 100, max: 1000 })); }
+  if (propLower.includes('currency')) { return faker.finance.currencyCode(); }
 
   // Date related fields
-  if (propLower.includes('date')) return faker.date.recent().toISOString().split('T')[0];
-  if (propLower.includes('year')) return faker.date.past().getFullYear();
+  if (propLower.includes('date')) { return faker.date.recent().toISOString().split('T')[0]; }
+  if (propLower.includes('year')) { return faker.date.past().getFullYear(); }
   if (propLower.includes('month')) return faker.date.month();
 
   // ID/Reference fields
@@ -272,7 +301,7 @@ function getExampleValue(prop: string): any {
   return faker.lorem.word();
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -317,11 +346,10 @@ Return only the HTML code without any explanation or formatting.`;
     // Return both the template and suggested variables
     return res.status(200).json({
       content: template,
-      suggestedVariables: suggestedVariables,
+      suggestedVariables,
     });
   } catch (error: any) {
     notificationService.showErrorNotification(error?.message || 'Failed to generate template');
-    console.error('Error generating template:', error);
     return res.status(500).json({ error: 'Failed to generate template' });
   }
 }

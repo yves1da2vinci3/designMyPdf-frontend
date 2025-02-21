@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
-  Badge,
   Box,
   Button,
   Checkbox,
@@ -12,7 +11,6 @@ import {
   Loader,
   Center,
   Drawer,
-  TextInput,
   Textarea,
   ActionIcon,
   Tooltip,
@@ -26,7 +24,6 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import {
   IconChevronLeft,
   IconDownload,
-  IconEye,
   IconMinus,
   IconPlus,
   IconWand,
@@ -34,11 +31,11 @@ import {
   IconChartDots,
   IconShoppingCart,
 } from '@tabler/icons-react';
+import { useMonaco } from '@monaco-editor/react';
 import IDE from './CodeEditor';
 import Preview, { FormatType } from './Preview';
 import AddVariable from '@/modals/AddVariable/AddVariable';
 import VariableBadge from '@/components/VariableBadge/VariableBadge';
-import { useMonaco } from '@monaco-editor/react';
 import { DEFAULT_TEMPLATE } from '@/constants/template';
 import { DEFAULT_FONT, fonts } from '@/constants/fonts';
 import { RequestStatus } from '@/api/request-status.enum';
@@ -180,7 +177,7 @@ function generateChartData(type: keyof typeof CHART_TYPES) {
   }
 }
 
-export default function CreateTemplate() {
+const CreateTemplate: React.FC = () => {
   const params = useParams();
   const router = useRouter();
   const monaco = useMonaco();
@@ -190,7 +187,7 @@ export default function CreateTemplate() {
   const [template, setTemplate] = useState<TemplateDTO | null>(null);
   const [code, setCode] = useState<string>(DEFAULT_TEMPLATE);
   const [jsonContent, setJsonContent] = useState<string>(JSON.stringify(data, null, 2));
-  const [variables, setVariables] = useState<any>({});
+  const [variables, setVariables] = useState<Record<string, any>>({});
   const [suggestedVariables, setSuggestedVariables] = useState<any>(null);
   const [addVariableOpened, { open: openAddVariable, close: closeAddVariable }] =
     useDisclosure(false);
@@ -208,12 +205,12 @@ export default function CreateTemplate() {
   const fetchTemplate = async () => {
     try {
       setIsLoading(RequestStatus.InProgress);
-      const template = await templateApi.getTemplateById(params.id as string);
-      setTemplate(template);
-      setCode(template.content || DEFAULT_TEMPLATE);
-      setJsonContent(JSON.stringify(template.variables || data, null, 2));
-      setVariables(template.variables || data);
-      setFontsSelected(template.fonts || [DEFAULT_FONT]);
+      const fetchedTemplate = await templateApi.getTemplateById(params.id as string);
+      setTemplate(fetchedTemplate);
+      setCode(fetchedTemplate.content || DEFAULT_TEMPLATE);
+      setJsonContent(JSON.stringify(fetchedTemplate.variables || data, null, 2));
+      setVariables(fetchedTemplate.variables || data);
+      setFontsSelected(fetchedTemplate.fonts || [DEFAULT_FONT]);
       setIsLoading(RequestStatus.Succeeded);
     } catch (error) {
       setIsLoading(RequestStatus.Failed);
@@ -258,7 +255,7 @@ export default function CreateTemplate() {
     setFontsSelected(fontsSelected.filter((f) => f !== fontToRemove));
   };
 
-  const handleChangeFont = (selectedOption: any, index: number) => {
+  const handleChangeFont = (selectedOption: { value: string }, index: number) => {
     const newFontsSelected = [...fontsSelected];
     newFontsSelected[index] = selectedOption.value;
     setFontsSelected(newFontsSelected);
@@ -270,13 +267,14 @@ export default function CreateTemplate() {
         ...template,
         content: code,
         variables: JSON.parse(jsonContent),
-        framework: 'tailwind',
         fonts: fontsSelected,
       });
-    } catch (error) {}
+    } catch (error: any) {
+      notificationService.showErrorNotification(error?.message || 'Error updating template');
+    }
   };
 
-  const [{ isOver }, drop] = useDrop({
+  const [, drop] = useDrop({
     accept: 'VARIABLE',
     drop: (item: { varName: string; type: 'array' | 'object' | 'key-value' }) => {
       if (editorRef.current) {
@@ -291,21 +289,24 @@ export default function CreateTemplate() {
         let text = '';
 
         switch (item.type) {
-          case 'array':
+          case 'array': {
             const objectConcerned = variables[item.varName][0];
             const firstKeyName = Object.keys(objectConcerned)[0];
             text = `{{#each ${item.varName}}}\n\t{{this.${firstKeyName}}}\n{{/each}}`;
             break;
-          case 'object':
+          }
+          case 'object': {
             const firstKey = Object.keys(variables[item.varName])[0];
             text = `{{${item.varName}.${firstKey}}}`;
             break;
-          default:
+          }
+          default: {
             text = `{{${item.varName}}}`;
             break;
+          }
         }
 
-        const op = { identifier: id, range: range, text: text, forceMoveMarkers: true };
+        const op = { identifier: id, range, text, forceMoveMarkers: true };
         editorRef.current.executeEdits('my-source', [op]);
       }
     },
@@ -314,7 +315,7 @@ export default function CreateTemplate() {
     }),
   });
 
-  function uploadTemplate(text: string) {
+  const uploadTemplate = (text: string): void => {
     const blob = new Blob([text], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -324,13 +325,13 @@ export default function CreateTemplate() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }
+  };
 
-  const handleAddVariable = () => {
+  const handleAddVariable = (): void => {
     openAddVariable();
   };
 
-  const generateTemplateFromPrompt = async () => {
+  const generateTemplateFromPrompt = async (): Promise<void> => {
     if (!prompt) return;
 
     setIsGenerating(true);
@@ -343,14 +344,14 @@ export default function CreateTemplate() {
         body: JSON.stringify({ prompt }),
       });
 
-      const data = await response.json();
-      if (data.content) {
-        if (data.suggestedVariables) {
-          handleVariablesUpdate(data.suggestedVariables);
-          setSuggestedVariables(data.suggestedVariables);
+      const generatedData = await response.json();
+      if (generatedData.content) {
+        if (generatedData.suggestedVariables) {
+          handleVariablesUpdate(generatedData.suggestedVariables);
+          setSuggestedVariables(generatedData.suggestedVariables);
         }
 
-        setCode(data.content);
+        setCode(generatedData.content);
         closePromptDrawer();
       }
     } catch (error: any) {
@@ -361,7 +362,7 @@ export default function CreateTemplate() {
     }
   };
 
-  const improveTemplateUI = async () => {
+  const improveTemplateUI = async (): Promise<void> => {
     if (!code) return;
 
     setIsImproving(true);
@@ -373,13 +374,13 @@ export default function CreateTemplate() {
         },
         body: JSON.stringify({
           template: code,
-          variables: variables,
+          variables,
         }),
       });
 
-      const data = await response.json();
-      if (data.content) {
-        setCode(data.content);
+      const improvedData = await response.json();
+      if (improvedData.content) {
+        setCode(improvedData.content);
       }
     } catch (error: any) {
       notificationService.showErrorNotification(error?.message || 'Error improving template');
@@ -388,7 +389,7 @@ export default function CreateTemplate() {
     }
   };
 
-  const publishToMarketplace = async () => {
+  const publishToMarketplace = async (): Promise<void> => {
     try {
       setIsPublishing(true);
       await templateApi.publishToMarketplace({
@@ -398,7 +399,7 @@ export default function CreateTemplate() {
         description: template?.description || '',
         preview: template?.preview || '',
         content: code,
-        variables: variables,
+        variables,
         fonts: fontsSelected,
       });
       notificationService.showSuccessNotification('Template published to marketplace successfully');
@@ -662,7 +663,7 @@ export default function CreateTemplate() {
 
       {/* Main Content */}
       {isLoading === RequestStatus.InProgress ? (
-        <Center h={'calc(100vh - 60px)'} w={'100%'}>
+        <Center h="calc(100vh - 60px)" w="100%">
           <Loader size="lg" color="blue" />
         </Center>
       ) : (
@@ -670,9 +671,9 @@ export default function CreateTemplate() {
           {/* Sidebar */}
           <Stack
             component={ScrollArea}
-            w={'18%'}
+            w="18%"
             p="xl"
-            h={'100%'}
+            h="100%"
             bg="#1A1B1E"
             style={{ borderRight: '1px solid #373A40' }}
             gap="xl"
@@ -688,9 +689,9 @@ export default function CreateTemplate() {
                   size="sm"
                   label="Paper Size"
                   w={120}
-                  onChange={(_, formatSelected) => {
-                    const format = (formatSelected.value as FormatType) || DEFAULT_FORMAT;
-                    setFormat(format);
+                  onChange={(_, selectedFormat) => {
+                    const formatValue = (selectedFormat.value as FormatType) || DEFAULT_FORMAT;
+                    setFormat(formatValue);
                   }}
                   defaultValue={DEFAULT_FORMAT}
                   data={[
@@ -854,7 +855,7 @@ export default function CreateTemplate() {
                     <Select
                       size="sm"
                       value={font}
-                      onChange={(value) => handleChangeFont({ value }, index)}
+                      onChange={(value) => handleChangeFont({ value: value || '' }, index)}
                       data={fonts}
                       style={{ flex: 1 }}
                       styles={{
@@ -958,8 +959,8 @@ export default function CreateTemplate() {
 
                           const op = {
                             identifier: { major: 1, minor: 1 },
-                            range: range,
-                            text: text,
+                            range,
+                            text,
                             forceMoveMarkers: true,
                           };
 
@@ -973,12 +974,8 @@ export default function CreateTemplate() {
                         cursor: 'pointer',
                         border: '1px solid #373A40',
                         transition: 'all 0.2s ease',
-                      }}
-                      sx={{
                         '&:hover': {
                           transform: 'translateY(-2px)',
-                          backgroundColor: '#2C2E33',
-                          borderColor: '#3B82F6',
                         },
                       }}
                     >
@@ -1046,4 +1043,6 @@ export default function CreateTemplate() {
       )}
     </Stack>
   );
-}
+};
+
+export default CreateTemplate;

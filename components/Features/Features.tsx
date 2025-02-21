@@ -6,22 +6,26 @@ const features = [
   {
     icon: IconPalette,
     title: 'Modern Design Tools',
-    description: 'Create beautiful PDFs with our modern design tools. Includes templates, components, and customizable styles.',
+    description:
+      'Create beautiful PDFs with our modern design tools. Includes templates, components, and customizable styles.',
   },
   {
     icon: IconComponents,
     title: 'Component Library',
-    description: 'Extensive collection of pre-built components. Tables, charts, forms, and more - all ready to use.',
+    description:
+      'Extensive collection of pre-built components. Tables, charts, forms, and more - all ready to use.',
   },
   {
     icon: IconDeviceLaptop,
     title: 'Developer Friendly',
-    description: 'Built with TypeScript and React. Easy to integrate, customize, and extend with your existing tools.',
+    description:
+      'Built with TypeScript and React. Easy to integrate, customize, and extend with your existing tools.',
   },
   {
     icon: IconBrandGit,
     title: 'Open Source',
-    description: 'Free and open source. Join our community, contribute, and help make PDF design better for everyone.',
+    description:
+      'Free and open source. Join our community, contribute, and help make PDF design better for everyone.',
   },
 ];
 
@@ -53,4 +57,4 @@ export function Features() {
       </SimpleGrid>
     </Container>
   );
-} 
+}

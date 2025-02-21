@@ -55,4 +55,4 @@ Return only the HTML code without any explanation or formatting.`;
     console.error('Error improving template:', error);
     return res.status(500).json({ error: 'Failed to improve template' });
   }
-} 
+}

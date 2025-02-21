@@ -1,48 +1,44 @@
-import { LogDTO, logApi } from '@/api/logApi';
-import { RequestStatus } from '@/api/request-status.enum';
-import DashboardLayout from '@/layouts/DashboardLayout';
-import ViewBacktrace from '@/modals/ViewBacktrace/ViewBacktrace';
-import { formatDate } from '@/utils/formatDate';
+import React, { useEffect, useState } from 'react';
+import { HttpStatusCode } from 'axios';
 import {
   Badge,
   Box,
   Button,
   Center,
-  Group,
   Loader,
-  Modal,
   Pagination,
   Stack,
   Table,
   Text,
   Title,
-  rem,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconEye } from '@tabler/icons-react';
-import { HttpStatusCode } from 'axios';
-import React, { useEffect, useState } from 'react';
+import { LogDTO, logApi } from '@/api/logApi';
+import { RequestStatus } from '@/api/request-status.enum';
+import DashboardLayout from '@/layouts/DashboardLayout';
+import ViewBacktrace from '@/modals/ViewBacktrace/ViewBacktrace';
+import { formatDate } from '@/utils/formatDate';
 
 export default function Log() {
   const [fetchLogRequestStatus, setFetchLogRequestStatus] = useState(RequestStatus.NotStated);
   const [logs, setLogs] = useState<LogDTO[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [log, setLog] = useState<LogDTO | null>(null);
+  const [selectedLog, setSelectedLog] = useState<LogDTO | null>(null);
   const logsPerPage = 10;
 
-  const viewLog = (log: LogDTO) => {
-    setLog(log);
+  const viewLog = (logItem: LogDTO) => {
+    setSelectedLog(logItem);
     openViewBacktrace();
   };
 
   const fetchLogs = async () => {
     setFetchLogRequestStatus(RequestStatus.InProgress);
     try {
-      const logs = await logApi.getLogs();
-      setLogs(logs);
+      const fetchedLogs = await logApi.getLogs();
+      setLogs(fetchedLogs);
       setFetchLogRequestStatus(RequestStatus.Succeeded);
     } catch (error) {
-      console.error(error);
       setFetchLogRequestStatus(RequestStatus.Failed);
     }
   };
@@ -59,20 +55,20 @@ export default function Log() {
   };
 
   const currentLogs = logs.slice((currentPage - 1) * logsPerPage, currentPage * logsPerPage);
-  const rows = currentLogs.map((log: LogDTO) => (
-    <Table.Tr    key={log.id}>
-      <Table.Td>{formatDate(log.called_at)}</Table.Td>
-      <Table.Td>{log.template.name}</Table.Td>
-      <Table.Td>{log.key.value}</Table.Td>
+  const rows = currentLogs.map((logItem: LogDTO) => (
+    <Table.Tr key={logItem.id}>
+      <Table.Td>{formatDate(logItem.called_at)}</Table.Td>
+      <Table.Td>{logItem.template.name}</Table.Td>
+      <Table.Td>{logItem.key.value}</Table.Td>
       <Table.Td>
-        {log.status_code === HttpStatusCode.Ok ? (
+        {logItem.status_code === HttpStatusCode.Ok ? (
           <Badge color="green">success</Badge>
         ) : (
           <Badge color="red">failed</Badge>
         )}
       </Table.Td>
       <Table.Td style={{ justifyContent: 'flex-end', display: 'flex' }}>
-        <Button onClick={() => viewLog(log)} variant="outline" leftSection={<IconEye />}>
+        <Button onClick={() => viewLog(logItem)} variant="outline" leftSection={<IconEye />}>
           View backtrace
         </Button>
       </Table.Td>
@@ -83,15 +79,15 @@ export default function Log() {
     <>
       {fetchLogRequestStatus === RequestStatus.InProgress ||
       fetchLogRequestStatus === RequestStatus.NotStated ? (
-        <Center h={'95vh'} w={'100%'}>
-          <Loader type="bars" size={'xl'} />
+        <Center h="95vh" w="100%">
+          <Loader type="bars" size="xl" />
         </Center>
       ) : (
-        <Stack h={'95vh'}>
-          {log && (
+        <Stack h="95vh">
+          {selectedLog && (
             <ViewBacktrace
-              Log={log}
-              size={'lg'}
+              Log={selectedLog}
+              size="lg"
               centered
               opened={viewBacktraceOpened}
               onClose={closeViewBacktrace}
@@ -100,32 +96,31 @@ export default function Log() {
 
           <Title>Logs</Title>
 
-          {/* Table */}
-          <Table   withRowBorders withColumnBorders>
+          <Table withRowBorders withColumnBorders>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>
-                  <Text fw={'bold'} ta={'center'}>
+                  <Text fw="bold" ta="center">
                     Called At
                   </Text>
                 </Table.Th>
                 <Table.Th>
-                  <Text fw={'bold'} ta={'center'}>
+                  <Text fw="bold" ta="center">
                     Template
                   </Text>
                 </Table.Th>
                 <Table.Th>
-                  <Text fw={'bold'} ta={'center'}>
+                  <Text fw="bold" ta="center">
                     API Key Used
                   </Text>
                 </Table.Th>
                 <Table.Th>
-                  <Text fw={'bold'} ta={'center'}>
+                  <Text fw="bold" ta="center">
                     Status
                   </Text>
                 </Table.Th>
                 <Table.Th>
-                  <Text fw={'bold'} ta={'center'}>
+                  <Text fw="bold" ta="center">
                     Actions
                   </Text>
                 </Table.Th>

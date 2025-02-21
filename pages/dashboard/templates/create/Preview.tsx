@@ -25,13 +25,11 @@ const importFontCreation = (fonts: string[]) => {
   }
 };
 
-const fontCssCreation = (fonts: string[]) => {
-  return `
+const fontCssCreation = (fonts: string[]) => `
     body {
       font-family: '${fonts[0]}', sans-serif;
     }
   `;
-};
 
 const Preview: React.FC<PreviewProps> = ({
   htmlContent,

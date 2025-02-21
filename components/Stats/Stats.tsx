@@ -1,34 +1,45 @@
-import { Container, Text, SimpleGrid, rem } from '@mantine/core';
-import { useIntersection } from '@mantine/hooks';
-import { useRef } from 'react';
+import { Container, Group, Paper, SimpleGrid, Text } from '@mantine/core';
 import classes from './Stats.module.css';
 
-const stats = [
-  { value: '100+', label: 'Components' },
-  { value: '50+', label: 'Templates' },
-  { value: '1000+', label: 'GitHub Stars' },
-  { value: '99%', label: 'TypeScript' },
+const data = [
+  {
+    title: 'Page Views',
+    value: '456,133',
+    diff: 34,
+  },
+  {
+    title: 'New Users',
+    value: '2,175',
+    diff: -13,
+  },
+  {
+    title: 'Completed Orders',
+    value: '1,994',
+    diff: 18,
+  },
 ];
 
 export function Stats() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { ref, entry } = useIntersection({
-    root: null,
-    threshold: 0.2,
-  });
-
-  const items = stats.map((stat) => (
-    <div key={stat.label} className={classes.stat}>
-      <Text className={classes.value}>{stat.value}</Text>
-      <Text className={classes.label}>{stat.label}</Text>
-    </div>
+  const stats = data.map((stat) => (
+    <Paper withBorder p="md" radius="md" key={stat.title}>
+      <Group justify="space-between">
+        <div>
+          <Text c="dimmed" tt="uppercase" fw={700} fz="xs" className={classes.label}>
+            {stat.title}
+          </Text>
+          <Text fw={700} fz="xl">
+            {stat.value}
+          </Text>
+        </div>
+      </Group>
+    </Paper>
   ));
 
   return (
-    <Container size="lg" py="xl" ref={containerRef}>
-      <div className={`${classes.root} ${entry?.isIntersecting ? classes.visible : ''}`} ref={ref}>
-        <SimpleGrid cols={{ base: 2, xs: 4 }}>{items}</SimpleGrid>
-      </div>
-    </Container>
+    <div className={classes.root}>
+      <Container>
+        <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }}>{stats}</SimpleGrid>
+      </Container>
+    </div>
   );
-} 
+}

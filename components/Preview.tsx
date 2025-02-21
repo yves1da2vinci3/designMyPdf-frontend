@@ -112,4 +112,4 @@ const Preview: React.FC<PreviewProps> = ({
   );
 };
 
-export default Preview; 
+export default Preview;

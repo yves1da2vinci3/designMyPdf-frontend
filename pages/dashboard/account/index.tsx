@@ -1,15 +1,9 @@
-import { authApi, updateUserDTO } from '@/api/authApi';
-import { CreateNamespaceDto, NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
-import { RequestStatus } from '@/api/request-status.enum';
-import ManagedNamespaceItem from '@/components/ManageNamespaceItem/ManagedNamespaceItem';
-import { ModifyUserForm } from '@/forms/ModifyUser';
-import DashboardLayout from '@/layouts/DashboardLayout';
-import AddNamespace from '@/modals/AddNamespace/AddNamespace';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/router';
 import {
   Button,
   Group,
   LoadingOverlay,
-  Paper,
   Stack,
   Tabs,
   Text,
@@ -19,11 +13,17 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconUserCircle, IconFolderFilled } from '@tabler/icons-react';
-import { useRouter } from 'next/router';
-import React, { useEffect, useMemo, useState } from 'react';
+import { authApi, updateUserDTO } from '@/api/authApi';
+import { CreateNamespaceDto, NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
+import { RequestStatus } from '@/api/request-status.enum';
+import ManagedNamespaceItem from '@/components/ManageNamespaceItem/ManagedNamespaceItem';
+import { ModifyUserForm } from '@/forms/ModifyUser';
+import DashboardLayout from '@/layouts/DashboardLayout';
+import AddNamespace from '@/modals/AddNamespace/AddNamespace';
 
 const ACCOUNT_TAB_NAME = 'account';
 const NAMESPACE_TAB_NAME = 'namespace';
+
 export default function Account() {
   const theme = useMantineTheme();
   const router = useRouter();
@@ -55,7 +55,6 @@ export default function Account() {
     } catch (error) {
       setUserRequestStatus(RequestStatus.Failed);
     }
-    console.log(updateUser);
   };
 
   // Management namspace
@@ -65,21 +64,22 @@ export default function Account() {
   const [selectedTabName, setSelectedTabName] = useState<string | null>(tabName as string);
 
   // nameSpace management
-
   const [namespaces, setNamespaces] = useState<NamespaceDTO[]>([]);
   const fetchNamespaces = async () => {
     SetfetchNamespacesRequestStatus(RequestStatus.InProgress);
     try {
-      const namespaces = await namespaceApi.getNamespaces();
-      setNamespaces(namespaces);
+      const fetchedNamespaces = await namespaceApi.getNamespaces();
+      setNamespaces(fetchedNamespaces);
       SetfetchNamespacesRequestStatus(RequestStatus.Succeeded);
     } catch (error) {
       SetfetchNamespacesRequestStatus(RequestStatus.Failed);
     }
   };
+
   useEffect(() => {
     fetchNamespaces();
   }, []);
+
   const DeleteFromClient = (id: number) => {
     setNamespaces(namespaces.filter((ns) => ns.ID !== id));
   };
@@ -91,14 +91,15 @@ export default function Account() {
   const AddNamespaceHandler = async (nameSpaceDTO: CreateNamespaceDto) => {
     try {
       setAddNameSpaceRequestStatus(RequestStatus.InProgress);
-      const namespace = await namespaceApi.createNamespace(nameSpaceDTO);
+      const newNamespace = await namespaceApi.createNamespace(nameSpaceDTO);
       setAddNameSpaceRequestStatus(RequestStatus.Succeeded);
-      setNamespaces([...namespaces, namespace]);
+      setNamespaces([...namespaces, newNamespace]);
       closeAddNamespace();
     } catch (error) {
       setAddNameSpaceRequestStatus(RequestStatus.Failed);
     }
   };
+
   return (
     <>
       <LoadingOverlay
@@ -115,7 +116,7 @@ export default function Account() {
         <Tabs.List>
           <Tabs.Tab
             value={ACCOUNT_TAB_NAME}
-            style={(style) =>
+            style={() =>
               selectedTabName === ACCOUNT_TAB_NAME ? selectedStyle : notselectedStyle
             }
             leftSection={
@@ -128,7 +129,7 @@ export default function Account() {
           </Tabs.Tab>
           <Tabs.Tab
             value={NAMESPACE_TAB_NAME}
-            style={(style) =>
+            style={() =>
               selectedTabName === NAMESPACE_TAB_NAME ? selectedStyle : notselectedStyle
             }
             leftSection={
@@ -144,7 +145,7 @@ export default function Account() {
         <Tabs.Panel value={ACCOUNT_TAB_NAME}>
           <Stack
             flex={1}
-            h={'90vh'}
+            h="90vh"
             style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
           >
             <ModifyUserForm onSubmit={updateUserHandler} requestStatus={updateUserRequestStatus} />
@@ -159,16 +160,14 @@ export default function Account() {
             addNamespaceRequestatus={addNamespaceRequestStatus}
           />
 
-          <Stack flex={1} h={'90vh'} mt={8}>
+          <Stack flex={1} h="90vh" mt={8}>
             <Group px={12} style={{ borderBottom: 2, borderColor: 'red' }} justify="space-between">
               <Title order={5}>Namespaces</Title>
               <Button onClick={openAddNamespace}>create new nameSpace</Button>
             </Group>
-            {/* Tite */}
-            <Text mx={12} c={'gray'}>
+            <Text mx={12} c="gray">
               Separate your templates into namespace
             </Text>
-            {/* Namespaces  */}
             <Group>
               {fetchNamespacesRequestStatus === RequestStatus.Succeeded && namespaces.length > 0 ? (
                 namespaces.map((namespace) => (
@@ -191,4 +190,5 @@ export default function Account() {
     </>
   );
 }
+
 Account.getLayout = (page: React.ReactNode) => <DashboardLayout>{page}</DashboardLayout>;

@@ -1,6 +1,6 @@
-import { Container, Grid, Text, Group, TextInput, Select, Button, LoadingOverlay } from '@mantine/core';
-import { IconSearch, IconFilter } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
+import { Container, Grid, Text, Group, TextInput, Select, LoadingOverlay } from '@mantine/core';
+import { IconSearch, IconFilter } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import TemplateCard from '../components/marketplace/TemplateCard';
 import { MainLayout } from '../layouts/MainLayout';
@@ -38,7 +38,6 @@ export default function Marketplace() {
   const handleDownload = async (templateId: string) => {
     try {
       const { downloadUrl } = await templateService.downloadTemplate(templateId);
-      // In a real application, you would handle the download here
       window.open(downloadUrl, '_blank');
     } catch (error) {
       notifications.show({
@@ -53,9 +52,10 @@ export default function Marketplace() {
     <MainLayout>
       <Container size="xl" mt="xl" pos="relative">
         <LoadingOverlay visible={loading} overlayProps={{ blur: 2 }} />
-        
         <Group justify="space-between" mb="xl">
-          <Text size="xl" fw={700}>Template Marketplace</Text>
+          <Text size="xl" fw={700}>
+            Template Marketplace
+          </Text>
           <Group>
             <TextInput
               placeholder="Search templates..."
@@ -81,10 +81,7 @@ export default function Marketplace() {
         <Grid>
           {templates.map((template) => (
             <Grid.Col span={{ base: 12, sm: 6, md: 4 }} key={template.id}>
-              <TemplateCard 
-                template={template}
-                onDownload={() => handleDownload(template.id)}
-              />
+              <TemplateCard template={template} onDownload={() => handleDownload(template.id)} />
             </Grid.Col>
           ))}
         </Grid>
@@ -97,4 +94,4 @@ export default function Marketplace() {
       </Container>
     </MainLayout>
   );
-} 
+}

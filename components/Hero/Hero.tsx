@@ -12,7 +12,7 @@ export function Hero() {
             <Text className={classes.circleText}>Browse Templates</Text>
           </div>
         </div>
-        
+
         <Stack className={classes.content}>
           <Title className={classes.title}>
             Design Beautiful
@@ -23,8 +23,8 @@ export function Hero() {
           </Title>
 
           <Text className={classes.description}>
-            Create professional PDFs effortlessly with our powerful design toolkit.
-            Drag & drop components, customize templates, and export in seconds.
+            Create professional PDFs effortlessly with our powerful design toolkit. Drag & drop
+            components, customize templates, and export in seconds.
           </Text>
 
           <div className={classes.stats}>
@@ -33,7 +33,7 @@ export function Hero() {
               <Text className={classes.statLabel}>Components</Text>
               <Text className={classes.statSubtext}>ready to use</Text>
             </div>
-            
+
             <div className={classes.statBox}>
               <Text className={classes.statValue}>50+</Text>
               <Text className={classes.statLabel}>Templates</Text>
@@ -64,4 +64,4 @@ export function Hero() {
       </Box>
     </Container>
   );
-} 
+}

@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import dynamic from 'next/dynamic';
-import { useParams, useRouter } from 'next/navigation';
+import { GetStaticProps, GetStaticPaths } from 'next';
+import { useRouter } from 'next/router';
 import {
   Box,
   Button,
@@ -17,8 +18,8 @@ import {
   Loader,
 } from '@mantine/core';
 import { IconCheck, IconChevronLeft, IconShoppingCart } from '@tabler/icons-react';
-import { RequestStatus } from '@/api/request-status.enum';
 import { DEFAULT_TEMPLATE } from '@/constants/template';
+import { templateService } from '@/services/templateService';
 
 // Import Preview component dynamically to avoid SSR issues
 const Preview = dynamic(() => import('@/components/Preview'), {
@@ -43,59 +44,32 @@ interface MarketplaceTemplate {
   fonts: string[];
 }
 
-export default function MarketplaceTemplateDetail() {
-  const params = useParams();
+interface Props {
+  template: MarketplaceTemplate;
+}
+
+export default function MarketplaceTemplateDetail({ template }: Props) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(RequestStatus.NotStated);
-  const [template, setTemplate] = useState<MarketplaceTemplate | null>(null);
-  const [isPurchasing, setIsPurchasing] = useState(false);
 
-  useEffect(() => {
-    // Simulating fetching template with fake data
-    setIsLoading(RequestStatus.InProgress);
-    setTimeout(() => {
-      setTemplate({
-        id: params.id as string,
-        name: 'Sample Template',
-        description: 'This is a sample description for the template.',
-        price: 1999, // Price in cents
-        preview: 'https://placehold.co/600x400?text=Template+Preview',
-        rating: 4.5,
-        reviewCount: 120,
-        author: {
-          name: 'John Doe',
-          avatar: 'https://placehold.co/100x100?text=Author+Avatar',
-        },
-        features: ['Feature 1', 'Feature 2', 'Feature 3'],
-        content: DEFAULT_TEMPLATE,
-        variables: {},
-        fonts: [],
-      });
-      setIsLoading(RequestStatus.Succeeded);
-    }, 1000);
-  }, [params.id]);
-
-  const handlePurchase = async () => {
-    try {
-      setIsPurchasing(true);
-      // Simulate purchase action
-      setTimeout(() => {
-        router.push('/dashboard/templates');
-      }, 1000);
-    } catch (error) {
-      console.error('Error purchasing template:', error);
-    } finally {
-      setIsPurchasing(false);
-    }
-  };
-
-  if (isLoading === RequestStatus.InProgress || !template) {
+  // Handle fallback state
+  if (router.isFallback) {
     return (
-      <Box style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Box
+        style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      >
         <Loader size="lg" />
       </Box>
     );
   }
+
+  const handlePurchase = async () => {
+    try {
+      // Implement purchase logic
+      router.push('/dashboard/templates');
+    } catch (error) {
+      // Handle error appropriately
+    }
+  };
 
   return (
     <Box bg="#1A1B1E" style={{ minHeight: '100vh' }}>
@@ -231,7 +205,6 @@ export default function MarketplaceTemplateDetail() {
                   fullWidth
                   size="lg"
                   onClick={handlePurchase}
-                  loading={isPurchasing}
                   leftSection={<IconShoppingCart size={20} />}
                   variant="gradient"
                   gradient={{ from: '#3B82F6', to: '#60A5FA' }}
@@ -257,4 +230,71 @@ export default function MarketplaceTemplateDetail() {
       </Container>
     </Box>
   );
-} 
+}
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  try {
+    // Get list of template IDs from your API
+    const templates = await templateService.getTemplates({});
+    const paths = templates.templates.map((template) => ({
+      params: { id: template.id.toString() },
+    }));
+
+    return {
+      paths,
+      fallback: true, // Enable fallback for templates not generated at build time
+    };
+  } catch (error) {
+    // If there's an error fetching templates, return empty paths
+    return {
+      paths: [],
+      fallback: true,
+    };
+  }
+};
+
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  try {
+    if (!params?.id) {
+      return {
+        notFound: true,
+      };
+    }
+
+    // Fetch template data from your API
+    const template = await templateService.getTemplate(params.id as string);
+
+    if (!template) {
+      return {
+        notFound: true,
+      };
+    }
+
+    return {
+      props: {
+        template: {
+          id: template.id,
+          name: template?.title || 'Sample Template',
+          description: template?.description || 'This is a sample description for the template.',
+          price: template?.price || 1999,
+          preview: template?.thumbnail || 'https://placehold.co/600x400?text=Template+Preview',
+          rating: template?.rating || 4.5,
+          reviewCount: template?.reviews || 120,
+          author: {
+            name: template.author?.name || 'John Doe',
+            avatar: template.author?.avatar || 'https://placehold.co/100x100?text=Author+Avatar',
+          },
+          features: template.features || ['Feature 1', 'Feature 2', 'Feature 3'],
+          content: template.content || DEFAULT_TEMPLATE,
+          variables: template.variables || {},
+          fonts: template.fonts || [],
+        },
+      },
+      revalidate: 60, // Revalidate every minute
+    };
+  } catch (error) {
+    return {
+      notFound: true,
+    };
+  }
+};

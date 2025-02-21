@@ -1,7 +1,7 @@
-import { Card, Image, Text, Badge, Button, Group, Stack, Rating } from '@mantine/core';
-import { Template } from '../../services/templateService';
 import { useRouter } from 'next/router';
+import { Card, Image, Text, Badge, Button, Group, Stack, Rating } from '@mantine/core';
 import { IconEye } from '@tabler/icons-react';
+import { Template } from '../../services/templateService';
 
 interface TemplateCardProps {
   template: Template;
@@ -29,7 +29,9 @@ export default function TemplateCard({ template, onDownload }: TemplateCardProps
         <Group justify="space-between" align="center">
           <Group gap="xs">
             <Rating value={template.rating} readOnly size="sm" />
-            <Text size="sm" c="dimmed">({template.reviews} reviews)</Text>
+            <Text size="sm" c="dimmed">
+              ({template.reviews} reviews)
+            </Text>
           </Group>
           <Badge variant="light">{template.category}</Badge>
         </Group>
@@ -40,7 +42,9 @@ export default function TemplateCard({ template, onDownload }: TemplateCardProps
 
         <Stack gap="xs">
           {template.features.map((feature, index) => (
-            <Text key={index} size="sm">• {feature}</Text>
+            <Text key={index} size="sm">
+              • {feature}
+            </Text>
           ))}
         </Stack>
 
@@ -64,4 +68,4 @@ export default function TemplateCard({ template, onDownload }: TemplateCardProps
       </Stack>
     </Card>
   );
-} 
+}

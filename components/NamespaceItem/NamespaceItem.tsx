@@ -1,18 +1,19 @@
+import React, { FC } from 'react';
+import { useDrop } from 'react-dnd';
+import { Group, Text, rem, useMantineTheme } from '@mantine/core';
+import { IconFolderFilled } from '@tabler/icons-react';
 import { NamespaceDTO } from '@/api/namespaceApi';
 import { templateApi } from '@/api/templateApi';
 import { limitText } from '@/utils/formatDate';
-import { Group, Text, rem, useMantineTheme } from '@mantine/core';
-import { IconFolderFilled } from '@tabler/icons-react';
-import React, { FC } from 'react';
-import { useDrop } from 'react-dnd';
 
 interface NamespaceItemProps {
   id: number;
   selected: boolean;
   namespace: NamespaceDTO;
   setNamespaceId: (id: number) => void;
-  updateOnClient : (id :number,namespaceId :number) => void;
+  updateOnClient: (id: number, namespaceId: number) => void;
 }
+
 const NamespaceItem: FC<NamespaceItemProps> = ({
   id,
   namespace,
@@ -22,8 +23,8 @@ const NamespaceItem: FC<NamespaceItemProps> = ({
 }: NamespaceItemProps) => {
   const theme = useMantineTheme();
   const { name } = namespace;
-  console.log('from namespace : ', namespace);
-  const [{ canDrop, isOver }, drop] = useDrop(() => ({
+
+  const [{ isOver }, drop] = useDrop(() => ({
     accept: 'TEMPLATE',
     drop: (item: { id: number }) => handleDrop(item.id),
     collect: (monitor) => ({
@@ -36,15 +37,16 @@ const NamespaceItem: FC<NamespaceItemProps> = ({
     try {
       await templateApi.changeTemplateNamespace(templateId, id);
       updateOnClient(templateId, id);
-    } catch (error) {}
-    console.log(`Dropped template ${templateId} into namespace ${id}`);
+    } catch (error) {
+      // Handle error if needed
+    }
   };
 
   return (
     <Group
       onClick={() => setNamespaceId(namespace.ID)}
       ref={drop}
-      component={'button'}
+      component="button"
       style={{
         borderRadius: rem(8),
         borderColor: 'var(--mantine-color-red)',
@@ -55,12 +57,12 @@ const NamespaceItem: FC<NamespaceItemProps> = ({
             : theme.colors.blue[2],
       }}
       variant="light"
-      c={'white'}
+      c="white"
       px={rem(12)}
       h={rem(44)}
     >
       <IconFolderFilled />
-      <Text fw={'bold'}>{limitText(name, 10)}</Text>
+      <Text fw="bold">{limitText(name, 10)}</Text>
     </Group>
   );
 };

@@ -1,4 +1,13 @@
-import { Container, TextInput, Textarea, NumberInput, Select, Button, Stack, Title } from '@mantine/core';
+import {
+  Container,
+  TextInput,
+  Textarea,
+  NumberInput,
+  Select,
+  Button,
+  Stack,
+  Title,
+} from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { MainLayout } from '../../layouts/MainLayout';
@@ -15,17 +24,17 @@ export default function AddTemplate() {
       features: '',
     },
     validate: {
-      title: (value) => !value ? 'Title is required' : null,
-      description: (value) => !value ? 'Description is required' : null,
-      price: (value) => value < 0 ? 'Price must be positive' : null,
-      category: (value) => !value ? 'Category is required' : null,
-      features: (value) => !value ? 'Features are required' : null,
+      title: (value: string) => (!value ? 'Title is required' : null),
+      description: (value: string) => (!value ? 'Description is required' : null),
+      price: (value: number) => (value < 0 ? 'Price must be positive' : null),
+      category: (value: string) => (!value ? 'Category is required' : null),
+      features: (value: string) => (!value ? 'Features are required' : null),
     },
   });
 
   const handleSubmit = async (values: typeof form.values) => {
     try {
-      const featuresArray = values.features.split('\n').filter(f => f.trim());
+      const featuresArray = values.features.split('\n').filter((f) => f.trim());
       const template = {
         ...values,
         features: featuresArray,
@@ -34,7 +43,7 @@ export default function AddTemplate() {
       };
 
       await templateService.addTemplate(template);
-      
+
       notifications.show({
         title: 'Success',
         message: 'Template added successfully',
@@ -54,7 +63,9 @@ export default function AddTemplate() {
   return (
     <MainLayout>
       <Container size="sm" mt="xl">
-        <Title order={2} mb="xl">Add New Template</Title>
+        <Title order={2} mb="xl">
+          Add New Template
+        </Title>
 
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack gap="md">
@@ -118,4 +129,4 @@ export default function AddTemplate() {
       </Container>
     </MainLayout>
   );
-} 
+}

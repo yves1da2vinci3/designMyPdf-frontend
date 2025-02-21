@@ -11,14 +11,14 @@ interface VariableBadgeProps {
 const VariableBadge: FC<VariableBadgeProps> = ({ varName, type }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'VARIABLE',
-    item: { varName,type },
+    item: { varName, type },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
   }));
 
-  const getIcon = (type: string) => {
-    switch (type) {
+  const getIcon = (iconType: string) => {
+    switch (iconType) {
       case 'array':
         return <IconTable size={10} />;
       case 'object':
