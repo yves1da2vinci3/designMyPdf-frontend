@@ -1,11 +1,21 @@
-import { Box, Container, Paper, Title, Text, Anchor, TextInput, PasswordInput, Button } from '@mantine/core';
-import styles from './signup.module.css';
-import { useRouter } from 'next/router';
-import { Links } from '@/components/Navbar/Navbar';
-import { isNotEmpty, useForm } from '@mantine/form';
-import { SignupDto, authApi } from '@/api/authApi';
 import { useState } from 'react';
+import { useRouter } from 'next/router';
+import {
+  TextInput,
+  PasswordInput,
+  Anchor,
+  Paper,
+  Title,
+  Text,
+  Container,
+  Button,
+  Box,
+} from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { SignupDto, authApi } from '@/api/authApi';
 import { RequestStatus } from '@/api/request-status.enum';
+import { Links } from '@/components/Navbar/Navbar';
+import classes from './signup.module.css';
 
 export default function Signup() {
   const router = useRouter();
@@ -18,7 +28,7 @@ export default function Signup() {
 
     validate: {
       email: (val) => (/^\S+@\S+$/.test(val) ? null : 'Invalid email'),
-      userName: isNotEmpty('Enter your userName '),
+      userName: (val) => (val.length === 0 ? 'Enter your userName ' : null),
       password: (val) => (val.length < 6 ? 'Password should include at least 6 characters' : null),
     },
   });
@@ -37,9 +47,9 @@ export default function Signup() {
   };
 
   return (
-    <Box className={styles.container}>
-      <Container className={styles.boxContainer} size={420} my={40}>
-        <Title ta="center" className={styles.title}>
+    <Box className={classes.container}>
+      <Container className={classes.boxContainer} size={420} my={40}>
+        <Title ta="center" className={classes.title}>
           Welcome!
         </Title>
         <Text c="dimmed" size="sm" ta="center" mt={5}>
@@ -49,7 +59,7 @@ export default function Signup() {
           </Anchor>
         </Text>
 
-        <Paper withBorder shadow="md" p={30} mt={30} className={styles.formContainer} radius="md">
+        <Paper withBorder shadow="md" p={30} mt={30} className={classes.formContainer} radius="md">
           <form onSubmit={form.onSubmit(onSubmit)}>
             <TextInput
               {...form.getInputProps('email')}

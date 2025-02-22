@@ -1,4 +1,3 @@
-import { cssframeworkTypes } from '@/utils/enums';
 import { apiClient } from './apiClient';
 import { DEFAULT_TEMPLATE } from '@/constants/template';
 import notificationService from '@/services/NotificationService';
@@ -39,23 +38,44 @@ export interface CreateTemplateDto {
 
 export interface UpdateTemplateDto {
   name?: string;
+  description?: string;
   content?: string;
+  variables?: any;
   fonts?: string[];
-  variables?: object;
-  framework?: string;
-  NamespaceID?: number;
+  preview?: string;
+  price?: number;
 }
 
 export interface TemplateDTO {
   ID: number;
   name: string;
-  uuid: string;
-  framework: string;
-  content: string;
-  fonts: string[];
-  variables: object; // Use object instead of JSON
+  description?: string;
+  content?: string;
+  variables?: any;
+  fonts?: string[];
+  preview?: string;
+  price?: number;
+  rating?: number;
+  reviewCount?: number;
+  author?: {
+    name: string;
+    avatar: string;
+  };
+  features?: string[];
+  uuid?: string;
+  CreatedAt?: string;
   NamespaceID: number;
-  CreatedAt: string;
+}
+
+export interface PublishToMarketplaceDto {
+  templateId: string;
+  price: number;
+  name: string;
+  description: string;
+  preview: string;
+  content: string;
+  variables: any;
+  fonts: string[];
 }
 
 export const templateApi = {
@@ -73,7 +93,7 @@ export const templateApi = {
       notificationService.showSuccessNotification('Template created successfully');
       return createTemplateResponse.data.template;
     } catch (error) {
-      throw new Error('Error creating template: ' + error);
+      throw new Error(`Error creating template: ${error}`);
     }
   },
 
@@ -82,7 +102,7 @@ export const templateApi = {
       const getTemplatesResponse = await apiClient.get('/templates');
       return getTemplatesResponse.data.templates;
     } catch (error) {
-      throw new Error('Error fetching templates: ' + error);
+      throw new Error(`Error fetching templates: ${error}`);
     }
   },
 
@@ -91,7 +111,7 @@ export const templateApi = {
       const getTemplateResponse = await apiClient.get(`/templates/${id}`);
       return getTemplateResponse.data.template;
     } catch (error) {
-      throw new Error('Error fetching template: ' + error);
+      throw new Error(`Error fetching template: ${error}`);
     }
   },
 
@@ -101,17 +121,15 @@ export const templateApi = {
       notificationService.showSuccessNotification('Template updated successfully');
       return updateTemplateResponse.data.template;
     } catch (error) {
-      throw new Error('Error updating template: ' + error);
+      throw new Error(`Error updating template: ${error}`);
     }
   },
   async changeTemplateNamespace(id: number, namespaceId: number): Promise<void> {
     try {
-      const updateTemplateResponse = await apiClient.put(
-        `/templates/${id}/namespace/${namespaceId}`
-      );
+      await apiClient.put(`/templates/${id}/namespace/${namespaceId}`);
       notificationService.showSuccessNotification('template emplacement change successful');
     } catch (error) {
-      throw new Error('Error updating template: ' + error);
+      throw new Error(`Error updating template: ${error}`);
     }
   },
 
@@ -120,7 +138,35 @@ export const templateApi = {
       await apiClient.delete(`/templates/${id}`);
       notificationService.showSuccessNotification('Template deleted successfully');
     } catch (error) {
-      throw new Error('Error deleting template: ' + error);
+      throw new Error(`Error deleting template: ${error}`);
     }
+  },
+
+  async publishToMarketplace(data: PublishToMarketplaceDto): Promise<TemplateDTO> {
+    const response = await fetch('/api/templates/marketplace/publish', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  },
+
+  async getMarketplaceTemplates(): Promise<TemplateDTO[]> {
+    const response = await fetch('/api/templates/marketplace');
+    return response.json();
+  },
+
+  async getMarketplaceTemplate(id: string): Promise<TemplateDTO> {
+    const response = await fetch(`/api/templates/marketplace/${id}`);
+    return response.json();
+  },
+
+  async purchaseTemplate(id: string): Promise<TemplateDTO> {
+    const response = await fetch(`/api/templates/marketplace/${id}/purchase`, {
+      method: 'POST',
+    });
+    return response.json();
   },
 };

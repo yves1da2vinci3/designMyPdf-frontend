@@ -1,14 +1,23 @@
 import React, { useEffect, useState } from 'react';
+import {
+  Button,
+  Center,
+  Group,
+  Loader,
+  Stack,
+  Table,
+  Text,
+  Title,
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { modals } from '@mantine/modals';
+import { IconPencil, IconTrash } from '@tabler/icons-react';
 import { KeyDTO, CreateKeyDto, UpdateKeyDto, keyApi } from '@/api/keyApi';
 import { RequestStatus } from '@/api/request-status.enum';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import AddKeyModal from '@/modals/AddKey/AddKey';
 import UpdateKeyModal from '@/modals/UpdateKey/UpdateKey';
 import { formatDate } from '@/utils/formatDate';
-import { Button, Center, Group, Loader, Stack, Table, Text, Title } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
-import { modals } from '@mantine/modals';
-import { IconPencil, IconTrash } from '@tabler/icons-react';
 
 export default function Keys() {
   const [fetchKeysRequestStatus, setFetchKeysRequestStatus] = useState(RequestStatus.NotStated);
@@ -29,9 +38,9 @@ export default function Keys() {
   const deleteKey = async (keyId: number) => {
     try {
       await keyApi.deleteKey(keyId);
-      setKeys((prevKeys) => prevKeys.filter((key) => key.id !== keyId));
+      setKeys((prevKeys) => prevKeys.filter((k) => k.id !== keyId));
     } catch (error) {
-      console.error('Failed to delete key', error);
+      // Handle error appropriately
     }
   };
 
@@ -48,10 +57,10 @@ export default function Keys() {
           <Text size="sm">Are you sure you want to delete the key</Text>
           <Text mx={2} fw="bold">
             {name}
-          </Text>{' '}
+          </Text>
           <Text size="sm">
             ? This action is destructive and you will have to contact support to restore your data.
-          </Text>{' '}
+          </Text>
         </Group>
       ),
       labels: { confirm: 'Delete key', cancel: "No, don't delete it" },
@@ -61,20 +70,20 @@ export default function Keys() {
   };
 
   useEffect(() => {
-    const updatedRows = keys.map((key) => (
-      <Table.Tr key={key.id}>
-        <Table.Td width="10%">{formatDate(key.created_at)}</Table.Td>
-        <Table.Td width="20%">{key.name}</Table.Td>
-        <Table.Td width="31%">{key.value}</Table.Td>
-        <Table.Td width="7%">{key.key_count}</Table.Td>
-        <Table.Td width="7%">{key.key_count_used}</Table.Td>
+    const updatedRows = keys.map((keyItem) => (
+      <Table.Tr key={keyItem.id}>
+        <Table.Td width="10%">{formatDate(keyItem.created_at)}</Table.Td>
+        <Table.Td width="20%">{keyItem.name}</Table.Td>
+        <Table.Td width="31%">{keyItem.value}</Table.Td>
+        <Table.Td width="7%">{keyItem.key_count}</Table.Td>
+        <Table.Td width="7%">{keyItem.key_count_used}</Table.Td>
         <Table.Td width="25%">
           <Group>
             <Button
               variant="outline"
               color="red"
               leftSection={<IconTrash />}
-              onClick={() => deleteConfirmation(key.name, key.id)}
+              onClick={() => deleteConfirmation(keyItem.name, keyItem.id)}
             >
               Delete
             </Button>
@@ -82,7 +91,7 @@ export default function Keys() {
               variant="outline"
               color="blue"
               leftSection={<IconPencil />}
-              onClick={() => updateKey(key.id)}
+              onClick={() => updateKey(keyItem.id)}
             >
               Update
             </Button>
@@ -95,10 +104,10 @@ export default function Keys() {
 
   const [addKeyOpened, { open: openAddKey, close: closeAddKey }] = useDisclosure(false);
   const [addKeyRequestStatus, setAddKeyRequestStatus] = useState(RequestStatus.NotStated);
-  const addKeyHandler = async (key: CreateKeyDto) => {
+  const addKeyHandler = async (keyData: CreateKeyDto) => {
     setAddKeyRequestStatus(RequestStatus.InProgress);
     try {
-      const keyCreated = await keyApi.createKey(key);
+      const keyCreated = await keyApi.createKey(keyData);
       setKeys((prevKeys) => [...prevKeys, keyCreated]);
       closeAddKey();
       setAddKeyRequestStatus(RequestStatus.Succeeded);
@@ -112,9 +121,9 @@ export default function Keys() {
   const [keyToUpdate, setKeyToUpdate] = useState<KeyDTO>();
 
   const updateKey = (keyId: number) => {
-    const key = keys.find((key) => key.id === keyId);
-    if (key) {
-      setKeyToUpdate(key);
+    const foundKey = keys.find((k) => k.id === keyId);
+    if (foundKey) {
+      setKeyToUpdate(foundKey);
       openUpdateKey();
     }
   };
@@ -122,31 +131,19 @@ export default function Keys() {
   const updateKeyHandler = async (values: UpdateKeyDto) => {
     try {
       setUpdateKeyRequestStatus(RequestStatus.InProgress);
-
-      // Use default keyId if keyToUpdate.id is undefined or null
       const keyId = keyToUpdate?.id || -1;
-
-      // Make API call to update the key
       const updatedKey = await keyApi.updateKey(values, keyId);
-
-      // Find the index of the updated key in the keys array
-      const keyIndex = keys.findIndex((key) => key.id === updatedKey.id);
+      const keyIndex = keys.findIndex((k) => k.id === updatedKey.id);
 
       if (keyIndex !== -1) {
-        // Update the keys array with the updated key
         const newKeys = [...keys];
         newKeys[keyIndex] = updatedKey;
         setKeys(newKeys);
       }
 
-      // Update request status to succeeded
       setUpdateKeyRequestStatus(RequestStatus.Succeeded);
-
-      // Close the update modal
       closeUpdateKey();
     } catch (error) {
-      // Handle API call errors
-      console.error('Failed to update key:', error);
       setUpdateKeyRequestStatus(RequestStatus.Failed);
     }
   };
@@ -155,8 +152,8 @@ export default function Keys() {
     <>
       {fetchKeysRequestStatus === RequestStatus.InProgress ||
       fetchKeysRequestStatus === RequestStatus.NotStated ? (
-        <Center h={'95vh'} w={'100%'}>
-          <Loader type="bars" size={'xl'} />
+        <Center h="95vh" w="100%">
+          <Loader type="bars" size="xl" />
         </Center>
       ) : (
         <Stack>
@@ -182,7 +179,6 @@ export default function Keys() {
             <Button onClick={openAddKey}>Create new API key</Button>
           </Group>
 
-          {/* Table */}
           <Table withColumnBorders>
             <Table.Thead>
               <Table.Tr>

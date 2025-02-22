@@ -1,10 +1,11 @@
-import { TemplateDTO, templateApi } from '@/api/templateApi';
-import { timeAgo } from '@/utils/formatDate';
+import { useDrag } from 'react-dnd';
 import { Paper, Box, Menu, rem, Text } from '@mantine/core';
 import { IconDots, IconTrash } from '@tabler/icons-react';
 import { useRouter } from 'next/router';
 import React from 'react';
-import { useDrag } from 'react-dnd';
+import { TemplateDTO, templateApi } from '@/api/templateApi';
+import { timeAgo } from '@/utils/formatDate';
+
 import MiniPreview from '../MiniPreview/MiniPreview';
 
 interface TemplateItemProps {
@@ -48,7 +49,7 @@ export default function TemplateItem({
       p={20}
       withBorder
       mt={0}
-      w={'30%'}
+      w="30%"
       h={200}
       shadow="sm"
       style={{ opacity: isDragging ? 0.5 : 1, cursor: 'pointer' }}
@@ -75,13 +76,12 @@ export default function TemplateItem({
             </Menu.Item>
           </Menu.Dropdown>
         </Menu>
-
         <Box>
-          <MiniPreview htmlContent={content} data={variables} fonts={fonts} />
+          <MiniPreview htmlContent={content || ''} data={variables || []} fonts={fonts || []} />
         </Box>
       </Box>
-      <Text>{name}</Text>
-      <Text c={'gray'}>created {timeAgo(CreatedAt)}</Text>
+      <Text>{name || 'Unnamed Template'}</Text>
+      <Text c="gray">created {timeAgo(CreatedAt || new Date().toISOString())}</Text>
     </Paper>
   );
 }

@@ -16,24 +16,21 @@ const importFontCreation = (fonts: string[]) => {
       .map((font) => `&display=swap&family=${encodeURIComponent(font)}`)
       .join('')}`;
     return `<link rel="stylesheet" href="${fontUrl}" />`;
-  } catch (error) {
-    console.error('Error generating font import:', error);
+  } catch {
     return '';
   }
 };
 
-const fontCssCreation = (fonts: string[]) => {
-  return `
-    body {
-      font-family: '${fonts[0]}', sans-serif;
-    }
-  `;
-};
+const fontCssCreation = (fonts: string[]) => `
+  body {
+    font-family: '${fonts[0]}', sans-serif;
+  }
+`;
 
 const MiniPreview: React.FC<MiniPreviewProps> = ({ htmlContent, data, fonts }) => {
   const [renderedContent, setRenderedContent] = useState('');
-  const [fontImport, setFontImport] = useState<string>('');
-  const [fontStyle, setFontStyle] = useState<string>('');
+  const [fontImport, setFontImport] = useState('');
+  const [fontStyle, setFontStyle] = useState('');
 
   useEffect(() => {
     setFontImport(importFontCreation(fonts));
@@ -76,8 +73,8 @@ const MiniPreview: React.FC<MiniPreviewProps> = ({ htmlContent, data, fonts }) =
         </body>
         </html>`;
       setRenderedContent(fullContent);
-    } catch (error) {
-      console.error('Error rendering Handlebars template:', error);
+    } catch {
+      setRenderedContent('');
     }
   }, [htmlContent, data, fontImport, fontStyle]);
 
@@ -87,7 +84,7 @@ const MiniPreview: React.FC<MiniPreviewProps> = ({ htmlContent, data, fonts }) =
         title="mini-Preview"
         srcDoc={renderedContent}
         style={{
-          transform: 'scale(0.25)', // Scale down the content
+          transform: 'scale(0.25)',
           transformOrigin: 'top left',
           width: '400%',
           height: '400%',

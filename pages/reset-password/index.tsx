@@ -1,8 +1,8 @@
+import { useState } from 'react';
+import { useRouter } from 'next/router';
 import {
   Paper,
   Title,
-  Text,
-  TextInput,
   Button,
   Container,
   Group,
@@ -12,14 +12,12 @@ import {
   Stack,
   PasswordInput,
 } from '@mantine/core';
-import { IconArrowLeft } from '@tabler/icons-react';
-import classes from './resetPassword.module.css';
-import { useRouter } from 'next/router';
-import { Links } from '@/components/Navbar/Navbar';
 import { useForm } from '@mantine/form';
-import { useState } from 'react';
-import { RequestStatus } from '@/api/request-status.enum';
+import { IconArrowLeft } from '@tabler/icons-react';
 import { ResetPasswordDto, authApi } from '@/api/authApi';
+import { RequestStatus } from '@/api/request-status.enum';
+import { Links } from '@/components/Navbar/Navbar';
+import classes from './resetPassword.module.css';
 
 export default function ResetPassword() {
   const router = useRouter();
@@ -31,8 +29,9 @@ export default function ResetPassword() {
       confirmPassword: '',
     },
     validate: {
-      newPassword: (value) => (value.length < 6 ? 'Password must be at least 6 characters' : null),
-      confirmPassword: (value, values) =>
+      newPassword: (value: string) =>
+        value.length < 6 ? 'Password must be at least 6 characters' : null,
+      confirmPassword: (value: string, values: ResetPasswordDto) =>
         value !== values.newPassword ? 'Passwords do not match' : null,
     },
   });

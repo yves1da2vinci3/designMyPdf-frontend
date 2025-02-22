@@ -1,38 +1,86 @@
-# Mantine Next.js template
+# Design My PDF
 
-This is a template for [Next.js](https://nextjs.org/) pages router + [Mantine](https://mantine.dev/).
-If you want to use app router instead, see [next-app-template](https://github.com/mantinedev/next-app-template).
+<div align="center">
 
-## Features
+🎨 A modern, open-source PDF design toolkit built with React and TypeScript
 
-This template comes with the following features:
+[![TypeScript](https://img.shields.io/badge/TypeScript-99%25-blue.svg)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-- [PostCSS](https://postcss.org/) with [mantine-postcss-preset](https://mantine.dev/styles/postcss-preset)
-- [TypeScript](https://www.typescriptlang.org/)
-- [Storybook](https://storybook.js.org/)
-- [Jest](https://jestjs.io/) setup with [React Testing Library](https://testing-library.com/docs/react-testing-library/intro)
-- ESLint setup with [eslint-config-mantine](https://github.com/mantinedev/eslint-config-mantine)
+</div>
 
-## npm scripts
+## ✨ Features
 
-### Build and dev scripts
+- 🎨 **Modern Design Tools**: Create beautiful PDFs with our intuitive design tools
+- 📦 **Rich Component Library**: 100+ pre-built components for all your needs
+- 🎯 **Developer Friendly**: Built with TypeScript and React for the best DX
+- 📱 **Responsive Design**: Create PDFs that look great on any device
+- 🌗 **Dark/Light Themes**: Built-in theme support for all components
+- 🚀 **Easy Integration**: Simple to integrate with existing projects
 
-- `dev` – start dev server
-- `build` – bundle application for production
-- `export` – exports static website to `out` folder
-- `analyze` – analyzes application bundle with [@next/bundle-analyzer](https://www.npmjs.com/package/@next/bundle-analyzer)
+## 🛠 Tech Stack
 
-### Testing scripts
+- [Next.js](https://nextjs.org/) - React framework for production
+- [Mantine](https://mantine.dev/) - Modern React component library
+- [TypeScript](https://www.typescriptlang.org/) - For type safety
+- [jsPDF](https://github.com/parallax/jsPDF) - PDF generation
+- [PostCSS](https://postcss.org/) - CSS processing
+- [Jest](https://jestjs.io/) - Testing framework
 
-- `typecheck` – checks TypeScript types
-- `lint` – runs ESLint
-- `prettier:check` – checks files with Prettier
-- `jest` – runs jest tests
-- `jest:watch` – starts jest watch
-- `test` – runs `jest`, `prettier:check`, `lint` and `typecheck` scripts
+## 🚀 Quick Start
 
-### Other scripts
+1. Clone the repository:
+\`\`\`bash
+git clone https://github.com/yves1da2vinci3/designMyPdf-frontend.git
+cd designMyPdf-frontend
+\`\`\`
 
-- `storybook` – starts storybook dev server
-- `storybook:build` – build production storybook bundle to `storybook-static`
-- `prettier:write` – formats all files with Prettier
+2. Install dependencies:
+\`\`\`bash
+yarn install
+\`\`\`
+
+3. Start the development server:
+\`\`\`bash
+yarn dev
+\`\`\`
+
+Visit [http://localhost:3000](http://localhost:3000) to see your app.
+
+## 📖 Documentation
+
+- [Getting Started](docs/getting-started.md)
+- [Component Library](docs/components.md)
+- [API Reference](docs/api.md)
+- [Contributing Guide](CONTRIBUTING.md)
+
+## 🧪 Available Scripts
+
+- \`yarn dev\` - Start development server
+- \`yarn build\` - Build for production
+- \`yarn start\` - Start production server
+- \`yarn test\` - Run tests
+- \`yarn storybook\` - Start Storybook
+- \`yarn lint\` - Run linting
+- \`yarn typecheck\` - Run type checking
+
+## 🤝 Contributing
+
+We love your input! We want to make contributing as easy and transparent as possible. Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Mantine](https://mantine.dev/) for the amazing UI components
+- [jsPDF](https://github.com/parallax/jsPDF) for PDF generation capabilities
+- All our [contributors](https://github.com/yourusername/designMyPdf-frontend/graphs/contributors)
+
+---
+
+<div align="center">
+Made with ❤️ by the Design My PDF team
+</div>

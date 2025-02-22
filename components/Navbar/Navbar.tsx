@@ -1,60 +1,58 @@
+import { useRouter } from 'next/router';
 import {
-  HoverCard,
   Group,
-  Button,
-  UnstyledButton,
-  Text,
-  SimpleGrid,
-  ThemeIcon,
-  Anchor,
-  Divider,
-  Center,
-  Box,
   Burger,
-  Drawer,
-  Collapse,
-  ScrollArea,
+  Button,
+  Text,
+  UnstyledButton,
+  ThemeIcon,
   rem,
   useMantineTheme,
+  Box,
+  HoverCard,
+  Center,
+  Anchor,
+  Collapse,
+  Divider,
+  Drawer,
+  ScrollArea,
+  SimpleGrid,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
-  IconNotification,
-  IconCode,
-  IconBook,
-  IconChartPie3,
-  IconFingerprint,
-  IconCoin,
+  IconBook2,
+  IconChartPie,
   IconChevronDown,
-  IconBox,
+  IconCodeOff,
+  IconCoinBitcoin,
+  IconFingerprintScan,
 } from '@tabler/icons-react';
+import { Logo } from '@/components/AppLogo/AppLogo';
 import classes from './NavBar.module.css';
-import { useRouter } from 'next/router';
-import { Logo } from '../AppLogo/AppLogo';
 
 const mockdata = [
   {
-    icon: IconCode,
+    icon: IconCodeOff,
     title: 'API Integration',
     description: 'Seamless integration with our comprehensive API.',
   },
   {
-    icon: IconCoin,
+    icon: IconCoinBitcoin,
     title: 'No fee ',
     description: 'No hidden fees. No credit card required.',
   },
   {
-    icon: IconBook,
+    icon: IconBook2,
     title: 'Documentation',
     description: 'Detailed guides and references for developers.',
   },
   {
-    icon: IconFingerprint,
+    icon: IconFingerprintScan,
     title: 'Top-notch Security',
     description: 'Robust security features to protect your data.',
   },
   {
-    icon: IconChartPie3,
+    icon: IconChartPie,
     title: 'Analytics',
     description: 'Powerful analytics to track your performance.',
   },
@@ -72,8 +70,8 @@ export const Links = {
 export function NavBar() {
   const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] = useDisclosure(false);
   const [linksOpened, { toggle: toggleLinks }] = useDisclosure(false);
-  const theme = useMantineTheme();
   const router = useRouter();
+  const theme = useMantineTheme();
   const links = mockdata.map((item) => (
     <UnstyledButton className={classes.subLink} key={item.title}>
       <Group wrap="nowrap" align="flex-start">
