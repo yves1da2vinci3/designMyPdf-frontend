@@ -1528,9 +1528,11 @@ const CreateTemplate: React.FC = () => {
           {/* Code editor */}
           <Box
             style={{
-              flex: sidebarCollapsed ? 3 : 2.5,
+              width: sidebarCollapsed ? 'calc(60% - 20px)' : '50%',
               height: '100%',
-              transition: 'flex 0.3s ease',
+              transition: 'width 0.3s ease',
+              flexShrink: 0,
+              flexGrow: 0,
             }}
             ref={drop}
           >
@@ -1551,12 +1553,14 @@ const CreateTemplate: React.FC = () => {
           {/* Preview */}
           <Box
             style={{
-              flex: sidebarCollapsed ? 2 : 1.5,
+              width: sidebarCollapsed ? 'calc(40% - 20px)' : '32%',
               height: '100%',
               backgroundColor: '#1A1B1E',
               borderLeft: '1px solid #373A40',
               position: 'relative',
-              transition: 'flex 0.3s ease',
+              transition: 'width 0.3s ease',
+              flexShrink: 0,
+              flexGrow: 0,
             }}
           >
             <Box
