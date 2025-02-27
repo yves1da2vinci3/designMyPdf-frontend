@@ -180,7 +180,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.send(output);
     return res.status(200).end();
   } catch (error) {
-    console.error('Error exporting template:', error);
     return res.status(500).json({ message: 'Error exporting template', error: String(error) });
   }
 }

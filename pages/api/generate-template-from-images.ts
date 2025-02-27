@@ -398,7 +398,6 @@ Return only the HTML code without any explanation or formatting.`;
       suggestedVariables,
     });
   } catch (error: any) {
-    console.error('Error generating template from images:', error);
     return res.status(500).json({ error: 'Failed to generate template from images' });
   }
 }

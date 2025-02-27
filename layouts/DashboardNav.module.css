@@ -42,6 +42,7 @@
     background-color: var(--mantine-color-blue-7);
     color: var(--mantine-color-white);
     cursor: pointer;
+    
     .linkIcon {
       color: var(--mantine-color-white);
     }

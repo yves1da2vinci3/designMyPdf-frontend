@@ -20,7 +20,6 @@ const importFontCreation = (fonts: string[]) => {
       .map((font) => `&display=swap&family=${encodeURIComponent(font)}`)}`;
     return `<link key="font-import" rel="stylesheet" href="${fontUrl}" />`;
   } catch (error) {
-    console.error('Error generating font import:', error);
     return '';
   }
 };
@@ -79,8 +78,8 @@ const Preview: React.FC<PreviewProps> = ({
       const chartScript = `
         (function() {
           function initializeCharts() {
-            if (typeof Chart === 'undefined') {
-              console.error('Chart.js not loaded');
+            if (!window.Chart) {
+              // Chart.js library not loaded
               return;
             }
             var chartElements = document.querySelectorAll('canvas[data-chart-type]');
@@ -90,7 +89,7 @@ const Preview: React.FC<PreviewProps> = ({
                 var rawData = element.getAttribute('data-chart-data');
                 
                 if (!type || !rawData) {
-                  console.error('Missing chart type or data attributes');
+                  // Missing required chart attributes
                   return;
                 }
 
@@ -99,7 +98,7 @@ const Preview: React.FC<PreviewProps> = ({
                   // The data is already JSON stringified in the attribute
                   chartData = JSON.parse(rawData);
                 } catch (e) {
-                  console.error('Invalid chart data JSON:', e);
+                  // Invalid chart data format
                   return;
                 }
 
@@ -164,12 +163,11 @@ const Preview: React.FC<PreviewProps> = ({
                 // Store chart instance for cleanup
                 element.chart = chartInstance;
               } catch (error) {
-                console.error('Error initializing chart:', error);
                 var ctx = element.getContext('2d');
                 if (ctx) {
                   ctx.fillStyle = '#FF4444';
                   ctx.font = '14px Arial';
-                  ctx.fillText('Error loading chart: ' + error.message, 10, 30);
+                  ctx.fillText('Error loading chart', 10, 30);
                 }
               }
             });
@@ -288,7 +286,6 @@ const Preview: React.FC<PreviewProps> = ({
         iframeRef.current.srcdoc = previewContent;
       }
     } catch (error: any) {
-      console.error('Error rendering Handlebars template:', error);
       setRenderedContent(`
 <html>
   <body style="color: red; padding: 1rem;">

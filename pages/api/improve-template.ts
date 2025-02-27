@@ -52,7 +52,6 @@ Return only the HTML code without any explanation or formatting.`;
     });
   } catch (error: any) {
     notificationService.showErrorNotification(error?.message || 'Failed to improve template');
-    console.error('Error improving template:', error);
     return res.status(500).json({ error: 'Failed to improve template' });
   }
 }
