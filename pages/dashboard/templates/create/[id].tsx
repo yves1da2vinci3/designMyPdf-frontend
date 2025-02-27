@@ -409,17 +409,15 @@ const CreateTemplate: React.FC = () => {
         })
           .then((response) => response.json())
           .then((result) => {
-            if (result.success) {
-              console.log('Image deleted from Cloudinary:', publicIdWithFolder);
-            } else {
-              console.error('Failed to delete image from Cloudinary:', result);
+            if (!result.success) {
+              notificationService.showErrorNotification('Failed to delete image from Cloudinary');
             }
           })
-          .catch((error) => {
-            console.error('Error deleting image from Cloudinary:', error);
+          .catch(() => {
+            notificationService.showErrorNotification('Error deleting image from Cloudinary');
           });
-      } catch (error) {
-        console.error('Error parsing Cloudinary URL:', error);
+      } catch {
+        notificationService.showErrorNotification('Error parsing Cloudinary URL');
       }
     }
 
@@ -445,17 +443,15 @@ const CreateTemplate: React.FC = () => {
           })
             .then((response) => response.json())
             .then((result) => {
-              if (result.success) {
-                console.log('Image deleted from Cloudinary:', publicIdWithFolder);
-              } else {
-                console.error('Failed to delete image from Cloudinary:', result);
+              if (!result.success) {
+                notificationService.showErrorNotification('Failed to delete image from Cloudinary');
               }
             })
-            .catch((error) => {
-              console.error('Error deleting image from Cloudinary:', error);
+            .catch(() => {
+              notificationService.showErrorNotification('Error deleting image from Cloudinary');
             });
         } catch (error) {
-          console.error('Error parsing Cloudinary URL:', error);
+          notificationService.showErrorNotification('Error parsing Cloudinary URL');
         }
       }
     });
@@ -745,14 +741,14 @@ const CreateTemplate: React.FC = () => {
       let currentPageHeight = 0;
       let pageCount = 1;
 
-      for (let i = 0; i < elements.length; i++) {
+      for (let i = 0; i < elements.length; i += 1) {
         const element = elements[i] as HTMLElement;
 
         // If element is a page break, start a new page
         if (element.classList.contains('page-break')) {
           pdf.addPage();
           currentPageHeight = 0;
-          pageCount = pageCount + 1;
+          pageCount += 1;
         } else {
           const elementHeight = getPdfHeight(element);
 
@@ -761,7 +757,7 @@ const CreateTemplate: React.FC = () => {
             // Element doesn't fit, add a new page
             pdf.addPage();
             currentPageHeight = 0;
-            pageCount = pageCount + 1;
+            pageCount += 1;
           }
 
           // Capture this element
@@ -802,7 +798,6 @@ const CreateTemplate: React.FC = () => {
         `Document exported as ${format.toUpperCase()} PDF with ${pageCount} page${pageCount > 1 ? 's' : ''}!`
       );
     } catch (error) {
-      console.error('Error exporting document:', error);
       notificationService.showErrorNotification('Failed to export document. Please try again.');
     }
   };

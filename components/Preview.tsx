@@ -101,7 +101,8 @@ const Preview: React.FC<PreviewProps> = ({
                   // Store in ref for potential cleanup later
                   chartInstancesRef.current.push(chartInstance);
                 } catch (error) {
-                  console.error('Error initializing chart:', error);
+                  // Silently handle chart initialization errors
+                  // We don't want to break the preview if charts fail to load
                 }
               }
             });
