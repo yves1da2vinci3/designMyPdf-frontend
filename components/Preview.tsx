@@ -20,6 +20,27 @@ const Preview: React.FC<PreviewProps> = ({
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  // Define paper dimensions in mm
+  const formatToSize = {
+    a1: { width: 841, height: 1189 },
+    a2: { width: 594, height: 841 },
+    a3: { width: 420, height: 594 },
+    a4: { width: 210, height: 297 },
+    a5: { width: 148, height: 210 },
+    a6: { width: 105, height: 148 },
+  };
+
+  // Get dimensions for the selected format
+  const getSize = () => {
+    const selectedSize = formatToSize[format as keyof typeof formatToSize] || formatToSize.a4;
+    if (isLandscape) {
+      return { width: selectedSize.height, height: selectedSize.width };
+    }
+    return selectedSize;
+  };
+
+  const paperSize = getSize();
+
   useEffect(() => {
     if (iframeRef.current) {
       const iframe = iframeRef.current;
@@ -56,12 +77,16 @@ const Preview: React.FC<PreviewProps> = ({
                 body {
                   margin: 0;
                   font-family: ${fonts[0] || 'system-ui'}, sans-serif;
+                  width: 100%;
+                  height: 100%;
+                  overflow: hidden;
                 }
                 .page {
                   width: 100%;
                   height: 100%;
                   display: flex;
                   flex-direction: column;
+                  box-sizing: border-box;
                 }
               </style>
             </head>
@@ -106,6 +131,7 @@ const Preview: React.FC<PreviewProps> = ({
         height: '100%',
         border: 'none',
         backgroundColor: 'white',
+        aspectRatio: `${paperSize.width} / ${paperSize.height}`,
       }}
       title="Template Preview"
     />

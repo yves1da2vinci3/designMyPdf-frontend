@@ -125,8 +125,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Set appropriate headers
     const contentType =
-      data.format === 'pdf' ? 'application/pdf' :
-      data.format === 'png' ? 'image/png' : 'image/jpeg';
+      data.format === 'pdf'
+        ? 'application/pdf'
+        : data.format === 'png'
+          ? 'image/png'
+          : 'image/jpeg';
 
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `attachment; filename=template.${data.format}`);
@@ -138,4 +141,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Error exporting template:', error);
     return res.status(500).json({ message: 'Error exporting template', error: String(error) });
   }
-} 
+}

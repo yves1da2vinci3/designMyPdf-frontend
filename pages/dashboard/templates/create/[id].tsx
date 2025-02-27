@@ -525,12 +525,12 @@ const CreateTemplate: React.FC = () => {
 
       // Get paper dimensions based on format
       const paperDimensions = {
-        a1: { width: 841, height: 594 },
-        a2: { width: 594, height: 420 },
-        a3: { width: 420, height: 297 },
-        a4: { width: 297, height: 210 },
-        a5: { width: 210, height: 148 },
-        a6: { width: 148, height: 105 },
+        a1: { width: 841, height: 1189 },
+        a2: { width: 594, height: 841 },
+        a3: { width: 420, height: 594 },
+        a4: { width: 210, height: 297 },
+        a5: { width: 148, height: 210 },
+        a6: { width: 105, height: 148 },
       };
 
       // Get dimensions for the selected format
@@ -562,7 +562,7 @@ const CreateTemplate: React.FC = () => {
                 size: ${format} ${isLandScape ? 'landscape' : 'portrait'};
                 margin: 0;
               }
-              body {
+              html, body {
                 margin: 0;
                 padding: 0;
                 font-family: ${fontsSelected[0] || 'system-ui'}, sans-serif;
@@ -576,6 +576,7 @@ const CreateTemplate: React.FC = () => {
                 display: flex;
                 flex-direction: column;
                 box-sizing: border-box;
+                position: relative;
               }
             </style>
           </head>
