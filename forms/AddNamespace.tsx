@@ -30,7 +30,7 @@ export function AddNamespaceForm({ onSubmit, onClose, requestStatus }: AddNamesp
     <Paper maw={'100%'} p={30} radius="md">
       <form
         onSubmit={addNamespaceForm.onSubmit((values: CreateNamespaceDto) =>
-          onSubmit({ ...values })
+          onSubmit({ ...values }),
         )}
       >
         <TextInput

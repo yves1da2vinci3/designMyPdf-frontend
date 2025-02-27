@@ -113,7 +113,7 @@ function generateChartData(type: keyof typeof CHART_TYPES): { labels: string[]; 
 }
 
 function extractVariablesFromTemplate(
-  template: string
+  template: string,
 ): Map<
   string,
   { type: 'array' | 'object' | 'value'; path: string[]; arrayItemStructure?: Record<string, any> }
@@ -155,7 +155,7 @@ function extractVariablesFromTemplate(
             obj[prop] = getExampleValue(prop);
             return obj;
           },
-          {} as Record<string, any>
+          {} as Record<string, any>,
         );
 
         variables.set(rootVar, {
@@ -182,7 +182,7 @@ function buildVariableStructure(
   variables: Map<
     string,
     { type: 'array' | 'object' | 'value'; path: string[]; arrayItemStructure?: Record<string, any> }
-  >
+  >,
 ): Record<string, any> {
   const structure: Record<string, any> = {};
 
@@ -200,7 +200,7 @@ function buildVariableStructure(
               obj[prop] = getExampleValue(prop);
               return obj;
             },
-            {} as Record<string, any>
+            {} as Record<string, any>,
           );
         });
       } else if (value.type === 'object') {
@@ -222,7 +222,7 @@ function buildVariableStructure(
         current = current[segment];
       }
       current[value.path[value.path.length - 1]] = getExampleValue(
-        value.path[value.path.length - 1]
+        value.path[value.path.length - 1],
       );
     }
   }

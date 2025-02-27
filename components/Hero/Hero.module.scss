@@ -1,3 +1,5 @@
+@import '../../styles/utils.scss';
+
 .wrapper {
   position: relative;
   padding-top: rem(80px);
@@ -66,7 +68,7 @@
 }
 
 .controls {
-  margin-top: var(--mantine-spacing-xl) * 1.5;
+  margin-top: calc(var(--mantine-spacing-xl) * 1.5);
 
   @media (max-width: $mantine-breakpoint-sm) {
     margin-top: var(--mantine-spacing-xl);

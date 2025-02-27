@@ -15,7 +15,7 @@ import { useForm } from '@mantine/form';
 import { SignupDto, authApi } from '@/api/authApi';
 import { RequestStatus } from '@/api/request-status.enum';
 import { Links } from '@/constants/routes';
-import classes from './signup.module.css';
+import classes from './signup.module.scss';
 
 export default function Signup() {
   const router = useRouter();

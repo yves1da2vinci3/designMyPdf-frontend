@@ -1,5 +1,5 @@
 import { Container, Group, Paper, SimpleGrid, Text } from '@mantine/core';
-import classes from './Stats.module.css';
+import classes from './Stats.module.scss';
 
 const data = [
   {

@@ -129,8 +129,8 @@ const Preview: React.FC<PreviewProps> = ({
             (font) =>
               `<link href="https://fonts.googleapis.com/css2?family=${font.replace(
                 / /g,
-                '+'
-              )}&display=swap" rel="stylesheet">`
+                '+',
+              )}&display=swap" rel="stylesheet">`,
           )
           .join('');
 

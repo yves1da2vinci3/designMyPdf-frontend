@@ -29,7 +29,7 @@ import {
 } from '@tabler/icons-react';
 import { Logo } from '@/components/AppLogo/AppLogo';
 import { Links } from '@/constants/routes';
-import classes from './NavBar.module.css';
+import classes from './NavBar.module.scss';
 
 const mockdata = [
   {

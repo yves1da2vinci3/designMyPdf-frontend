@@ -1,6 +1,6 @@
 import { Container, Text, SimpleGrid, rem, Title } from '@mantine/core';
 import { IconPalette, IconComponents, IconDeviceLaptop, IconBrandGit } from '@tabler/icons-react';
-import classes from './Features.module.css';
+import classes from './Features.module.scss';
 
 const features = [
   {

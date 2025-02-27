@@ -299,7 +299,7 @@ const CreateTemplate: React.FC = () => {
           position.lineNumber,
           position.column,
           position.lineNumber,
-          position.column
+          position.column,
         );
         const id = { major: 1, minor: 1 }; // unique identifier for the op
         let text = '';
@@ -558,7 +558,7 @@ const CreateTemplate: React.FC = () => {
       notificationService.showSuccessNotification('Template published to marketplace successfully');
     } catch (error: any) {
       notificationService.showErrorNotification(
-        error?.message || 'Error publishing to marketplace'
+        error?.message || 'Error publishing to marketplace',
       );
     } finally {
       setIsPublishing(false);
@@ -571,7 +571,7 @@ const CreateTemplate: React.FC = () => {
 
       // Show loading notification
       notificationService.showInformationNotification(
-        `Exporting document as ${format.toUpperCase()}...`
+        `Exporting document as ${format.toUpperCase()}...`,
       );
 
       // Create a hidden iframe to render the template
@@ -617,8 +617,8 @@ const CreateTemplate: React.FC = () => {
                 (font) =>
                   `<link href="https://fonts.googleapis.com/css2?family=${font.replace(
                     / /g,
-                    '+'
-                  )}&display=swap" rel="stylesheet">`
+                    '+',
+                  )}&display=swap" rel="stylesheet">`,
               )
               .join('')}
             <script src="https://cdn.tailwindcss.com"></script>
@@ -779,7 +779,7 @@ const CreateTemplate: React.FC = () => {
             10, // X position (10mm margin)
             10 + currentPageHeight, // Y position (10mm margin + current height)
             imgWidth,
-            imgHeight
+            imgHeight,
           );
 
           // Update current page height
@@ -795,7 +795,7 @@ const CreateTemplate: React.FC = () => {
 
       // Show success notification
       notificationService.showSuccessNotification(
-        `Document exported as ${format.toUpperCase()} PDF with ${pageCount} page${pageCount > 1 ? 's' : ''}!`
+        `Document exported as ${format.toUpperCase()} PDF with ${pageCount} page${pageCount > 1 ? 's' : ''}!`,
       );
     } catch (error) {
       notificationService.showErrorNotification('Failed to export document. Please try again.');
@@ -1548,7 +1548,7 @@ const CreateTemplate: React.FC = () => {
                                 position.lineNumber,
                                 position.column,
                                 position.lineNumber,
-                                position.column
+                                position.column,
                               );
 
                               const op = {

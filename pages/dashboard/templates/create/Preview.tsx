@@ -12,7 +12,7 @@ interface PreviewProps {
   setTemplateContent?: (string: string) => void;
 }
 
-const importFontCreation = (fonts: string[]) => {
+function importFontCreation(fonts: string[]) {
   try {
     const encodedFont = encodeURIComponent(fonts[0]);
     const fontUrl = `https://fonts.googleapis.com/css2?family=${encodedFont}:wght@100;200;300;400;500;600;700;800;900${fonts
@@ -20,25 +20,26 @@ const importFontCreation = (fonts: string[]) => {
       .map((font) => `&display=swap&family=${encodeURIComponent(font)}`)}`;
     return `<link key="font-import" rel="stylesheet" href="${fontUrl}" />`;
   } catch (error) {
-    console.error('Error generating font import:', error);
     return '';
   }
-};
+}
 
-const fontCssCreation = (fonts: string[]) => `
+function fontCssCreation(fonts: string[]) {
+  return `
     body {
       font-family: '${fonts[0]}', sans-serif;
     }
   `;
+}
 
-const Preview: React.FC<PreviewProps> = ({
+function Preview({
   htmlContent,
   format = 'a4',
   data = {},
   fonts,
   isLandscape = false,
   setTemplateContent,
-}) => {
+}: PreviewProps) {
   const [renderedContent, setRenderedContent] = useState('');
   const [fontImport, setFontImport] = useState<string>('');
   const [fontStyle, setFontStyle] = useState<string>('');
@@ -79,8 +80,8 @@ const Preview: React.FC<PreviewProps> = ({
       const chartScript = `
         (function() {
           function initializeCharts() {
-            if (typeof Chart === 'undefined') {
-              console.error('Chart.js not loaded');
+            if (!window.Chart) {
+              // Chart.js library not loaded
               return;
             }
             var chartElements = document.querySelectorAll('canvas[data-chart-type]');
@@ -90,7 +91,7 @@ const Preview: React.FC<PreviewProps> = ({
                 var rawData = element.getAttribute('data-chart-data');
                 
                 if (!type || !rawData) {
-                  console.error('Missing chart type or data attributes');
+                  // Missing required chart attributes
                   return;
                 }
 
@@ -99,7 +100,7 @@ const Preview: React.FC<PreviewProps> = ({
                   // The data is already JSON stringified in the attribute
                   chartData = JSON.parse(rawData);
                 } catch (e) {
-                  console.error('Invalid chart data JSON:', e);
+                  // Invalid chart data format
                   return;
                 }
 
@@ -164,12 +165,11 @@ const Preview: React.FC<PreviewProps> = ({
                 // Store chart instance for cleanup
                 element.chart = chartInstance;
               } catch (error) {
-                console.error('Error initializing chart:', error);
                 var ctx = element.getContext('2d');
                 if (ctx) {
                   ctx.fillStyle = '#FF4444';
                   ctx.font = '14px Arial';
-                  ctx.fillText('Error loading chart: ' + error.message, 10, 30);
+                  ctx.fillText('Error loading chart', 10, 30);
                 }
               }
             });
@@ -288,7 +288,6 @@ const Preview: React.FC<PreviewProps> = ({
         iframeRef.current.srcdoc = previewContent;
       }
     } catch (error: any) {
-      console.error('Error rendering Handlebars template:', error);
       setRenderedContent(`
 <html>
   <body style="color: red; padding: 1rem;">
@@ -355,6 +354,6 @@ const Preview: React.FC<PreviewProps> = ({
       </div>
     </div>
   );
-};
+}
 
 export default Preview;

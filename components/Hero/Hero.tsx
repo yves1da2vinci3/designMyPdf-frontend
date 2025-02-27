@@ -1,6 +1,6 @@
 import { Box, Container, Title, Text, Button, Group, Stack, rem } from '@mantine/core';
 import { IconFileText, IconPencil } from '@tabler/icons-react';
-import classes from './Hero.module.css';
+import classes from './Hero.module.scss';
 
 const Hero = () => (
   <Container size="lg" className={classes.wrapper}>

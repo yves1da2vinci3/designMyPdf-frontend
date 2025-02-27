@@ -1,3 +1,5 @@
+@import '../styles/utils.scss';
+
 .navbar {
   height: 100vh;
   width: rem(300px);
@@ -42,6 +44,7 @@
     background-color: var(--mantine-color-blue-7);
     color: var(--mantine-color-white);
     cursor: pointer;
+
     .linkIcon {
       color: var(--mantine-color-white);
     }

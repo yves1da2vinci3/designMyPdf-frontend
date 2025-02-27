@@ -9,7 +9,7 @@ import {
   IconUserCircle,
   IconBoxSeam,
 } from '@tabler/icons-react';
-import classes from './DashboardNav.module.css';
+import classes from './DashboardNav.module.scss';
 import { useRouter } from 'next/router';
 import { authApi } from '@/api/authApi';
 import { Logo } from '@/components/AppLogo/AppLogo';

@@ -21,7 +21,7 @@ interface ImageUploaderProps {
   onClose: () => void;
 }
 
-const ImageUploader: React.FC<ImageUploaderProps> = ({ onGenerate, onClose }) => {
+function ImageUploader({ onGenerate, onClose }: ImageUploaderProps) {
   const [files, setFiles] = useState<FileWithPath[]>([]);
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
   const [prompt, setPrompt] = useState('');
@@ -64,7 +64,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onGenerate, onClose }) =>
       }
     } catch (error: any) {
       notificationService.showErrorNotification(error?.message || 'Error uploading images');
-      console.error('Error uploading images:', error);
     } finally {
       setIsUploading(false);
     }
@@ -98,7 +97,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onGenerate, onClose }) =>
       }
     } catch (error: any) {
       notificationService.showErrorNotification(error?.message || 'Error generating template');
-      console.error('Error generating template:', error);
     } finally {
       setIsGenerating(false);
     }
@@ -314,6 +312,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onGenerate, onClose }) =>
       )}
     </Stack>
   );
-};
+}
 
 export default ImageUploader;

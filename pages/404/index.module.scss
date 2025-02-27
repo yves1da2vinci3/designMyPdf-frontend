@@ -1,0 +1,57 @@
+@import '../../styles/utils.scss';
+
+.root {
+  padding-top: rem(80px);
+  padding-bottom: rem(80px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.title {
+  font-weight: 900;
+  font-size: rem(34px);
+  margin-bottom: var(--mantine-spacing-md);
+  font-family: 'Greycliff CF', var(--mantine-font-family);
+}
+
+/* Media query for small screens */
+@media (max-width: $mantine-breakpoint-sm) {
+  .title {
+    font-size: rem(32px);
+  }
+}
+
+.control {
+  /* Control styles */
+}
+
+/* Media query for small screens */
+@media (max-width: $mantine-breakpoint-sm) {
+  .control {
+    width: 100%;
+  }
+}
+
+.mobileImage {
+  /* Mobile image styles */
+}
+
+/* Media query for medium screens and up */
+@media (min-width: 48em) {
+  .mobileImage {
+    display: none;
+  }
+}
+
+.desktopImage {
+  /* Desktop image styles */
+}
+
+/* Media query for small screens */
+@media (max-width: 47.99em) {
+  .desktopImage {
+    display: none;
+  }
+}

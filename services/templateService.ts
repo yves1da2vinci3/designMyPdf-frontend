@@ -70,7 +70,7 @@ export const templateService = {
       filteredTemplates = filteredTemplates.filter(
         (template) =>
           template.title.toLowerCase().includes(search.toLowerCase()) ||
-          template.description.toLowerCase().includes(search.toLowerCase())
+          template.description.toLowerCase().includes(search.toLowerCase()),
       );
     }
 

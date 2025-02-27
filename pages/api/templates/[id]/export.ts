@@ -52,8 +52,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               (font) =>
                 `<link href="https://fonts.googleapis.com/css2?family=${font.replace(
                   / /g,
-                  '+'
-                )}&display=swap&text=${encodeURIComponent(sampleText)}" rel="stylesheet">`
+                  '+',
+                )}&display=swap&text=${encodeURIComponent(sampleText)}" rel="stylesheet">`,
             )
             .join('')}
           <script src="https://cdn.tailwindcss.com"></script>
@@ -180,7 +180,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.send(output);
     return res.status(200).end();
   } catch (error) {
-    console.error('Error exporting template:', error);
     return res.status(500).json({ message: 'Error exporting template', error: String(error) });
   }
 }

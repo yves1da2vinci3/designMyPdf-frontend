@@ -30,14 +30,13 @@ async function cleanupOldImages() {
       // Delete images from Cloudinary
       for (const publicId of idsToDelete) {
         await cloudinary.uploader.destroy(publicId);
-        console.log(`Deleted old image: ${publicId}`);
       }
 
       // Update the array to only keep the most recent 20
       uploadedImageIds.splice(0, uploadedImageIds.length - 20);
     }
   } catch (error) {
-    console.error('Error cleaning up old images:', error);
+    // Silent error handling for background cleanup process
   }
 }
 
@@ -68,7 +67,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return await new Promise((resolve) => {
       form.parse(req, async (err, fields, files) => {
         if (err) {
-          console.error('Error parsing form:', err);
           res.status(500).json({ error: 'Error uploading files' });
           return resolve(undefined);
         }
@@ -107,7 +105,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 public_id: result.public_id,
               };
             } catch (uploadError) {
-              console.error('Error uploading to Cloudinary:', uploadError);
+              // Handle upload error silently and return null
               return null;
             }
           });
@@ -119,7 +117,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           try {
             fs.rmdirSync(uploadDir);
           } catch (cleanupError) {
-            console.error('Error cleaning up temp directory:', cleanupError);
+            // Silent error handling for directory cleanup
           }
 
           // Run cleanup to ensure we don't exceed storage limits
@@ -132,14 +130,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           });
           return resolve(undefined);
         } catch (error) {
-          console.error('Error processing uploads:', error);
           res.status(500).json({ error: 'Error processing uploads' });
           return resolve(undefined);
         }
       });
     });
   } catch (error) {
-    console.error('Error in upload handler:', error);
     return res.status(500).json({ error: 'Server error' });
   }
 }
