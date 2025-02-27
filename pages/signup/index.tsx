@@ -14,7 +14,7 @@ import {
 import { useForm } from '@mantine/form';
 import { SignupDto, authApi } from '@/api/authApi';
 import { RequestStatus } from '@/api/request-status.enum';
-import { Links } from '@/components/Navbar/Navbar';
+import { Links } from '@/constants/routes';
 import classes from './signup.module.css';
 
 export default function Signup() {

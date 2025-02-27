@@ -17,7 +17,7 @@ import { useForm } from '@mantine/form';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { ForgotPasswordDto, authApi } from '@/api/authApi';
 import { RequestStatus } from '@/api/request-status.enum';
-import { Links } from '@/components/Navbar/Navbar';
+import { Links } from '@/constants/routes';
 import classes from './forgotPassword.module.css';
 
 export default function ForgotPassword() {

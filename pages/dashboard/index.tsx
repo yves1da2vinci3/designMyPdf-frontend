@@ -4,7 +4,7 @@ import { Button, Center, Group, Loader, Select, Stack, Title, rem } from '@manti
 import { BarChart } from '@mantine/charts';
 import { LogStatDTO, logApi } from '@/api/logApi';
 import { RequestStatus } from '@/api/request-status.enum';
-import { Links } from '@/components/Navbar/Navbar';
+import { Links } from '@/constants/routes';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import getFilledStats from '@/utils/filledStats';
 

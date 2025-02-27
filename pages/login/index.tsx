@@ -16,7 +16,7 @@ import {
 import { useForm } from '@mantine/form';
 import { LoginDto, authApi } from '@/api/authApi';
 import { RequestStatus } from '@/api/request-status.enum';
-import { Links } from '@/components/Navbar/Navbar';
+import { Links } from '@/constants/routes';
 import styles from './login.module.css';
 
 export default function Login() {

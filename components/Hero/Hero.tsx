@@ -2,8 +2,7 @@ import { Box, Container, Title, Text, Button, Group, Stack, rem } from '@mantine
 import { IconFileText, IconPencil } from '@tabler/icons-react';
 import classes from './Hero.module.css';
 
-export function Hero() {
-  return (
+const Hero = () => (
     <Container size="lg" className={classes.wrapper}>
       <Box className={classes.inner}>
         <div className={classes.shapes}>
@@ -63,5 +62,6 @@ export function Hero() {
         </Stack>
       </Box>
     </Container>
-  );
-}
+);
+
+export default Hero;
