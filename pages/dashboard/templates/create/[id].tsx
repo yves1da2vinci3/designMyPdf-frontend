@@ -388,12 +388,80 @@ const CreateTemplate: React.FC = () => {
     }
   };
 
-  const clearImages = () => {
-    setUploadedUrls([]);
+  const removeUploadedImage = (index: number) => {
+    const imageToRemove = uploadedUrls[index];
+    
+    // Extract the public ID from the Cloudinary URL
+    if (typeof imageToRemove === 'string' && imageToRemove.includes('cloudinary.com')) {
+      try {
+        // The URL format is typically: https://res.cloudinary.com/cloud-name/image/upload/v1234567890/folder/public_id.ext
+        const urlParts = imageToRemove.split('/');
+        const fileNameWithExt = urlParts[urlParts.length - 1];
+        const publicIdWithFolder = `${urlParts[urlParts.length - 2]}/${fileNameWithExt.split('.')[0]}`;
+        
+        // Call the API to delete the image from Cloudinary
+        fetch('/api/delete-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ publicId: publicIdWithFolder }),
+        })
+          .then(response => response.json())
+          .then(result => {
+            if (result.success) {
+              console.log('Image deleted from Cloudinary:', publicIdWithFolder);
+            } else {
+              console.error('Failed to delete image from Cloudinary:', result);
+            }
+          })
+          .catch(error => {
+            console.error('Error deleting image from Cloudinary:', error);
+          });
+      } catch (error) {
+        console.error('Error parsing Cloudinary URL:', error);
+      }
+    }
+    
+    // Remove from UI regardless of deletion success
+    setUploadedUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const removeUploadedImage = (index: number) => {
-    setUploadedUrls((prev) => prev.filter((_, i) => i !== index));
+  const clearImages = () => {
+    // Delete all images from Cloudinary
+    uploadedUrls.forEach((url) => {
+      if (typeof url === 'string' && url.includes('cloudinary.com')) {
+        try {
+          const urlParts = url.split('/');
+          const fileNameWithExt = urlParts[urlParts.length - 1];
+          const publicIdWithFolder = `${urlParts[urlParts.length - 2]}/${fileNameWithExt.split('.')[0]}`;
+          
+          fetch('/api/delete-image', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ publicId: publicIdWithFolder }),
+          })
+            .then(response => response.json())
+            .then(result => {
+              if (result.success) {
+                console.log('Image deleted from Cloudinary:', publicIdWithFolder);
+              } else {
+                console.error('Failed to delete image from Cloudinary:', result);
+              }
+            })
+            .catch(error => {
+              console.error('Error deleting image from Cloudinary:', error);
+            });
+        } catch (error) {
+          console.error('Error parsing Cloudinary URL:', error);
+        }
+      }
+    });
+    
+    // Clear the UI
+    setUploadedUrls([]);
   };
 
   const generateTemplateFromPrompt = async (): Promise<void> => {

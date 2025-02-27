@@ -1,8 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import formidable from 'formidable';
+import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
 
 // Disable the default body parser to handle form data
 export const config = {
@@ -11,10 +10,40 @@ export const config = {
   },
 };
 
-// Ensure upload directory exists
-const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'your-cloud-name',
+  api_key: process.env.CLOUDINARY_API_KEY || 'your-api-key',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'your-api-secret',
+  secure: true,
+});
+
+// Store uploaded image public IDs for later cleanup
+const uploadedImageIds: string[] = [];
+
+// Function to clean up old images (keep only the most recent 20)
+async function cleanupOldImages() {
+  try {
+    if (uploadedImageIds.length > 20) {
+      const idsToDelete = uploadedImageIds.slice(0, uploadedImageIds.length - 20);
+      
+      // Delete images from Cloudinary
+      for (const publicId of idsToDelete) {
+        await cloudinary.uploader.destroy(publicId);
+        console.log(`Deleted old image: ${publicId}`);
+      }
+      
+      // Update the array to only keep the most recent 20
+      uploadedImageIds.splice(0, uploadedImageIds.length - 20);
+    }
+  } catch (error) {
+    console.error('Error cleaning up old images:', error);
+  }
+}
+
+// Schedule cleanup every hour
+if (typeof setInterval !== 'undefined') {
+  setInterval(cleanupOldImages, 60 * 60 * 1000); // Every hour
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -23,11 +52,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    // Create a temporary directory for uploads
+    const uploadDir = `/tmp/uploads-${Date.now()}`;
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
     const form = formidable({
       uploadDir,
       keepExtensions: true,
       maxFiles: 5,
-      maxFileSize: 10 * 1024 * 1024, // 10MB
+      maxFileSize: 5 * 1024 * 1024, // 5MB
     });
 
     return await new Promise((resolve) => {
@@ -41,22 +76,59 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         try {
           const uploadedFiles = files.files;
           const fileArray = Array.isArray(uploadedFiles) ? uploadedFiles : [uploadedFiles];
-
-          const uploadedUrls = fileArray.map((file) => {
+          
+          // Upload files to Cloudinary
+          const uploadPromises = fileArray.map(async (file) => {
             if (!file) return null;
-
-            // Generate a unique filename
-            const uniqueFilename = `${uuidv4()}${path.extname(file.originalFilename || '')}`;
-            const finalPath = path.join(uploadDir, uniqueFilename);
-
-            // Move the file to the final location with the unique name
-            fs.renameSync(file.filepath, finalPath);
-
-            // Return the public URL
-            return `/uploads/${uniqueFilename}`;
-          }).filter(Boolean);
-
-          res.status(200).json({ urls: uploadedUrls });
+            
+            try {
+              // Upload to Cloudinary with auto-expiration
+              const result = await cloudinary.uploader.upload(file.filepath, {
+                folder: 'designmypdf',
+                resource_type: 'image',
+                quality: 'auto:good', // Optimize quality
+                fetch_format: 'auto', // Auto-select optimal format
+                transformation: [
+                  { width: 1200, crop: 'limit' }, // Limit max width
+                  { quality: 'auto:good' }, // Optimize quality
+                ],
+              });
+              
+              // Store the public_id for later cleanup
+              if (result.public_id) {
+                uploadedImageIds.push(result.public_id);
+              }
+              
+              // Delete the temporary file
+              fs.unlinkSync(file.filepath);
+              
+              return {
+                url: result.secure_url,
+                public_id: result.public_id,
+              };
+            } catch (uploadError) {
+              console.error('Error uploading to Cloudinary:', uploadError);
+              return null;
+            }
+          });
+          
+          const uploadResults = (await Promise.all(uploadPromises)).filter(Boolean);
+          const uploadedUrls = uploadResults.map(result => result?.url).filter(Boolean);
+          
+          // Clean up temporary directory
+          try {
+            fs.rmdirSync(uploadDir);
+          } catch (cleanupError) {
+            console.error('Error cleaning up temp directory:', cleanupError);
+          }
+          
+          // Run cleanup to ensure we don't exceed storage limits
+          cleanupOldImages();
+          
+          res.status(200).json({ 
+            urls: uploadedUrls,
+            message: 'Images uploaded successfully. They will be automatically deleted after usage to preserve storage.',
+          });
           return resolve(undefined);
         } catch (error) {
           console.error('Error processing uploads:', error);
