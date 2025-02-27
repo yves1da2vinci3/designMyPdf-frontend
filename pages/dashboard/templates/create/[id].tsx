@@ -17,6 +17,8 @@ import {
   ScrollArea,
   SimpleGrid,
   Image,
+  Menu,
+  Divider,
 } from '@mantine/core';
 import { useRouter, useParams } from 'next/navigation';
 import { useDisclosure } from '@mantine/hooks';
@@ -36,6 +38,9 @@ import {
   IconUpload,
   IconX,
   IconTrash,
+  IconChevronRight,
+  IconFileExport,
+  IconDotsVertical,
 } from '@tabler/icons-react';
 import { useMonaco } from '@monaco-editor/react';
 import IDE from './CodeEditor';
@@ -211,6 +216,8 @@ const CreateTemplate: React.FC = () => {
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const openRef = useRef<() => void>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'pdf' | 'png' | 'jpg'>('pdf');
 
   const fetchTemplate = async () => {
     try {
@@ -495,6 +502,153 @@ const CreateTemplate: React.FC = () => {
     }
   };
 
+  const exportPdf = async (): Promise<void> => {
+    try {
+      if (!template) return;
+
+      // Show loading notification
+      notificationService.showInformationNotification('Exporting document...');
+
+      // Create a hidden iframe to render the template
+      const iframe = document.createElement('iframe');
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.position = 'absolute';
+      iframe.style.top = '-9999px';
+      document.body.appendChild(iframe);
+
+      // Generate HTML content
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            ${fontsSelected
+              .map(
+                (font) =>
+                  `<link href="https://fonts.googleapis.com/css2?family=${font.replace(
+                    / /g,
+                    '+'
+                  )}&display=swap" rel="stylesheet">`
+              )
+              .join('')}
+            <script src="https://cdn.tailwindcss.com"></script>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <style>
+              @page {
+                size: ${format} ${isLandScape ? 'landscape' : 'portrait'};
+                margin: 0;
+              }
+              body {
+                margin: 0;
+                font-family: ${fontsSelected[0] || 'system-ui'}, sans-serif;
+              }
+              .page {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="page">
+              ${code}
+            </div>
+            <script>
+              // Initialize charts if any
+              document.querySelectorAll('canvas[data-chart-type]').forEach(canvas => {
+                const type = canvas.getAttribute('data-chart-type');
+                const data = JSON.parse(canvas.getAttribute('data-chart-data'));
+                new Chart(canvas, {
+                  type,
+                  data,
+                  options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                  }
+                });
+              });
+              // Signal that content is loaded
+              window.parent.postMessage('contentLoaded', '*');
+            </script>
+          </body>
+        </html>
+      `;
+
+      // Set the content to the iframe
+      const iframeDoc = iframe.contentWindow?.document;
+      if (!iframeDoc) {
+        throw new Error('Could not access iframe document');
+      }
+
+      iframeDoc.open();
+      iframeDoc.write(htmlContent);
+      iframeDoc.close();
+
+      // Wait for content to be fully loaded
+      await new Promise<void>((resolve) => {
+        window.addEventListener('message', function handler(event) {
+          if (event.data === 'contentLoaded') {
+            window.removeEventListener('message', handler);
+            setTimeout(resolve, 1000); // Give charts a moment to render
+          }
+        });
+      });
+
+      // Use html2canvas and jsPDF for export
+      const { default: html2canvas } = await import('html2canvas');
+      const { default: JsPDF } = await import('jspdf');
+
+      const contentElement = iframeDoc.body;
+
+      if (exportFormat === 'pdf') {
+        const canvas = await html2canvas(contentElement, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new JsPDF({
+          orientation: isLandScape ? 'landscape' : 'portrait',
+          unit: 'mm',
+          format,
+        });
+
+        const imgWidth = pdf.internal.pageSize.getWidth();
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        pdf.save(`${template.name || 'template'}.pdf`);
+      } else {
+        // For PNG or JPG, just use canvas directly
+        const canvas = await html2canvas(contentElement, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+        });
+
+        const link = document.createElement('a');
+        link.download = `${template.name || 'template'}.${exportFormat}`;
+        link.href = canvas.toDataURL(`image/${exportFormat === 'jpg' ? 'jpeg' : exportFormat}`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      // Clean up
+      document.body.removeChild(iframe);
+
+      // Show success notification
+      notificationService.showSuccessNotification('Document exported successfully!');
+    } catch (error) {
+      console.error('Error exporting document:', error);
+      notificationService.showErrorNotification('Failed to export document. Please try again.');
+    }
+  };
+
   return (
     <Stack style={{ overflow: 'hidden' }} gap={0}>
       {/* Manage variable */}
@@ -535,8 +689,8 @@ const CreateTemplate: React.FC = () => {
       >
         <Stack gap="xl" p="xl">
           <Text size="sm" c="dimmed">
-            Describe your template and the AI will generate it along with suggested variables.
-            You can also upload images to help the AI understand your design requirements.
+            Describe your template and the AI will generate it along with suggested variables. You
+            can also upload images to help the AI understand your design requirements.
           </Text>
 
           {/* Image Upload Section */}
@@ -829,37 +983,51 @@ const CreateTemplate: React.FC = () => {
               AI Generate
             </Button>
           </Tooltip>
-          <Button
-            onClick={() => uploadTemplate(templateContent)}
-            leftSection={<IconDownload size={16} />}
-            variant="light"
-            color="gray"
-            styles={{
-              root: {
-                transition: 'all 0.2s ease',
-                '&:hover': { transform: 'translateY(-1px)' },
-              },
-            }}
-          >
-            Download
-          </Button>
-          <Tooltip label="Publish to Marketplace">
-            <Button
-              onClick={publishToMarketplace}
-              loading={isPublishing}
-              leftSection={<IconShoppingCart size={16} />}
-              variant="light"
-              color="green"
-              styles={{
-                root: {
-                  transition: 'all 0.2s ease',
-                  '&:hover': { transform: 'translateY(-1px)' },
-                },
-              }}
-            >
-              Publish to Marketplace
-            </Button>
-          </Tooltip>
+
+          {/* Actions Menu */}
+          <Menu shadow="md" width={200}>
+            <Menu.Target>
+              <Button
+                variant="light"
+                color="gray"
+                leftSection={<IconDotsVertical size={16} />}
+                styles={{
+                  root: {
+                    transition: 'all 0.2s ease',
+                    '&:hover': { transform: 'translateY(-1px)' },
+                  },
+                }}
+              >
+                Actions
+              </Button>
+            </Menu.Target>
+
+            <Menu.Dropdown>
+              <Menu.Label>Document</Menu.Label>
+              <Menu.Item
+                leftSection={<IconDownload size={16} />}
+                onClick={() => uploadTemplate(templateContent)}
+              >
+                Download Template
+              </Menu.Item>
+
+              <Menu.Item leftSection={<IconFileExport size={16} />} onClick={exportPdf}>
+                Export as PDF
+              </Menu.Item>
+
+              <Divider />
+
+              <Menu.Label>Marketplace</Menu.Label>
+              <Menu.Item
+                leftSection={<IconShoppingCart size={16} />}
+                onClick={publishToMarketplace}
+                disabled={isPublishing}
+              >
+                Publish to Marketplace
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+
           <Button
             onClick={updateTemplate}
             variant="filled"
@@ -886,271 +1054,346 @@ const CreateTemplate: React.FC = () => {
           {/* Sidebar */}
           <Stack
             component={ScrollArea}
-            w="18%"
-            p="xl"
+            w={sidebarCollapsed ? '40px' : '18%'}
+            p={sidebarCollapsed ? 'xs' : 'xl'}
             h="100%"
             bg="#1A1B1E"
-            style={{ borderRight: '1px solid #373A40' }}
+            style={{
+              borderRight: '1px solid #373A40',
+              transition: 'width 0.3s ease, padding 0.3s ease',
+              overflow: 'hidden',
+              flexShrink: 0,
+            }}
             gap="xl"
           >
-            <Box>
-              <Text size="sm" fw={600} c="white" mb="md" fs="uppercase">
-                Template settings
-              </Text>
-
-              {/* Paper size and orientation */}
-              <Group align="center" mb="lg">
-                <Select
-                  size="sm"
-                  label="Paper Size"
-                  w={120}
-                  onChange={(_, selectedFormat) => {
-                    const formatValue = (selectedFormat.value as FormatType) || DEFAULT_FORMAT;
-                    setFormat(formatValue);
-                  }}
-                  defaultValue={DEFAULT_FORMAT}
-                  data={[
-                    { label: 'A1', value: 'a1' },
-                    { label: 'A2', value: 'a2' },
-                    { label: 'A3', value: 'a3' },
-                    { label: 'A4', value: 'a4' },
-                    { label: 'A5', value: 'a5' },
-                    { label: 'A6', value: 'a6' },
-                  ]}
-                  styles={{
-                    root: { marginBottom: 0 },
-                    input: {
-                      backgroundColor: '#25262B',
-                      border: '1px solid #373A40',
-                      color: 'white',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        borderColor: '#3B82F6',
-                      },
-                    },
-                    label: {
-                      color: '#909296',
-                      fontSize: '0.75rem',
-                      marginBottom: '0.25rem',
-                    },
-                    dropdown: {
-                      backgroundColor: '#25262B',
-                      border: '1px solid #373A40',
-                    },
-                    option: {
-                      '&[data-selected]': {
-                        '&, &:hover': {
-                          backgroundColor: '#3B82F6',
-                          color: 'white',
-                        },
-                      },
-                    },
-                  }}
-                />
-                <Checkbox
-                  checked={isLandScape}
-                  onChange={(event) => setIsLandScape(event.currentTarget.checked)}
-                  label="Landscape"
-                  styles={{
-                    label: {
-                      color: '#909296',
-                    },
-                  }}
-                />
-              </Group>
-            </Box>
-
-            {/* Variables section */}
-            <Box>
-              <Group justify="space-between" mb="xs">
-                <Text size="sm" fw={600} c="white" fs="uppercase">
-                  Variables
-                </Text>
-                <Tooltip label="Add variables">
-                  <ActionIcon
-                    variant="subtle"
-                    color="blue"
-                    onClick={handleAddVariable}
-                    style={{
-                      transition: 'all 0.2s ease',
-                      '&:hover': { transform: 'scale(1.1)' },
-                    }}
-                  >
-                    <IconPlus size={16} />
-                  </ActionIcon>
-                </Tooltip>
-              </Group>
-              <Text size="xs" c="dimmed" mb="md">
-                How to use variables?
-              </Text>
-
-              {/* Variables list */}
-              <Box
+            {sidebarCollapsed ? (
+              <ActionIcon
+                variant="subtle"
+                color="blue"
+                onClick={() => setSidebarCollapsed(false)}
                 style={{
-                  maxHeight: '200px',
-                  overflowY: 'auto',
-                  padding: '0.5rem',
-                  backgroundColor: '#25262B',
-                  borderRadius: '8px',
+                  marginTop: '10px',
+                  transition: 'all 0.2s ease',
                 }}
               >
-                <Group gap="xs" style={{ flexWrap: 'wrap' }}>
-                  {Object.entries(variables).map(([varName, value]) => {
-                    let type = 'object';
-                    if (Array.isArray(value)) {
-                      type = 'array';
-                    } else if (typeof value === 'object' && value !== null) {
-                      type = 'object';
-                    } else {
-                      type = 'key-value';
-                    }
-                    return <VariableBadge key={varName} varName={varName} type={type} />;
-                  })}
-                </Group>
-              </Box>
-            </Box>
-
-            {/* Stylesheet section */}
-            <Box>
-              <Text size="sm" fw={600} c="white" mb="md" fs="uppercase">
-                Stylesheet
-              </Text>
-              <Select
-                value="tailwind"
-                data={[{ value: 'tailwind', label: 'Tailwind CSS' }]}
-                styles={{
-                  input: {
-                    backgroundColor: '#25262B',
-                    border: '1px solid #373A40',
-                    color: 'white',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      borderColor: '#3B82F6',
-                    },
-                  },
-                  dropdown: {
-                    backgroundColor: '#25262B',
-                    border: '1px solid #373A40',
-                  },
-                  option: {
-                    '&[data-selected]': {
-                      '&, &:hover': {
-                        backgroundColor: '#3B82F6',
-                        color: 'white',
-                      },
-                    },
-                  },
-                }}
-              />
-            </Box>
-
-            {/* Fonts section */}
-            <Box>
-              <Group justify="space-between" mb="xs">
-                <Text size="sm" fw={600} c="white" fs="uppercase">
-                  Fonts
-                </Text>
-                <Tooltip label="Add font">
+                <IconChevronRight size={20} />
+              </ActionIcon>
+            ) : (
+              <>
+                <Group justify="space-between">
+                  <Text size="sm" fw={600} c="white" mb="md" fs="uppercase">
+                    Template settings
+                  </Text>
                   <ActionIcon
                     variant="subtle"
                     color="blue"
-                    onClick={addFont}
+                    onClick={() => setSidebarCollapsed(true)}
                     style={{
                       transition: 'all 0.2s ease',
-                      '&:hover': { transform: 'scale(1.1)' },
                     }}
                   >
-                    <IconPlus size={16} />
+                    <IconChevronLeft size={16} />
                   </ActionIcon>
-                </Tooltip>
-              </Group>
-              <Stack gap="xs">
-                {fontsSelected.map((font, index) => (
-                  <Group key={font} align="center">
-                    <Select
-                      size="sm"
-                      value={font}
-                      onChange={(value) => handleChangeFont({ value: value || '' }, index)}
-                      data={fonts}
-                      style={{ flex: 1 }}
-                      styles={{
-                        input: {
-                          backgroundColor: '#25262B',
-                          border: '1px solid #373A40',
-                          color: 'white',
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            borderColor: '#3B82F6',
+                </Group>
+
+                {/* Paper size and orientation */}
+                <Group align="center" mb="lg">
+                  <Select
+                    size="sm"
+                    label="Paper Size"
+                    w={120}
+                    onChange={(_, selectedFormat) => {
+                      const formatValue = (selectedFormat.value as FormatType) || DEFAULT_FORMAT;
+                      setFormat(formatValue);
+                    }}
+                    defaultValue={DEFAULT_FORMAT}
+                    data={[
+                      { label: 'A1', value: 'a1' },
+                      { label: 'A2', value: 'a2' },
+                      { label: 'A3', value: 'a3' },
+                      { label: 'A4', value: 'a4' },
+                      { label: 'A5', value: 'a5' },
+                      { label: 'A6', value: 'a6' },
+                    ]}
+                    styles={{
+                      root: { marginBottom: 0 },
+                      input: {
+                        backgroundColor: '#25262B',
+                        border: '1px solid #373A40',
+                        color: 'white',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          borderColor: '#3B82F6',
+                        },
+                      },
+                      label: {
+                        color: '#909296',
+                        fontSize: '0.75rem',
+                        marginBottom: '0.25rem',
+                      },
+                      dropdown: {
+                        backgroundColor: '#25262B',
+                        border: '1px solid #373A40',
+                      },
+                      option: {
+                        '&[data-selected]': {
+                          '&, &:hover': {
+                            backgroundColor: '#3B82F6',
+                            color: 'white',
                           },
                         },
-                        dropdown: {
-                          backgroundColor: '#25262B',
-                          border: '1px solid #373A40',
+                      },
+                    }}
+                  />
+                  <Checkbox
+                    checked={isLandScape}
+                    onChange={(event) => setIsLandScape(event.currentTarget.checked)}
+                    label="Landscape"
+                    styles={{
+                      label: {
+                        color: '#909296',
+                      },
+                    }}
+                  />
+                </Group>
+
+                {/* Export format */}
+                <Box>
+                  <Text size="sm" fw={600} c="white" mb="md" fs="uppercase">
+                    Export Settings
+                  </Text>
+                  <Select
+                    size="sm"
+                    label="Export Format"
+                    value={exportFormat}
+                    onChange={(value) => setExportFormat(value as 'pdf' | 'png' | 'jpg')}
+                    data={[
+                      { label: 'PDF', value: 'pdf' },
+                      { label: 'PNG', value: 'png' },
+                      { label: 'JPG', value: 'jpg' },
+                    ]}
+                    styles={{
+                      input: {
+                        backgroundColor: '#25262B',
+                        border: '1px solid #373A40',
+                        color: 'white',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          borderColor: '#3B82F6',
                         },
-                        option: {
-                          '&[data-selected]': {
-                            '&, &:hover': {
-                              backgroundColor: '#3B82F6',
-                              color: 'white',
-                            },
+                      },
+                      label: {
+                        color: '#909296',
+                        fontSize: '0.75rem',
+                        marginBottom: '0.25rem',
+                      },
+                      dropdown: {
+                        backgroundColor: '#25262B',
+                        border: '1px solid #373A40',
+                      },
+                      option: {
+                        '&[data-selected]': {
+                          '&, &:hover': {
+                            backgroundColor: '#3B82F6',
+                            color: 'white',
                           },
                         },
-                      }}
-                    />
-                    {index !== 0 && (
+                      },
+                    }}
+                  />
+                </Box>
+
+                {/* Variables section */}
+                <Box>
+                  <Group justify="space-between" mb="xs">
+                    <Text size="sm" fw={600} c="white" fs="uppercase">
+                      Variables
+                    </Text>
+                    <Tooltip label="Add variables">
                       <ActionIcon
                         variant="subtle"
-                        color="red"
-                        onClick={() => removeFont(font)}
+                        color="blue"
+                        onClick={handleAddVariable}
                         style={{
                           transition: 'all 0.2s ease',
                           '&:hover': { transform: 'scale(1.1)' },
                         }}
                       >
-                        <IconMinus size={16} />
+                        <IconPlus size={16} />
                       </ActionIcon>
-                    )}
+                    </Tooltip>
                   </Group>
-                ))}
-              </Stack>
-            </Box>
+                  <Text size="xs" c="dimmed" mb="md">
+                    How to use variables?
+                  </Text>
 
-            {/* Charts section */}
-            <Stack h={300}>
-              <Box p="xs">
-                <Text size="sm" fw={600} c="white" mb="md" tt="uppercase">
-                  Charts
-                </Text>
-                <Text size="xs" c="dimmed" mb="md">
-                  Click on a chart type to add it to your template
-                </Text>
-                <SimpleGrid cols={2} spacing="xs">
-                  {Object.entries(CHART_TYPES).map(([type, label]) => (
-                    <Box
-                      key={type}
-                      onClick={() => {
-                        if (editorRef.current) {
-                          const editor = editorRef.current;
-                          const model = editor.getModel();
-                          if (!model) return;
+                  {/* Variables list */}
+                  <Box
+                    style={{
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      padding: '0.5rem',
+                      backgroundColor: '#25262B',
+                      borderRadius: '8px',
+                    }}
+                  >
+                    <Group gap="xs" style={{ flexWrap: 'wrap' }}>
+                      {Object.entries(variables).map(([varName, value]) => {
+                        let type = 'object';
+                        if (Array.isArray(value)) {
+                          type = 'array';
+                        } else if (typeof value === 'object' && value !== null) {
+                          type = 'object';
+                        } else {
+                          type = 'key-value';
+                        }
+                        return <VariableBadge key={varName} varName={varName} type={type} />;
+                      })}
+                    </Group>
+                  </Box>
+                </Box>
 
-                          const lastLine = model.getLineCount();
-                          const lastLineContent = model.getLineContent(lastLine);
-                          const chartId = `${type}Chart${Math.random().toString(36).substr(2, 9)}`;
-                          const chartData = generateChartData(type as keyof typeof CHART_TYPES);
+                {/* Stylesheet section */}
+                <Box>
+                  <Text size="sm" fw={600} c="white" mb="md" fs="uppercase">
+                    Stylesheet
+                  </Text>
+                  <Select
+                    value="tailwind"
+                    data={[{ value: 'tailwind', label: 'Tailwind CSS' }]}
+                    styles={{
+                      input: {
+                        backgroundColor: '#25262B',
+                        border: '1px solid #373A40',
+                        color: 'white',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          borderColor: '#3B82F6',
+                        },
+                      },
+                      dropdown: {
+                        backgroundColor: '#25262B',
+                        border: '1px solid #373A40',
+                      },
+                      option: {
+                        '&[data-selected]': {
+                          '&, &:hover': {
+                            backgroundColor: '#3B82F6',
+                            color: 'white',
+                          },
+                        },
+                      },
+                    }}
+                  />
+                </Box>
 
-                          // Update variables with new chart data
-                          const updatedVariables = {
-                            ...variables,
-                            charts: {
-                              ...(variables.charts || {}),
-                              [chartId]: chartData,
+                {/* Fonts section */}
+                <Box>
+                  <Group justify="space-between" mb="xs">
+                    <Text size="sm" fw={600} c="white" fs="uppercase">
+                      Fonts
+                    </Text>
+                    <Tooltip label="Add font">
+                      <ActionIcon
+                        variant="subtle"
+                        color="blue"
+                        onClick={addFont}
+                        style={{
+                          transition: 'all 0.2s ease',
+                          '&:hover': { transform: 'scale(1.1)' },
+                        }}
+                      >
+                        <IconPlus size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                  <Stack gap="xs">
+                    {fontsSelected.map((font, index) => (
+                      <Group key={font} align="center">
+                        <Select
+                          size="sm"
+                          value={font}
+                          onChange={(value) => handleChangeFont({ value: value || '' }, index)}
+                          data={fonts}
+                          style={{ flex: 1 }}
+                          styles={{
+                            input: {
+                              backgroundColor: '#25262B',
+                              border: '1px solid #373A40',
+                              color: 'white',
+                              transition: 'all 0.2s ease',
+                              '&:hover': {
+                                borderColor: '#3B82F6',
+                              },
                             },
-                          };
-                          handleVariablesUpdate(updatedVariables);
+                            dropdown: {
+                              backgroundColor: '#25262B',
+                              border: '1px solid #373A40',
+                            },
+                            option: {
+                              '&[data-selected]': {
+                                '&, &:hover': {
+                                  backgroundColor: '#3B82F6',
+                                  color: 'white',
+                                },
+                              },
+                            },
+                          }}
+                        />
+                        {index !== 0 && (
+                          <ActionIcon
+                            variant="subtle"
+                            color="red"
+                            onClick={() => removeFont(font)}
+                            style={{
+                              transition: 'all 0.2s ease',
+                              '&:hover': { transform: 'scale(1.1)' },
+                            }}
+                          >
+                            <IconMinus size={16} />
+                          </ActionIcon>
+                        )}
+                      </Group>
+                    ))}
+                  </Stack>
+                </Box>
 
-                          // Insert chart canvas element at the end
-                          const text = `\n\n<!-- Chart Section -->
+                {/* Charts section */}
+                <Stack h={300}>
+                  <Box p="xs">
+                    <Text size="sm" fw={600} c="white" mb="md" tt="uppercase">
+                      Charts
+                    </Text>
+                    <Text size="xs" c="dimmed" mb="md">
+                      Click on a chart type to add it to your template
+                    </Text>
+                    <SimpleGrid cols={2} spacing="xs">
+                      {Object.entries(CHART_TYPES).map(([type, label]) => (
+                        <Box
+                          key={type}
+                          onClick={() => {
+                            if (editorRef.current) {
+                              const editor = editorRef.current;
+                              const model = editor.getModel();
+                              if (!model) return;
+
+                              const lastLine = model.getLineCount();
+                              const lastLineContent = model.getLineContent(lastLine);
+                              const chartId = `${type}Chart${Math.random().toString(36).substr(2, 9)}`;
+                              const chartData = generateChartData(type as keyof typeof CHART_TYPES);
+
+                              // Update variables with new chart data
+                              const updatedVariables = {
+                                ...variables,
+                                charts: {
+                                  ...(variables.charts || {}),
+                                  [chartId]: chartData,
+                                },
+                              };
+                              handleVariablesUpdate(updatedVariables);
+
+                              // Insert chart canvas element at the end
+                              const text = `\n\n<!-- Chart Section -->
 <div class="w-full max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg mb-8">
   <canvas 
     id="${chartId}"
@@ -1160,55 +1403,64 @@ const CreateTemplate: React.FC = () => {
   ></canvas>
 </div>`;
 
-                          const position = {
-                            lineNumber: lastLine,
-                            column: lastLineContent.length + 1,
-                          };
+                              const position = {
+                                lineNumber: lastLine,
+                                column: lastLineContent.length + 1,
+                              };
 
-                          const range = new monaco.Range(
-                            position.lineNumber,
-                            position.column,
-                            position.lineNumber,
-                            position.column
-                          );
+                              const range = new monaco.Range(
+                                position.lineNumber,
+                                position.column,
+                                position.lineNumber,
+                                position.column
+                              );
 
-                          const op = {
-                            identifier: { major: 1, minor: 1 },
-                            range,
-                            text,
-                            forceMoveMarkers: true,
-                          };
+                              const op = {
+                                identifier: { major: 1, minor: 1 },
+                                range,
+                                text,
+                                forceMoveMarkers: true,
+                              };
 
-                          editor.executeEdits('chart-insert', [op]);
-                        }
-                      }}
-                      style={{
-                        backgroundColor: '#25262B',
-                        padding: '12px',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        border: '1px solid #373A40',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                        },
-                      }}
-                    >
-                      <Stack gap={4} align="center">
-                        <IconChartDots size={24} style={{ color: '#3B82F6' }} />
-                        <Text size="xs" c="white" ta="center">
-                          {label}
-                        </Text>
-                      </Stack>
-                    </Box>
-                  ))}
-                </SimpleGrid>
-              </Box>
-            </Stack>
+                              editor.executeEdits('chart-insert', [op]);
+                            }
+                          }}
+                          style={{
+                            backgroundColor: '#25262B',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            border: '1px solid #373A40',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              transform: 'translateY(-2px)',
+                            },
+                          }}
+                        >
+                          <Stack gap={4} align="center">
+                            <IconChartDots size={24} style={{ color: '#3B82F6' }} />
+                            <Text size="xs" c="white" ta="center">
+                              {label}
+                            </Text>
+                          </Stack>
+                        </Box>
+                      ))}
+                    </SimpleGrid>
+                  </Box>
+                </Stack>
+              </>
+            )}
           </Stack>
 
           {/* Code editor */}
-          <Box style={{ width: '49%', height: '100%' }} ref={drop}>
+          <Box
+            style={{
+              flex: sidebarCollapsed ? 3 : 2.5,
+              height: '100%',
+              transition: 'flex 0.3s ease',
+            }}
+            ref={drop}
+          >
             <DndProvider backend={HTML5Backend}>
               <IDE
                 onChange={(newCode) => {
@@ -1226,11 +1478,12 @@ const CreateTemplate: React.FC = () => {
           {/* Preview */}
           <Box
             style={{
-              width: '33%',
+              flex: sidebarCollapsed ? 2 : 1.5,
               height: '100%',
               backgroundColor: '#1A1B1E',
               borderLeft: '1px solid #373A40',
               position: 'relative',
+              transition: 'flex 0.3s ease',
             }}
           >
             <Box
