@@ -1274,35 +1274,6 @@ const CreateTemplate: React.FC = () => {
                   >
                     Export as {format.toUpperCase()} PDF
                   </Button>
-                  <Button
-                    fullWidth
-                    variant="subtle"
-                    onClick={() => {
-                      if (editorRef.current) {
-                        const editor = editorRef.current;
-                        const position = editor.getPosition();
-                        const range = new monaco.Range(
-                          position.lineNumber,
-                          position.column,
-                          position.lineNumber,
-                          position.column
-                        );
-                        editor.executeEdits('page-break', [
-                          {
-                            identifier: { major: 1, minor: 1 },
-                            range,
-                            text: `\n<!-- Page Break -->\n<div class="page-break" style="height: 2px; border-top: 3px dashed #FF0000; margin: 20px 0; background-color: rgba(255, 0, 0, 0.1); position: relative; text-align: center;"></div>\n`,
-                            forceMoveMarkers: true,
-                          },
-                        ]);
-                        notificationService.showInformationNotification(
-                          'Page break inserted. You will see a red dashed line in the preview and a new page in the exported PDF.'
-                        );
-                      }
-                    }}
-                  >
-                    Insert Page Break
-                  </Button>
                 </Box>
 
                 {/* Variables section */}
