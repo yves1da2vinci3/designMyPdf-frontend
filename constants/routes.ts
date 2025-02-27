@@ -5,4 +5,4 @@ export const Links = {
   DASHBOARD: '/dashboard',
   TEMPLATES: '/dashboard/templates',
   LOGS: '/dashboard/backtrace',
-} as const; 
+} as const;

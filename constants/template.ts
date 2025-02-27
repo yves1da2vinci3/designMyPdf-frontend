@@ -150,7 +150,6 @@ export const DEFAULT_TEMPLATE = `
 </div>
 `;
 
-
 export const RESUME_TEMPLATE = `<div class="max-w-4xl mx-auto">
 <!-- Header -->
 <header class="mb-4">

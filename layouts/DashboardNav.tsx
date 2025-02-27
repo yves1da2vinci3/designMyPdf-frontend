@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Group, Code, Box,  } from '@mantine/core';
+import { Group, Code, Box } from '@mantine/core';
 import {
   IconKey,
   IconLogout,
@@ -64,7 +64,6 @@ export function DashboardNav() {
       <div className={classes.footer}>
         <Box
           className={classes.link}
-          
           onClick={(event) => {
             event.preventDefault();
             Logout();

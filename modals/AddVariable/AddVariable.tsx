@@ -46,7 +46,7 @@ const AddVariable: React.FC<AddVariableModalProps> = ({
             scrollBeyondLastLine: false,
           }}
         />
-        <Button onClick={()=> handleSave()} w={rem(130)} style={{ alignSelf: 'flex-end' }}>
+        <Button onClick={() => handleSave()} w={rem(130)} style={{ alignSelf: 'flex-end' }}>
           Save
         </Button>
       </Stack>

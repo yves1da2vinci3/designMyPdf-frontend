@@ -1,62 +1,58 @@
 .title {
-    font-family:
-      Greycliff CF,
-      var(--mantine-font-family);
-    font-weight: 900;
-  }
+  font-family:
+    Greycliff CF,
+    var(--mantine-font-family);
+  font-weight: 900;
+}
 
 .container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}  
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
 
 .boxContainer {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
 }
 
 .formContainer {
-    
-    min-width: rem(500px);
+  min-width: rem(500px);
 }
 
-
-
 @media screen and (max-width: 1200px) {
-    .formContainer {
+  .formContainer {
     min-width: rem(300px);
-       
-    }
+  }
 }
 
 @media screen and (max-width: 992px) {
-    .formContainer {
-        padding-left: rem(100);
-        padding-right: rem(100);
-    }
+  .formContainer {
+    padding-left: rem(100);
+    padding-right: rem(100);
+  }
 }
 
 @media screen and (max-width: 768px) {
-    .formContainer {
-        padding-left: rem(50);
-        padding-right: rem(50);
-    }
+  .formContainer {
+    padding-left: rem(50);
+    padding-right: rem(50);
+  }
 }
 
 @media screen and (max-width: 576px) {
-    .formContainer {
-        padding-left: rem(20);
-        padding-right: rem(20);
-    }
+  .formContainer {
+    padding-left: rem(20);
+    padding-right: rem(20);
+  }
 }
 
 @media screen and (max-width: 400px) {
-    .formContainer {
-        padding-left: rem(0);
-        padding-right: rem(0);
-    }
+  .formContainer {
+    padding-left: rem(0);
+    padding-right: rem(0);
+  }
 }

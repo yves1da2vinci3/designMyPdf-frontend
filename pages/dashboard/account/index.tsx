@@ -116,9 +116,7 @@ export default function Account() {
         <Tabs.List>
           <Tabs.Tab
             value={ACCOUNT_TAB_NAME}
-            style={() =>
-              selectedTabName === ACCOUNT_TAB_NAME ? selectedStyle : notselectedStyle
-            }
+            style={() => (selectedTabName === ACCOUNT_TAB_NAME ? selectedStyle : notselectedStyle)}
             leftSection={
               <IconUserCircle
                 style={selectedTabName === ACCOUNT_TAB_NAME ? iconStyleSelected : iconStyle}

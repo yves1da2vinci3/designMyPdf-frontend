@@ -1,4 +1,4 @@
-import { notifications } from "@mantine/notifications";
+import { notifications } from '@mantine/notifications';
 
 interface NotificationService {
   showSuccessNotification: (message: string) => void;
@@ -12,46 +12,46 @@ interface NotificationService {
 const notificationService: NotificationService = {
   showSuccessNotification: (message: string) => {
     notifications.show({
-      title: "Operation successfully",
+      title: 'Operation successfully',
       message: message,
-      color: "green",
+      color: 'green',
     });
   },
   showErrorNotification: function (message: string): void {
     notifications.show({
-      title: "An error occurred",
+      title: 'An error occurred',
       message: message,
-      color: "red",
+      color: 'red',
     });
   },
   showInformationNotification: function (message: string): void {
     notifications.show({
-      title: "Information",
+      title: 'Information',
       message: message,
-      color: "blue",
+      color: 'blue',
     });
   },
   showLoading: function (message: string): void {
     notifications.show({
-      title: "Loading",
+      title: 'Loading',
       message: message,
-      color: "blue",
+      color: 'blue',
       loading: true,
       autoClose: false,
     });
   },
   showSuccess: function (message: string): void {
     notifications.show({
-      title: "Success",
+      title: 'Success',
       message: message,
-      color: "green",
+      color: 'green',
     });
   },
   showError: function (message: string): void {
     notifications.show({
-      title: "Error",
+      title: 'Error',
       message: message,
-      color: "red",
+      color: 'red',
     });
   },
 };

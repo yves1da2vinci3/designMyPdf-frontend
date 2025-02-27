@@ -266,16 +266,32 @@ function getExampleValue(prop: string): any {
   if (propLower.includes('position')) return faker.person.jobTitle();
 
   // Commerce related fields
-  if (propLower.includes('price') || propLower.includes('amount')) { return Number(faker.commerce.price()); }
-  if (propLower.includes('product')) { return faker.commerce.productName(); }
-  if (propLower.includes('description')) { return faker.commerce.productDescription(); }
-  if (propLower.includes('quantity') || propLower.includes('count')) { return faker.number.int({ min: 1, max: 100 }); }
-  if (propLower.includes('total')) { return Number(faker.commerce.price({ min: 100, max: 1000 })); }
-  if (propLower.includes('currency')) { return faker.finance.currencyCode(); }
+  if (propLower.includes('price') || propLower.includes('amount')) {
+    return Number(faker.commerce.price());
+  }
+  if (propLower.includes('product')) {
+    return faker.commerce.productName();
+  }
+  if (propLower.includes('description')) {
+    return faker.commerce.productDescription();
+  }
+  if (propLower.includes('quantity') || propLower.includes('count')) {
+    return faker.number.int({ min: 1, max: 100 });
+  }
+  if (propLower.includes('total')) {
+    return Number(faker.commerce.price({ min: 100, max: 1000 }));
+  }
+  if (propLower.includes('currency')) {
+    return faker.finance.currencyCode();
+  }
 
   // Date related fields
-  if (propLower.includes('date')) { return faker.date.recent().toISOString().split('T')[0]; }
-  if (propLower.includes('year')) { return faker.date.past().getFullYear(); }
+  if (propLower.includes('date')) {
+    return faker.date.recent().toISOString().split('T')[0];
+  }
+  if (propLower.includes('year')) {
+    return faker.date.past().getFullYear();
+  }
   if (propLower.includes('month')) return faker.date.month();
 
   // ID/Reference fields

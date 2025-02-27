@@ -388,12 +388,76 @@ const CreateTemplate: React.FC = () => {
     }
   };
 
-  const clearImages = () => {
-    setUploadedUrls([]);
+  const removeUploadedImage = (index: number) => {
+    const imageToRemove = uploadedUrls[index];
+
+    // Extract the public ID from the Cloudinary URL
+    if (typeof imageToRemove === 'string' && imageToRemove.includes('cloudinary.com')) {
+      try {
+        // The URL format is typically: https://res.cloudinary.com/cloud-name/image/upload/v1234567890/folder/public_id.ext
+        const urlParts = imageToRemove.split('/');
+        const fileNameWithExt = urlParts[urlParts.length - 1];
+        const publicIdWithFolder = `${urlParts[urlParts.length - 2]}/${fileNameWithExt.split('.')[0]}`;
+
+        // Call the API to delete the image from Cloudinary
+        fetch('/api/delete-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ publicId: publicIdWithFolder }),
+        })
+          .then((response) => response.json())
+          .then((result) => {
+            if (!result.success) {
+              notificationService.showErrorNotification('Failed to delete image from Cloudinary');
+            }
+          })
+          .catch(() => {
+            notificationService.showErrorNotification('Error deleting image from Cloudinary');
+          });
+      } catch {
+        notificationService.showErrorNotification('Error parsing Cloudinary URL');
+      }
+    }
+
+    // Remove from UI regardless of deletion success
+    setUploadedUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const removeUploadedImage = (index: number) => {
-    setUploadedUrls((prev) => prev.filter((_, i) => i !== index));
+  const clearImages = () => {
+    // Delete all images from Cloudinary
+    uploadedUrls.forEach((url) => {
+      if (typeof url === 'string' && url.includes('cloudinary.com')) {
+        try {
+          const urlParts = url.split('/');
+          const fileNameWithExt = urlParts[urlParts.length - 1];
+          const publicIdWithFolder = `${urlParts[urlParts.length - 2]}/${fileNameWithExt.split('.')[0]}`;
+
+          fetch('/api/delete-image', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ publicId: publicIdWithFolder }),
+          })
+            .then((response) => response.json())
+            .then((result) => {
+              if (!result.success) {
+                notificationService.showErrorNotification('Failed to delete image from Cloudinary');
+              }
+            })
+            .catch(() => {
+              notificationService.showErrorNotification('Error deleting image from Cloudinary');
+            });
+        } catch (error) {
+          notificationService.showErrorNotification('Error parsing Cloudinary URL');
+        }
+      }
+    });
+
+    // Clear the UI
+    setUploadedUrls([]);
   };
 
   const generateTemplateFromPrompt = async (): Promise<void> => {
@@ -512,10 +576,11 @@ const CreateTemplate: React.FC = () => {
 
       // Create a hidden iframe to render the template
       const iframe = document.createElement('iframe');
-      iframe.style.width = '0';
-      iframe.style.height = '0';
+      iframe.style.width = '100%';
+      iframe.style.height = '1000px';
       iframe.style.position = 'absolute';
       iframe.style.top = '-9999px';
+      iframe.style.left = '-9999px';
       document.body.appendChild(iframe);
 
       // Use Handlebars to render the template with variables
@@ -540,6 +605,7 @@ const CreateTemplate: React.FC = () => {
       const pageWidth = isLandScape ? dimensions.height : dimensions.width;
       const pageHeight = isLandScape ? dimensions.width : dimensions.height;
 
+      // Prepare the HTML content with proper CSS for pagination
       const htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -566,37 +632,45 @@ const CreateTemplate: React.FC = () => {
                 margin: 0;
                 padding: 0;
                 font-family: ${fontsSelected[0] || 'system-ui'}, sans-serif;
-                width: ${pageWidth}mm;
-                height: ${pageHeight}mm;
-                overflow: hidden;
+                background-color: white;
               }
-              .page {
-                width: 100%;
-                height: 100%;
-                display: flex;
-                flex-direction: column;
+              #content-container {
+                width: ${pageWidth}mm;
+                background-color: white;
+                margin: 0 auto;
+                padding: 10mm;
                 box-sizing: border-box;
-                position: relative;
+              }
+              /* Any page break elements will still work as manual breaks */
+              .page-break {
+                page-break-after: always;
+                break-after: page;
               }
             </style>
           </head>
           <body>
-            <div class="page">
+            <div id="content-container">
               ${renderedContent}
             </div>
             <script>
               // Initialize charts if any
               document.querySelectorAll('canvas[data-chart-type]').forEach(canvas => {
                 const type = canvas.getAttribute('data-chart-type');
-                const data = JSON.parse(canvas.getAttribute('data-chart-data'));
-                new Chart(canvas, {
-                  type,
-                  data,
-                  options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
+                const chartData = JSON.parse(canvas.getAttribute('data-chart-data') || '{}');
+                if (type && chartData) {
+                  try {
+                    new Chart(canvas, {
+                      type,
+                      data: chartData,
+                      options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                      }
+                    });
+                  } catch (error) {
+                    console.error('Error initializing chart:', error);
                   }
-                });
+                }
               });
               // Signal that content is loaded
               window.parent.postMessage('contentLoaded', '*');
@@ -620,56 +694,110 @@ const CreateTemplate: React.FC = () => {
         window.addEventListener('message', function handler(event) {
           if (event.data === 'contentLoaded') {
             window.removeEventListener('message', handler);
-            setTimeout(resolve, 1000); // Give charts a moment to render
+            // Give charts and fonts more time to render
+            setTimeout(resolve, 2000);
           }
         });
       });
 
-      // Use html2canvas and jsPDF for export
+      // Load html2pdf.js for better pagination support
+      const { default: jsPDF } = await import('jspdf');
       const { default: html2canvas } = await import('html2canvas');
-      const { default: JsPDF } = await import('jspdf');
 
-      const contentElement = iframeDoc.body;
-
-      const canvas = await html2canvas(contentElement, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        width: pageWidth * 3.78, // Convert mm to px (1mm ≈ 3.78px)
-        height: pageHeight * 3.78,
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-
-      // Create PDF with the exact dimensions of the selected paper size
-      const pdf = new JsPDF({
+      // Create jsPDF instance with the correct dimensions
+      const PDF = jsPDF;
+      const pdf = new PDF({
         orientation: isLandScape ? 'landscape' : 'portrait',
         unit: 'mm',
         format,
       });
 
-      // Add the image to fill the entire page
-      pdf.addImage(
-        imgData,
-        'PNG',
-        0,
-        0,
-        pdf.internal.pageSize.getWidth(),
-        pdf.internal.pageSize.getHeight()
-      );
+      // Function to get element height in PDF units (mm)
+      const getPdfHeight = (element: HTMLElement): number => {
+        const heightPx = element.offsetHeight;
+        // Convert pixels to mm (assuming 96 DPI)
+        return (heightPx * 25.4) / 96;
+      };
 
-      // Save the PDF with the template name and paper size
-      pdf.save(`${template.name || 'template'}_${format.toUpperCase()}.pdf`);
+      // Function to get element width in PDF units (mm)
+      const getPdfWidth = (element: HTMLElement): number => {
+        const widthPx = element.offsetWidth;
+        // Convert pixels to mm (assuming 96 DPI)
+        return (widthPx * 25.4) / 96;
+      };
+
+      // Get content container
+      const contentContainer = iframeDoc.getElementById('content-container');
+      if (!contentContainer) {
+        throw new Error('Content container not found');
+      }
+
+      // Get all child elements of the content container
+      const elements = Array.from(contentContainer.children);
+
+      // Determine available height for content (page height minus margins)
+      const contentHeight = pageHeight - 20; // 10mm margin top and bottom
+
+      let currentPageHeight = 0;
+      let pageCount = 1;
+
+      for (let i = 0; i < elements.length; i += 1) {
+        const element = elements[i] as HTMLElement;
+
+        // If element is a page break, start a new page
+        if (element.classList.contains('page-break')) {
+          pdf.addPage();
+          currentPageHeight = 0;
+          pageCount += 1;
+        } else {
+          const elementHeight = getPdfHeight(element);
+
+          // Check if element fits on current page
+          if (currentPageHeight + elementHeight > contentHeight && currentPageHeight > 0) {
+            // Element doesn't fit, add a new page
+            pdf.addPage();
+            currentPageHeight = 0;
+            pageCount += 1;
+          }
+
+          // Capture this element
+          const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: 'white',
+          });
+
+          const imgData = canvas.toDataURL('image/png');
+          const imgWidth = getPdfWidth(element);
+          const imgHeight = elementHeight;
+
+          // Add element to PDF at the current position
+          pdf.addImage(
+            imgData,
+            'PNG',
+            10, // X position (10mm margin)
+            10 + currentPageHeight, // Y position (10mm margin + current height)
+            imgWidth,
+            imgHeight
+          );
+
+          // Update current page height
+          currentPageHeight += imgHeight;
+        }
+      }
 
       // Clean up
       document.body.removeChild(iframe);
 
+      // Save the PDF with the template name and paper size
+      pdf.save(`${template.name || 'template'}_${format.toUpperCase()}.pdf`);
+
       // Show success notification
       notificationService.showSuccessNotification(
-        `Document exported as ${format.toUpperCase()} PDF successfully!`
+        `Document exported as ${format.toUpperCase()} PDF with ${pageCount} page${pageCount > 1 ? 's' : ''}!`
       );
     } catch (error) {
-      console.error('Error exporting document:', error);
       notificationService.showErrorNotification('Failed to export document. Please try again.');
     }
   };
@@ -1205,6 +1333,7 @@ const CreateTemplate: React.FC = () => {
                         '&:hover': { transform: 'translateY(-1px)' },
                       },
                     }}
+                    mb="md"
                   >
                     Export as {format.toUpperCase()} PDF
                   </Button>
@@ -1462,9 +1591,11 @@ const CreateTemplate: React.FC = () => {
           {/* Code editor */}
           <Box
             style={{
-              flex: sidebarCollapsed ? 3 : 2.5,
+              width: sidebarCollapsed ? 'calc(60% - 20px)' : '50%',
               height: '100%',
-              transition: 'flex 0.3s ease',
+              transition: 'width 0.3s ease',
+              flexShrink: 0,
+              flexGrow: 0,
             }}
             ref={drop}
           >
@@ -1485,12 +1616,14 @@ const CreateTemplate: React.FC = () => {
           {/* Preview */}
           <Box
             style={{
-              flex: sidebarCollapsed ? 2 : 1.5,
+              width: sidebarCollapsed ? 'calc(40% - 20px)' : '32%',
               height: '100%',
               backgroundColor: '#1A1B1E',
               borderLeft: '1px solid #373A40',
               position: 'relative',
-              transition: 'flex 0.3s ease',
+              transition: 'width 0.3s ease',
+              flexShrink: 0,
+              flexGrow: 0,
             }}
           >
             <Box

@@ -15,7 +15,6 @@ const deleteNamespace = async (id: number, DeleteFromClient: (id: number) => voi
     await namespaceApi.deleteNamespace(id);
     DeleteFromClient(id);
   } catch (error) {
-    console.error('Error deleting namespace:', error);
     notificationService.showErrorNotification('Failed to delete namespace');
   }
 };
@@ -45,7 +44,7 @@ const ManagedNamespaceItem: React.FC<ManagedNamespaceItemProps> = ({
       ),
       labels: { confirm: 'Delete namespace', cancel: "No, don't delete it" },
       confirmProps: { color: 'red' },
-      onCancel: () => console.log('Cancel'),
+      onCancel: () => {},
       onConfirm: () => deleteNamespace(id, DeleteFromClient),
     });
 

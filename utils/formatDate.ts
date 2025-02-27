@@ -1,4 +1,4 @@
-import moment from "moment";
+import moment from 'moment';
 export const timeAgo = (dateString: string): string => {
   const newDate = new Date(dateString);
   const now = new Date();
@@ -36,7 +36,6 @@ export const limitText = (text: string, limit: number): string => {
   return text;
 };
 
-
 export const formatDate = (date: string): string => {
-  return moment(date).format("MMM Do YY");
-}
+  return moment(date).format('MMM Do YY');
+};

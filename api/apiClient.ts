@@ -29,7 +29,11 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
 
     // Check if the error is due to an unauthorized request
-    if (error.response && error.response.status === HttpStatusCode.Unauthorized && !originalRequest._retry) {
+    if (
+      error.response &&
+      error.response.status === HttpStatusCode.Unauthorized &&
+      !originalRequest._retry
+    ) {
       console.log('Unauthorized request');
 
       originalRequest._retry = true; // Mark the request as retried to prevent infinite loops

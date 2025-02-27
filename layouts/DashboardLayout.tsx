@@ -14,7 +14,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [opened, { toggle }] = useDisclosure();
   return (
     <AppShell
-      
       navbar={{
         width: NAVBAR_WIDTH,
         breakpoint: 'sm',
@@ -27,7 +26,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           overflow: 'hidden',
         }}
       >
-        <AppShell.Section   >
+        <AppShell.Section>
           <DashboardNav />
         </AppShell.Section>
       </AppShell.Navbar>
