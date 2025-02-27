@@ -1,7 +1,7 @@
 import { useRouter } from 'next/router';
 import { Image, Container, Title, Text, Button, SimpleGrid } from '@mantine/core';
 import image from './image.svg';
-import classes from './index.module.css';
+import classes from './index.module.scss';
 
 export default function Custom404() {
   const router = useRouter();

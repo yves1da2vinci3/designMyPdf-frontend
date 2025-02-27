@@ -4,7 +4,7 @@ import Hero from '@/components/Hero/Hero';
 import Stats from '@/components/Stats/Stats';
 import Features from '@/components/Features/Features';
 import ColorSchemeToggle from '@/components/ColorSchemeToggle/ColorSchemeToggle';
-import classes from './index.module.css';
+import classes from './index.module.scss';
 
 export default function HomePage() {
   return (

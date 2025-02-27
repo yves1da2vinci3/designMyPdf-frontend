@@ -21,7 +21,7 @@ interface ImageUploaderProps {
   onClose: () => void;
 }
 
-const ImageUploader: React.FC<ImageUploaderProps> = ({ onGenerate, onClose }) => {
+function ImageUploader({ onGenerate, onClose }: ImageUploaderProps) {
   const [files, setFiles] = useState<FileWithPath[]>([]);
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
   const [prompt, setPrompt] = useState('');
@@ -312,6 +312,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onGenerate, onClose }) =>
       )}
     </Stack>
   );
-};
+}
 
 export default ImageUploader;

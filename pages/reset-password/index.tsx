@@ -17,7 +17,7 @@ import { IconArrowLeft } from '@tabler/icons-react';
 import { ResetPasswordDto, authApi } from '@/api/authApi';
 import { RequestStatus } from '@/api/request-status.enum';
 import { Links } from '@/constants/routes';
-import classes from './resetPassword.module.css';
+import classes from './resetPassword.module.scss';
 
 export default function ResetPassword() {
   const router = useRouter();

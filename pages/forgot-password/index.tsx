@@ -18,7 +18,7 @@ import { IconArrowLeft } from '@tabler/icons-react';
 import { ForgotPasswordDto, authApi } from '@/api/authApi';
 import { RequestStatus } from '@/api/request-status.enum';
 import { Links } from '@/constants/routes';
-import classes from './forgotPassword.module.css';
+import classes from './forgotPassword.module.scss';
 
 export default function ForgotPassword() {
   const router = useRouter();

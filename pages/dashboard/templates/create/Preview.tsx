@@ -12,7 +12,7 @@ interface PreviewProps {
   setTemplateContent?: (string: string) => void;
 }
 
-const importFontCreation = (fonts: string[]) => {
+function importFontCreation(fonts: string[]) {
   try {
     const encodedFont = encodeURIComponent(fonts[0]);
     const fontUrl = `https://fonts.googleapis.com/css2?family=${encodedFont}:wght@100;200;300;400;500;600;700;800;900${fonts
@@ -22,22 +22,24 @@ const importFontCreation = (fonts: string[]) => {
   } catch (error) {
     return '';
   }
-};
+}
 
-const fontCssCreation = (fonts: string[]) => `
+function fontCssCreation(fonts: string[]) {
+  return `
     body {
       font-family: '${fonts[0]}', sans-serif;
     }
   `;
+}
 
-const Preview: React.FC<PreviewProps> = ({
+function Preview({
   htmlContent,
   format = 'a4',
   data = {},
   fonts,
   isLandscape = false,
   setTemplateContent,
-}) => {
+}: PreviewProps) {
   const [renderedContent, setRenderedContent] = useState('');
   const [fontImport, setFontImport] = useState<string>('');
   const [fontStyle, setFontStyle] = useState<string>('');
@@ -352,6 +354,6 @@ const Preview: React.FC<PreviewProps> = ({
       </div>
     </div>
   );
-};
+}
 
 export default Preview;

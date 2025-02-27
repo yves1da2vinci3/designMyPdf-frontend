@@ -4,7 +4,19 @@ import { faker } from '@faker-js/faker';
 import fs from 'fs';
 import path from 'path';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+// Initialize the Google Generative AI client with proper error handling
+let genAI: GoogleGenerativeAI;
+try {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is not defined in environment variables');
+  }
+  genAI = new GoogleGenerativeAI(apiKey);
+} catch (error) {
+  // Log initialization error but don't crash the server
+  // We'll handle this in the API route
+  genAI = null as any;
+}
 
 // Add chart types
 const CHART_TYPES = {
@@ -113,7 +125,7 @@ function generateChartData(type: keyof typeof CHART_TYPES): { labels: string[]; 
 }
 
 function extractVariablesFromTemplate(
-  template: string
+  template: string,
 ): Map<
   string,
   { type: 'array' | 'object' | 'value'; path: string[]; arrayItemStructure?: Record<string, any> }
@@ -155,7 +167,7 @@ function extractVariablesFromTemplate(
             obj[prop] = getExampleValue(prop);
             return obj;
           },
-          {} as Record<string, any>
+          {} as Record<string, any>,
         );
 
         variables.set(rootVar, {
@@ -182,7 +194,7 @@ function buildVariableStructure(
   variables: Map<
     string,
     { type: 'array' | 'object' | 'value'; path: string[]; arrayItemStructure?: Record<string, any> }
-  >
+  >,
 ): Record<string, any> {
   const structure: Record<string, any> = {};
 
@@ -200,7 +212,7 @@ function buildVariableStructure(
               obj[prop] = getExampleValue(prop);
               return obj;
             },
-            {} as Record<string, any>
+            {} as Record<string, any>,
           );
         });
       } else if (value.type === 'object') {
@@ -222,7 +234,7 @@ function buildVariableStructure(
         current = current[segment];
       }
       current[value.path[value.path.length - 1]] = getExampleValue(
-        value.path[value.path.length - 1]
+        value.path[value.path.length - 1],
       );
     }
   }
@@ -323,6 +335,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    // Check if Gemini API is properly initialized
+    if (!genAI) {
+      return res.status(500).json({
+        error:
+          'Google Generative AI client not initialized. Please check your GEMINI_API_KEY environment variable.',
+      });
+    }
+
     const { prompt, imageUrls } = req.body;
 
     if (!prompt) {
@@ -333,36 +353,54 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'At least one image URL is required' });
     }
 
+    // Validate image URLs
+    for (const url of imageUrls) {
+      if (typeof url !== 'string') {
+        return res.status(400).json({ error: 'All image URLs must be strings' });
+      }
+    }
+
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     // Prepare image parts for the model
-    const imageParts: (FileDataPart | InlineDataPart)[] = await Promise.all(
-      imageUrls.map(async (url: string) => {
-        // For local images, we need to read them from the filesystem
-        if (url.startsWith('/uploads/')) {
-          // Using dynamic import for fs and path to avoid issues with Next.js
-          const filePath = path.join(process.cwd(), 'public', url);
-          const fileData = fs.readFileSync(filePath);
-          const mimeType = `image/${path.extname(url).substring(1)}`;
-          return {
-            inlineData: {
-              data: Buffer.from(fileData).toString('base64'),
-              mimeType,
-            },
-          } as InlineDataPart;
-        }
+    try {
+      const imageParts: (FileDataPart | InlineDataPart)[] = await Promise.all(
+        imageUrls.map(async (url: string) => {
+          try {
+            // For local images, we need to read them from the filesystem
+            if (url.startsWith('/uploads/')) {
+              const filePath = path.join(process.cwd(), 'public', url);
 
-        // For external URLs, we can use them directly
-        return {
-          fileData: {
-            fileUri: url,
-          },
-        } as FileDataPart;
-      })
-    );
+              // Check if file exists
+              if (!fs.existsSync(filePath)) {
+                throw new Error(`File not found: ${url}`);
+              }
 
-    // Create a prompt that includes both text and images
-    const templatePrompt = `Generate only the inner HTML content (without <!DOCTYPE>, <html>, <head>, or <body> tags) for a template based on the provided images and this requirement: ${prompt}
+              const fileData = fs.readFileSync(filePath);
+              const mimeType = `image/${path.extname(url).substring(1)}`;
+              return {
+                inlineData: {
+                  data: Buffer.from(fileData).toString('base64'),
+                  mimeType,
+                },
+              } as InlineDataPart;
+            }
+
+            // For external URLs, we can use them directly
+            return {
+              fileData: {
+                fileUri: url,
+              },
+            } as FileDataPart;
+          } catch (error: any) {
+            // Log the error but continue with other images
+            throw new Error(`Error processing image ${url}: ${error.message}`);
+          }
+        }),
+      );
+
+      // Create a prompt that includes both text and images
+      const templatePrompt = `Generate only the inner HTML content (without <!DOCTYPE>, <html>, <head>, or <body> tags) for a template based on the provided images and this requirement: ${prompt}
 
 Requirements:
 1. Use Handlebars syntax for variables: {{variable}}
@@ -383,21 +421,30 @@ Example of chart usage:
 
 Return only the HTML code without any explanation or formatting.`;
 
-    // Generate content with both text and images
-    const templateResult = await model.generateContent([templatePrompt, ...imageParts]);
-    const templateResponse = await templateResult.response;
-    const template = templateResponse.text();
+      // Generate content with both text and images
+      const templateResult = await model.generateContent([templatePrompt, ...imageParts]);
+      const templateResponse = await templateResult.response;
+      const template = templateResponse.text();
 
-    // Extract and analyze variables from the template
-    const extractedVars = extractVariablesFromTemplate(template);
-    const suggestedVariables = buildVariableStructure(extractedVars);
+      // Extract and analyze variables from the template
+      const extractedVars = extractVariablesFromTemplate(template);
+      const suggestedVariables = buildVariableStructure(extractedVars);
 
-    // Return both the template and suggested variables
-    return res.status(200).json({
-      content: template,
-      suggestedVariables,
-    });
+      // Return both the template and suggested variables
+      return res.status(200).json({
+        content: template,
+        suggestedVariables,
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        error: 'Failed to generate template from images',
+        details: error.message,
+      });
+    }
   } catch (error: any) {
-    return res.status(500).json({ error: 'Failed to generate template from images' });
+    return res.status(500).json({
+      error: 'Failed to generate template from images',
+      details: error.message,
+    });
   }
 }

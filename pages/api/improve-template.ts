@@ -1,8 +1,19 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import notificationService from '@/services/NotificationService';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+// Initialize the Google Generative AI client with proper error handling
+let genAI: GoogleGenerativeAI;
+try {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY is not defined in environment variables');
+  }
+  genAI = new GoogleGenerativeAI(apiKey);
+} catch (error) {
+  // Log initialization error but don't crash the server
+  // We'll handle this in the API route
+  genAI = null as any;
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -10,6 +21,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    // Check if Gemini API is properly initialized
+    if (!genAI) {
+      return res.status(500).json({
+        error: 'Google Generative AI client not initialized. Please check your GEMINI_API_KEY environment variable.',
+      });
+    }
+
     const { template, variables } = req.body;
 
     if (!template) {
@@ -51,7 +69,10 @@ Return only the HTML code without any explanation or formatting.`;
       content: improvedTemplate,
     });
   } catch (error: any) {
-    notificationService.showErrorNotification(error?.message || 'Failed to improve template');
-    return res.status(500).json({ error: 'Failed to improve template' });
+    const errorMessage = error?.message || 'Failed to improve template';
+    return res.status(500).json({
+      error: 'Failed to improve template',
+      details: errorMessage,
+    });
   }
 }
