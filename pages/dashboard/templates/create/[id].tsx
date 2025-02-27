@@ -217,7 +217,6 @@ const CreateTemplate: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const openRef = useRef<() => void>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [exportFormat, setExportFormat] = useState<'pdf' | 'png' | 'jpg'>('pdf');
 
   const fetchTemplate = async () => {
     try {
@@ -507,7 +506,9 @@ const CreateTemplate: React.FC = () => {
       if (!template) return;
 
       // Show loading notification
-      notificationService.showInformationNotification('Exporting document...');
+      notificationService.showInformationNotification(
+        `Exporting document as ${format.toUpperCase()}...`
+      );
 
       // Create a hidden iframe to render the template
       const iframe = document.createElement('iframe');
@@ -521,6 +522,23 @@ const CreateTemplate: React.FC = () => {
       const { default: Handlebars } = await import('handlebars');
       const compiledTemplate = Handlebars.compile(code);
       const renderedContent = compiledTemplate(variables);
+
+      // Get paper dimensions based on format
+      const paperDimensions = {
+        a1: { width: 841, height: 594 },
+        a2: { width: 594, height: 420 },
+        a3: { width: 420, height: 297 },
+        a4: { width: 297, height: 210 },
+        a5: { width: 210, height: 148 },
+        a6: { width: 148, height: 105 },
+      };
+
+      // Get dimensions for the selected format
+      const dimensions = paperDimensions[format as keyof typeof paperDimensions];
+
+      // Apply landscape orientation if selected
+      const pageWidth = isLandScape ? dimensions.height : dimensions.width;
+      const pageHeight = isLandScape ? dimensions.width : dimensions.height;
 
       const htmlContent = `
         <!DOCTYPE html>
@@ -546,13 +564,18 @@ const CreateTemplate: React.FC = () => {
               }
               body {
                 margin: 0;
+                padding: 0;
                 font-family: ${fontsSelected[0] || 'system-ui'}, sans-serif;
+                width: ${pageWidth}mm;
+                height: ${pageHeight}mm;
+                overflow: hidden;
               }
               .page {
                 width: 100%;
                 height: 100%;
                 display: flex;
                 flex-direction: column;
+                box-sizing: border-box;
               }
             </style>
           </head>
@@ -607,46 +630,43 @@ const CreateTemplate: React.FC = () => {
 
       const contentElement = iframeDoc.body;
 
-      if (exportFormat === 'pdf') {
-        const canvas = await html2canvas(contentElement, {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-        });
+      const canvas = await html2canvas(contentElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        width: pageWidth * 3.78, // Convert mm to px (1mm ≈ 3.78px)
+        height: pageHeight * 3.78,
+      });
 
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new JsPDF({
-          orientation: isLandScape ? 'landscape' : 'portrait',
-          unit: 'mm',
-          format,
-        });
+      const imgData = canvas.toDataURL('image/png');
 
-        const imgWidth = pdf.internal.pageSize.getWidth();
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      // Create PDF with the exact dimensions of the selected paper size
+      const pdf = new JsPDF({
+        orientation: isLandScape ? 'landscape' : 'portrait',
+        unit: 'mm',
+        format,
+      });
 
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-        pdf.save(`${template.name || 'template'}.pdf`);
-      } else {
-        // For PNG or JPG, just use canvas directly
-        const canvas = await html2canvas(contentElement, {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-        });
+      // Add the image to fill the entire page
+      pdf.addImage(
+        imgData,
+        'PNG',
+        0,
+        0,
+        pdf.internal.pageSize.getWidth(),
+        pdf.internal.pageSize.getHeight()
+      );
 
-        const link = document.createElement('a');
-        link.download = `${template.name || 'template'}.${exportFormat}`;
-        link.href = canvas.toDataURL(`image/${exportFormat === 'jpg' ? 'jpeg' : exportFormat}`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
+      // Save the PDF with the template name and paper size
+      pdf.save(`${template.name || 'template'}_${format.toUpperCase()}.pdf`);
 
       // Clean up
       document.body.removeChild(iframe);
 
       // Show success notification
-      notificationService.showSuccessNotification('Document exported successfully!');
+      notificationService.showSuccessNotification(
+        `Document exported as ${format.toUpperCase()} PDF successfully!`
+      );
     } catch (error) {
       console.error('Error exporting document:', error);
       notificationService.showErrorNotification('Failed to export document. Please try again.');
@@ -1015,31 +1035,9 @@ const CreateTemplate: React.FC = () => {
                 Download Template
               </Menu.Item>
 
-              <Menu.Label>Export As</Menu.Label>
-              <Menu.Item
-                leftSection={<IconFileExport size={16} />}
-                onClick={() => {
-                  setExportFormat('pdf');
-                  exportPdf();
-                }}
-              >
-                PDF Document
-              </Menu.Item>
-              <Menu.Item
-                onClick={() => {
-                  setExportFormat('png');
-                  exportPdf();
-                }}
-              >
-                PNG Image
-              </Menu.Item>
-              <Menu.Item
-                onClick={() => {
-                  setExportFormat('jpg');
-                  exportPdf();
-                }}
-              >
-                JPG Image
+              <Menu.Label>Export PDF</Menu.Label>
+              <Menu.Item leftSection={<IconFileExport size={16} />} onClick={exportPdf}>
+                Export as {format.toUpperCase()} PDF
               </Menu.Item>
 
               <Divider />
@@ -1191,45 +1189,24 @@ const CreateTemplate: React.FC = () => {
                   <Text size="sm" fw={600} c="white" mb="md" fs="uppercase">
                     Export Settings
                   </Text>
-                  <Select
-                    size="sm"
-                    label="Export Format"
-                    value={exportFormat}
-                    onChange={(value) => setExportFormat(value as 'pdf' | 'png' | 'jpg')}
-                    data={[
-                      { label: 'PDF', value: 'pdf' },
-                      { label: 'PNG', value: 'png' },
-                      { label: 'JPG', value: 'jpg' },
-                    ]}
+                  <Text size="xs" c="dimmed" mb="md">
+                    PDF export will use the paper size and orientation selected above.
+                  </Text>
+                  <Button
+                    fullWidth
+                    leftSection={<IconFileExport size={16} />}
+                    onClick={exportPdf}
+                    variant="light"
+                    color="blue"
                     styles={{
-                      input: {
-                        backgroundColor: '#25262B',
-                        border: '1px solid #373A40',
-                        color: 'white',
+                      root: {
                         transition: 'all 0.2s ease',
-                        '&:hover': {
-                          borderColor: '#3B82F6',
-                        },
-                      },
-                      label: {
-                        color: '#909296',
-                        fontSize: '0.75rem',
-                        marginBottom: '0.25rem',
-                      },
-                      dropdown: {
-                        backgroundColor: '#25262B',
-                        border: '1px solid #373A40',
-                      },
-                      option: {
-                        '&[data-selected]': {
-                          '&, &:hover': {
-                            backgroundColor: '#3B82F6',
-                            color: 'white',
-                          },
-                        },
+                        '&:hover': { transform: 'translateY(-1px)' },
                       },
                     }}
-                  />
+                  >
+                    Export as {format.toUpperCase()} PDF
+                  </Button>
                 </Box>
 
                 {/* Variables section */}
