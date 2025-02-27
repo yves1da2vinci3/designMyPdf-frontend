@@ -22,11 +22,41 @@ try {
 // Function to fetch image data and convert to base64
 async function fetchImageAsBase64(url: string): Promise<{ data: string; mimeType: string }> {
   try {
-    const response = await axios.get(url, { responseType: 'arraybuffer' });
+    console.log(`Fetching image from: ${url}`);
+    const response = await axios.get(url, {
+      responseType: 'arraybuffer',
+      timeout: 10000, // 10 second timeout
+      maxContentLength: 10 * 1024 * 1024, // 10MB max size
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      },
+    });
+
+    if (response.status !== 200) {
+      throw new Error(`Failed to fetch image, status code: ${response.status}`);
+    }
+
     const contentType = response.headers['content-type'] || 'image/jpeg';
+    console.log(`Image content type: ${contentType}`);
+
+    if (!contentType.startsWith('image/')) {
+      throw new Error(`Invalid content type: ${contentType}. Expected an image.`);
+    }
+
     const base64Data = Buffer.from(response.data).toString('base64');
     return { data: base64Data, mimeType: contentType };
   } catch (error: any) {
+    console.error(`Error fetching image from ${url}:`, error);
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error(`Status: ${error.response.status}`);
+      console.error('Headers:', error.response.headers);
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('No response received:', error.request);
+    }
     throw new Error(`Failed to fetch image from ${url}: ${error.message}`);
   }
 }
@@ -437,19 +467,35 @@ Example of chart usage:
 Return only the HTML code without any explanation or formatting.`;
 
       // Generate content with both text and images
-      const templateResult = await model.generateContent([templatePrompt, ...imageParts]);
-      const templateResponse = await templateResult.response;
-      const template = templateResponse.text();
+      try {
+        console.log(`Sending ${imageParts.length} images to Gemini API`);
+        const templateResult = await model.generateContent([templatePrompt, ...imageParts]);
+        const templateResponse = await templateResult.response;
+        const template = templateResponse.text();
 
-      // Extract and analyze variables from the template
-      const extractedVars = extractVariablesFromTemplate(template);
-      const suggestedVariables = buildVariableStructure(extractedVars);
+        // Extract and analyze variables from the template
+        const extractedVars = extractVariablesFromTemplate(template);
+        const suggestedVariables = buildVariableStructure(extractedVars);
 
-      // Return both the template and suggested variables
-      return res.status(200).json({
-        content: template,
-        suggestedVariables,
-      });
+        // Return both the template and suggested variables
+        return res.status(200).json({
+          content: template,
+          suggestedVariables,
+        });
+      } catch (error: any) {
+        console.error('Gemini API error:', error);
+        let errorMessage = error.message || 'Unknown error';
+
+        // Check if the error is related to the image format or size
+        if (errorMessage.includes('image') || errorMessage.includes('file')) {
+          errorMessage = `Image processing error: ${errorMessage}. Try using a different image format (JPG or PNG) or a smaller image size.`;
+        }
+
+        return res.status(500).json({
+          error: 'Failed to generate template from images',
+          details: errorMessage,
+        });
+      }
     } catch (error: any) {
       return res.status(500).json({
         error: 'Failed to generate template from images',

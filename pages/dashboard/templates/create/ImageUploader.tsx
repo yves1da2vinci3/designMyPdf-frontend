@@ -88,6 +88,23 @@ function ImageUploader({ onGenerate, onClose }: ImageUploaderProps) {
         }),
       });
 
+      // Check if the response is ok before trying to parse JSON
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = 'Failed to generate template';
+
+        try {
+          // Try to parse the error as JSON
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorJson.details || errorMessage;
+        } catch (parseError) {
+          // If parsing fails, use the raw text
+          errorMessage = errorText || errorMessage;
+        }
+
+        throw new Error(errorMessage);
+      }
+
       const data = await response.json();
       if (data.content) {
         onGenerate(data.content, data.suggestedVariables || {});
@@ -96,6 +113,7 @@ function ImageUploader({ onGenerate, onClose }: ImageUploaderProps) {
         throw new Error('Failed to generate template');
       }
     } catch (error: any) {
+      console.error('Error generating template:', error);
       notificationService.showErrorNotification(error?.message || 'Error generating template');
     } finally {
       setIsGenerating(false);
