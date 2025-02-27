@@ -56,7 +56,7 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
         {getLayout(
           <DndProvider backend={HTML5Backend}>
             <Component {...pageProps} />
-          </DndProvider>
+          </DndProvider>,
         )}
       </ModalsProvider>
     </MantineProvider>

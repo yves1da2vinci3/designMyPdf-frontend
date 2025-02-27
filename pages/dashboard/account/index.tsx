@@ -42,10 +42,10 @@ export default function Account() {
 
   // UserManagement
   const [updateUserRequestStatus, setUserRequestStatus] = useState<RequestStatus>(
-    RequestStatus.NotStated
+    RequestStatus.NotStated,
   );
   const [fetchNamespacesRequestStatus, SetfetchNamespacesRequestStatus] = useState<RequestStatus>(
-    RequestStatus.NotStated
+    RequestStatus.NotStated,
   );
   const updateUserHandler = async (updateUser: updateUserDTO) => {
     setUserRequestStatus(RequestStatus.InProgress);
@@ -86,7 +86,7 @@ export default function Account() {
 
   // Add namespace
   const [addNamespaceRequestStatus, setAddNameSpaceRequestStatus] = useState(
-    RequestStatus.NotStated
+    RequestStatus.NotStated,
   );
   const AddNamespaceHandler = async (nameSpaceDTO: CreateNamespaceDto) => {
     try {

@@ -52,8 +52,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               (font) =>
                 `<link href="https://fonts.googleapis.com/css2?family=${font.replace(
                   / /g,
-                  '+'
-                )}&display=swap&text=${encodeURIComponent(sampleText)}" rel="stylesheet">`
+                  '+',
+                )}&display=swap&text=${encodeURIComponent(sampleText)}" rel="stylesheet">`,
             )
             .join('')}
           <script src="https://cdn.tailwindcss.com"></script>

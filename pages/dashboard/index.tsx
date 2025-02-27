@@ -13,7 +13,7 @@ const DEFAULT_PERIOD = 'week';
 export default function Overview() {
   const [LogsStats, setLogStats] = useState<LogStatDTO[]>([]);
   const [fetchLogStatsRequestStatus, setFetchLogStatsRequestStatus] = useState(
-    RequestStatus.NotStated
+    RequestStatus.NotStated,
   );
   const [period, setPeriod] = useState(DEFAULT_PERIOD);
   const router = useRouter();

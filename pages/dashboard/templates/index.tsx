@@ -20,7 +20,7 @@ const TemplateHome = () => {
   const [templates, setTemplates] = useState<TemplateDTO[]>([]);
   const [namespaces, setNamespaces] = useState<NamespaceDTO[]>([]);
   const [fetchTemplatesRequestStatus, setFetchTemplatesRequestStatus] = useState(
-    RequestStatus.NotStated
+    RequestStatus.NotStated,
   );
   const [selectedNamespaceId, setSelectedNamespaceId] = useState<number | null>(null);
 
@@ -52,7 +52,7 @@ const TemplateHome = () => {
 
   // Namespace Management
   const [addNamespaceRequestStatus, setAddNameSpaceRequestStatus] = useState(
-    RequestStatus.NotStated
+    RequestStatus.NotStated,
   );
 
   const updateTemplateOnClient = (id: number, namespaceId: number) => {
@@ -89,7 +89,7 @@ const TemplateHome = () => {
       setAddTemplateRequestStatus(RequestStatus.InProgress);
       const newTemplate = await templateApi.createTemplate(
         template.name,
-        selectedNamespaceId as number
+        selectedNamespaceId as number,
       );
       setAddTemplateRequestStatus(RequestStatus.Succeeded);
       setTemplates([...templates, newTemplate]);

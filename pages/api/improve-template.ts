@@ -24,7 +24,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Check if Gemini API is properly initialized
     if (!genAI) {
       return res.status(500).json({
-        error: 'Google Generative AI client not initialized. Please check your GEMINI_API_KEY environment variable.',
+        error:
+          'Google Generative AI client not initialized. Please check your GEMINI_API_KEY environment variable.',
       });
     }
 
