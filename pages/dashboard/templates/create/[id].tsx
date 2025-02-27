@@ -16,11 +16,13 @@ import {
   Tooltip,
   ScrollArea,
   SimpleGrid,
+  Image,
 } from '@mantine/core';
 import { useRouter, useParams } from 'next/navigation';
 import { useDisclosure } from '@mantine/hooks';
 import { DndProvider, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { Dropzone, FileWithPath } from '@mantine/dropzone';
 import {
   IconChevronLeft,
   IconDownload,
@@ -30,6 +32,10 @@ import {
   IconSparkles,
   IconChartDots,
   IconShoppingCart,
+  IconPhoto,
+  IconUpload,
+  IconX,
+  IconTrash,
 } from '@tabler/icons-react';
 import { useMonaco } from '@monaco-editor/react';
 import IDE from './CodeEditor';
@@ -201,6 +207,10 @@ const CreateTemplate: React.FC = () => {
     useDisclosure(false);
   const [isImproving, setIsImproving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [files, setFiles] = useState<FileWithPath[]>([]);
+  const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const openRef = useRef<() => void>(null);
 
   const fetchTemplate = async () => {
     try {
@@ -331,28 +341,101 @@ const CreateTemplate: React.FC = () => {
     openAddVariable();
   };
 
+  const handleDrop = (acceptedFiles: FileWithPath[]) => {
+    // Limit to 5 files
+    const newFiles = [...files, ...acceptedFiles].slice(0, 5);
+    setFiles(newFiles);
+  };
+
+  const removeFile = (index: number) => {
+    setFiles((current) => current.filter((_, i) => i !== index));
+  };
+
+  const uploadFiles = async () => {
+    if (files.length === 0) return;
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      files.forEach((file) => {
+        formData.append('files', file);
+      });
+
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const uploadData = await response.json();
+      if (uploadData.urls && Array.isArray(uploadData.urls)) {
+        setUploadedUrls(uploadData.urls);
+        setFiles([]);
+        notificationService.showSuccessNotification('Images uploaded successfully');
+      } else {
+        throw new Error('Failed to upload images');
+      }
+    } catch (error: any) {
+      notificationService.showErrorNotification(error?.message || 'Error uploading images');
+      console.error('Error uploading images:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const clearImages = () => {
+    setUploadedUrls([]);
+  };
+
+  const removeUploadedImage = (index: number) => {
+    setUploadedUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const generateTemplateFromPrompt = async (): Promise<void> => {
     if (!prompt) return;
 
     setIsGenerating(true);
     try {
-      const response = await fetch('/api/generate-template', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
-      });
+      // If we have uploaded images, use the generate-template-from-images endpoint
+      if (uploadedUrls.length > 0) {
+        const response = await fetch('/api/generate-template-from-images', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prompt,
+            imageUrls: uploadedUrls,
+          }),
+        });
 
-      const generatedData = await response.json();
-      if (generatedData.content) {
-        if (generatedData.suggestedVariables) {
-          handleVariablesUpdate(generatedData.suggestedVariables);
-          setSuggestedVariables(generatedData.suggestedVariables);
+        const responseData = await response.json();
+        if (responseData.content) {
+          if (responseData.suggestedVariables) {
+            handleVariablesUpdate(responseData.suggestedVariables);
+            setSuggestedVariables(responseData.suggestedVariables);
+          }
+          setCode(responseData.content);
+          closePromptDrawer();
         }
+      } else {
+        // Otherwise use the regular generate-template endpoint
+        const response = await fetch('/api/generate-template', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ prompt }),
+        });
 
-        setCode(generatedData.content);
-        closePromptDrawer();
+        const generatedData = await response.json();
+        if (generatedData.content) {
+          if (generatedData.suggestedVariables) {
+            handleVariablesUpdate(generatedData.suggestedVariables);
+            setSuggestedVariables(generatedData.suggestedVariables);
+          }
+          setCode(generatedData.content);
+          closePromptDrawer();
+        }
       }
     } catch (error: any) {
       notificationService.showErrorNotification(error?.message || 'Error generating template');
@@ -452,9 +535,141 @@ const CreateTemplate: React.FC = () => {
       >
         <Stack gap="xl" p="xl">
           <Text size="sm" c="dimmed">
-            Describe your template and the AI will generate it along with suggested variables. The
-            existing variables will be replaced with AI-generated ones with realistic sample data.
+            Describe your template and the AI will generate it along with suggested variables.
+            You can also upload images to help the AI understand your design requirements.
           </Text>
+
+          {/* Image Upload Section */}
+          {uploadedUrls.length > 0 ? (
+            <Box>
+              <Group justify="space-between" mb="xs">
+                <Text size="sm" fw={500}>
+                  Uploaded Images
+                </Text>
+                <Button
+                  variant="subtle"
+                  color="red"
+                  size="xs"
+                  leftSection={<IconTrash size={14} />}
+                  onClick={clearImages}
+                >
+                  Clear All
+                </Button>
+              </Group>
+              <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="xs">
+                {uploadedUrls.map((url, index) => (
+                  <Box key={index} pos="relative">
+                    <ActionIcon
+                      color="red"
+                      variant="filled"
+                      radius="xl"
+                      size="sm"
+                      style={{ position: 'absolute', top: 5, right: 5, zIndex: 10 }}
+                      onClick={() => removeUploadedImage(index)}
+                    >
+                      <IconX size={14} />
+                    </ActionIcon>
+                    <Image
+                      src={url}
+                      height={120}
+                      fit="cover"
+                      radius="md"
+                      style={{ border: '1px solid #373A40' }}
+                    />
+                  </Box>
+                ))}
+              </SimpleGrid>
+            </Box>
+          ) : (
+            <Box>
+              <Text size="sm" fw={500} mb="xs">
+                Upload Images (Optional)
+              </Text>
+              <Dropzone
+                onDrop={handleDrop}
+                accept={['image/png', 'image/jpeg', 'image/gif', 'image/webp']}
+                maxSize={5 * 1024 * 1024}
+                maxFiles={5}
+                openRef={openRef}
+                styles={{
+                  root: {
+                    borderColor: '#373A40',
+                    backgroundColor: '#25262B',
+                    '&:hover': {
+                      borderColor: '#3B82F6',
+                    },
+                  },
+                }}
+              >
+                <Group justify="center" gap="xl" style={{ minHeight: 100, pointerEvents: 'none' }}>
+                  <Dropzone.Accept>
+                    <IconUpload size={40} stroke={1.5} color="#3B82F6" />
+                  </Dropzone.Accept>
+                  <Dropzone.Reject>
+                    <IconX size={40} stroke={1.5} color="#ff0000" />
+                  </Dropzone.Reject>
+                  <Dropzone.Idle>
+                    <IconPhoto size={40} stroke={1.5} color="#909296" />
+                  </Dropzone.Idle>
+
+                  <Stack gap="xs" style={{ textAlign: 'center' }}>
+                    <Text size="sm" inline c="white">
+                      Drag images here or click to select files
+                    </Text>
+                    <Text size="xs" c="dimmed" inline>
+                      Upload up to 5 images, each file should not exceed 5MB
+                    </Text>
+                  </Stack>
+                </Group>
+              </Dropzone>
+
+              {files.length > 0 && (
+                <Box mt="md">
+                  <Text size="sm" fw={500} mb="xs">
+                    Selected Images
+                  </Text>
+                  <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="xs">
+                    {files.map((file, index) => (
+                      <Box key={index} pos="relative">
+                        <ActionIcon
+                          color="red"
+                          variant="filled"
+                          radius="xl"
+                          size="sm"
+                          style={{ position: 'absolute', top: 5, right: 5, zIndex: 10 }}
+                          onClick={() => removeFile(index)}
+                        >
+                          <IconX size={14} />
+                        </ActionIcon>
+                        <Image
+                          src={URL.createObjectURL(file)}
+                          height={120}
+                          fit="cover"
+                          radius="md"
+                          style={{ border: '1px solid #373A40' }}
+                          onLoad={() => URL.revokeObjectURL(URL.createObjectURL(file))}
+                        />
+                      </Box>
+                    ))}
+                  </SimpleGrid>
+
+                  <Group justify="flex-end" mt="md">
+                    <Button variant="subtle" color="gray" onClick={() => setFiles([])}>
+                      Clear
+                    </Button>
+                    <Button
+                      onClick={uploadFiles}
+                      loading={isUploading}
+                      leftSection={<IconUpload size={16} />}
+                      color="blue"
+                    >
+                      Upload
+                    </Button>
+                  </Group>
+                </Box>
+              )}
+            </Box>
+          )}
 
           <Textarea
             label="Template Description"

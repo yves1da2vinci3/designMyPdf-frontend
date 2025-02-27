@@ -19,7 +19,7 @@ const data = [
   },
 ];
 
-export function Stats() {
+const Stats = () => {
   const stats = data.map((stat) => (
     <Paper withBorder p="md" radius="md" key={stat.title}>
       <Group justify="space-between">
@@ -42,4 +42,6 @@ export function Stats() {
       </Container>
     </div>
   );
-}
+};
+
+export default Stats;

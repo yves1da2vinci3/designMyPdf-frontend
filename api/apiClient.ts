@@ -20,9 +20,7 @@ apiClient.interceptors.request.use(
 
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 apiClient.interceptors.response.use(
@@ -31,14 +29,14 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
 
     // Check if the error is due to an unauthorized request
-    if (error.response.status === HttpStatusCode.Unauthorized && !originalRequest._retry) {
+    if (error.response && error.response.status === HttpStatusCode.Unauthorized && !originalRequest._retry) {
       console.log('Unauthorized request');
 
       originalRequest._retry = true; // Mark the request as retried to prevent infinite loops
 
       try {
         await authApi.refreshAccessToken();
-        const accessToken = authApi?.getUserSession()?.accessToken;
+        const accessToken = authApi.getUserSession()?.accessToken;
         if (accessToken) {
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           console.log('Retrying request');
@@ -50,15 +48,14 @@ apiClient.interceptors.response.use(
         console.error('Error refreshing access token:', refreshError);
         authApi.logout();
         notificationService.showErrorNotification('Your session has expired. Please log in again.');
-        // Optionally, redirect to login page or handle session expiration here
         return Promise.reject(refreshError);
       }
     }
 
     // Handle other errors
-    if (error.response.status >= HttpStatusCode.BadRequest) {
+    if (error.response && error.response.status >= HttpStatusCode.BadRequest) {
       const message =
-        error?.response?.data?.error || 'An error occurred when processing your request';
+        error.response.data?.error || 'An error occurred when processing your request';
       console.log('Request Error notify:', message);
       notificationService.showErrorNotification(message);
     }

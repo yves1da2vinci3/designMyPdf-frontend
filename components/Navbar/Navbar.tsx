@@ -28,6 +28,7 @@ import {
   IconFingerprintScan,
 } from '@tabler/icons-react';
 import { Logo } from '@/components/AppLogo/AppLogo';
+import { Links } from '@/constants/routes';
 import classes from './NavBar.module.css';
 
 const mockdata = [
@@ -58,16 +59,7 @@ const mockdata = [
   },
 ];
 
-export const Links = {
-  LOGIN: '/login',
-  SIGNUP: '/signup',
-  FORGOT_PASSWORD: '/forgot-password',
-  DASHBOARD: '/dashboard',
-  TEMPLATES: '/dashboard/templates',
-  LOGS: '/dashboard/backtrace',
-};
-
-export function NavBar() {
+const NavBar = () => {
   const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] = useDisclosure(false);
   const [linksOpened, { toggle: toggleLinks }] = useDisclosure(false);
   const router = useRouter();
@@ -204,4 +196,6 @@ export function NavBar() {
       </Drawer>
     </Box>
   );
-}
+};
+
+export default NavBar;
