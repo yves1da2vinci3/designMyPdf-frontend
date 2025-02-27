@@ -4,6 +4,9 @@ interface NotificationService {
   showSuccessNotification: (message: string) => void;
   showErrorNotification: (message: string) => void;
   showInformationNotification: (message: string) => void;
+  showLoading: (message: string) => void;
+  showSuccess: (message: string) => void;
+  showError: (message: string) => void;
 }
 
 const notificationService: NotificationService = {
@@ -26,6 +29,29 @@ const notificationService: NotificationService = {
       title: "Information",
       message: message,
       color: "blue",
+    });
+  },
+  showLoading: function (message: string): void {
+    notifications.show({
+      title: "Loading",
+      message: message,
+      color: "blue",
+      loading: true,
+      autoClose: false,
+    });
+  },
+  showSuccess: function (message: string): void {
+    notifications.show({
+      title: "Success",
+      message: message,
+      color: "green",
+    });
+  },
+  showError: function (message: string): void {
+    notifications.show({
+      title: "Error",
+      message: message,
+      color: "red",
     });
   },
 };

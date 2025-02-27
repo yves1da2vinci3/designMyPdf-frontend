@@ -78,6 +78,15 @@ export interface PublishToMarketplaceDto {
   fonts: string[];
 }
 
+export interface ExportTemplateDto {
+  templateId: string;
+  format: 'pdf' | 'png' | 'jpg';
+  variables: any;
+  paperSize: string;
+  isLandscape: boolean;
+  fonts: string[];
+}
+
 export const templateApi = {
   async createTemplate(templateName: string, namespaceId: number): Promise<TemplateDTO> {
     const template = {
@@ -168,5 +177,25 @@ export const templateApi = {
       method: 'POST',
     });
     return response.json();
+  },
+
+  async exportTemplate(data: ExportTemplateDto): Promise<Blob> {
+    try {
+      const response = await fetch(`/api/templates/${data.templateId}/export`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error exporting template: ${response.statusText}`);
+      }
+
+      return await response.blob();
+    } catch (error) {
+      throw new Error(`Error exporting template: ${error}`);
+    }
   },
 };
