@@ -27,10 +27,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (result.result === 'ok') {
       return res.status(200).json({ success: true, message: 'Image deleted successfully' });
     }
-    
+
     return res.status(400).json({ success: false, message: 'Failed to delete image', result });
   } catch (error) {
     console.error('Error deleting image:', error);
     return res.status(500).json({ error: 'Server error' });
   }
-} 
+}

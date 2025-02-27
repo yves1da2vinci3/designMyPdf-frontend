@@ -19,6 +19,7 @@ const Preview: React.FC<PreviewProps> = ({
   setTemplateContent,
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const chartInstancesRef = useRef<any[]>([]);
   const [pageCount, setPageCount] = useState(1);
 
   // Define paper dimensions in mm
@@ -87,14 +88,18 @@ const Preview: React.FC<PreviewProps> = ({
                 try {
                   const chartData = JSON.parse(dataStr);
                   (window as any).Chart.register(...(window as any).Chart.register);
-                  new (window as any).Chart(canvas, {
+                  // Store the chart instance in a variable
+                  const chartInstance = new (window as any).Chart(canvas, {
                     type,
                     data: chartData,
                     options: {
                       responsive: true,
                       maintainAspectRatio: true,
+                      animation: false,
                     },
                   });
+                  // Store in ref for potential cleanup later
+                  chartInstancesRef.current.push(chartInstance);
                 } catch (error) {
                   console.error('Error initializing chart:', error);
                 }

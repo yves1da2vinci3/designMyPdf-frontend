@@ -390,7 +390,7 @@ const CreateTemplate: React.FC = () => {
 
   const removeUploadedImage = (index: number) => {
     const imageToRemove = uploadedUrls[index];
-    
+
     // Extract the public ID from the Cloudinary URL
     if (typeof imageToRemove === 'string' && imageToRemove.includes('cloudinary.com')) {
       try {
@@ -398,7 +398,7 @@ const CreateTemplate: React.FC = () => {
         const urlParts = imageToRemove.split('/');
         const fileNameWithExt = urlParts[urlParts.length - 1];
         const publicIdWithFolder = `${urlParts[urlParts.length - 2]}/${fileNameWithExt.split('.')[0]}`;
-        
+
         // Call the API to delete the image from Cloudinary
         fetch('/api/delete-image', {
           method: 'POST',
@@ -407,22 +407,22 @@ const CreateTemplate: React.FC = () => {
           },
           body: JSON.stringify({ publicId: publicIdWithFolder }),
         })
-          .then(response => response.json())
-          .then(result => {
+          .then((response) => response.json())
+          .then((result) => {
             if (result.success) {
               console.log('Image deleted from Cloudinary:', publicIdWithFolder);
             } else {
               console.error('Failed to delete image from Cloudinary:', result);
             }
           })
-          .catch(error => {
+          .catch((error) => {
             console.error('Error deleting image from Cloudinary:', error);
           });
       } catch (error) {
         console.error('Error parsing Cloudinary URL:', error);
       }
     }
-    
+
     // Remove from UI regardless of deletion success
     setUploadedUrls((prev) => prev.filter((_, i) => i !== index));
   };
@@ -435,7 +435,7 @@ const CreateTemplate: React.FC = () => {
           const urlParts = url.split('/');
           const fileNameWithExt = urlParts[urlParts.length - 1];
           const publicIdWithFolder = `${urlParts[urlParts.length - 2]}/${fileNameWithExt.split('.')[0]}`;
-          
+
           fetch('/api/delete-image', {
             method: 'POST',
             headers: {
@@ -443,15 +443,15 @@ const CreateTemplate: React.FC = () => {
             },
             body: JSON.stringify({ publicId: publicIdWithFolder }),
           })
-            .then(response => response.json())
-            .then(result => {
+            .then((response) => response.json())
+            .then((result) => {
               if (result.success) {
                 console.log('Image deleted from Cloudinary:', publicIdWithFolder);
               } else {
                 console.error('Failed to delete image from Cloudinary:', result);
               }
             })
-            .catch(error => {
+            .catch((error) => {
               console.error('Error deleting image from Cloudinary:', error);
             });
         } catch (error) {
@@ -459,7 +459,7 @@ const CreateTemplate: React.FC = () => {
         }
       }
     });
-    
+
     // Clear the UI
     setUploadedUrls([]);
   };
@@ -709,7 +709,8 @@ const CreateTemplate: React.FC = () => {
       const { default: html2canvas } = await import('html2canvas');
 
       // Create jsPDF instance with the correct dimensions
-      const pdf = new jsPDF({
+      const PDF = jsPDF;
+      const pdf = new PDF({
         orientation: isLandScape ? 'landscape' : 'portrait',
         unit: 'mm',
         format,
@@ -751,44 +752,43 @@ const CreateTemplate: React.FC = () => {
         if (element.classList.contains('page-break')) {
           pdf.addPage();
           currentPageHeight = 0;
-          pageCount += 1;
-          continue;
+          pageCount = pageCount + 1;
+        } else {
+          const elementHeight = getPdfHeight(element);
+
+          // Check if element fits on current page
+          if (currentPageHeight + elementHeight > contentHeight && currentPageHeight > 0) {
+            // Element doesn't fit, add a new page
+            pdf.addPage();
+            currentPageHeight = 0;
+            pageCount = pageCount + 1;
+          }
+
+          // Capture this element
+          const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: 'white',
+          });
+
+          const imgData = canvas.toDataURL('image/png');
+          const imgWidth = getPdfWidth(element);
+          const imgHeight = elementHeight;
+
+          // Add element to PDF at the current position
+          pdf.addImage(
+            imgData,
+            'PNG',
+            10, // X position (10mm margin)
+            10 + currentPageHeight, // Y position (10mm margin + current height)
+            imgWidth,
+            imgHeight
+          );
+
+          // Update current page height
+          currentPageHeight += imgHeight;
         }
-
-        const elementHeight = getPdfHeight(element);
-
-        // Check if element fits on current page
-        if (currentPageHeight + elementHeight > contentHeight && currentPageHeight > 0) {
-          // Element doesn't fit, add a new page
-          pdf.addPage();
-          currentPageHeight = 0;
-          pageCount += 1;
-        }
-
-        // Capture this element
-        const canvas = await html2canvas(element, {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: 'white',
-        });
-
-        const imgData = canvas.toDataURL('image/png');
-        const imgWidth = getPdfWidth(element);
-        const imgHeight = elementHeight;
-
-        // Add element to PDF at the current position
-        pdf.addImage(
-          imgData,
-          'PNG',
-          10, // X position (10mm margin)
-          10 + currentPageHeight, // Y position (10mm margin + current height)
-          imgWidth,
-          imgHeight
-        );
-
-        // Update current page height
-        currentPageHeight += imgHeight;
       }
 
       // Clean up

@@ -26,13 +26,13 @@ async function cleanupOldImages() {
   try {
     if (uploadedImageIds.length > 20) {
       const idsToDelete = uploadedImageIds.slice(0, uploadedImageIds.length - 20);
-      
+
       // Delete images from Cloudinary
       for (const publicId of idsToDelete) {
         await cloudinary.uploader.destroy(publicId);
         console.log(`Deleted old image: ${publicId}`);
       }
-      
+
       // Update the array to only keep the most recent 20
       uploadedImageIds.splice(0, uploadedImageIds.length - 20);
     }
@@ -76,11 +76,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         try {
           const uploadedFiles = files.files;
           const fileArray = Array.isArray(uploadedFiles) ? uploadedFiles : [uploadedFiles];
-          
+
           // Upload files to Cloudinary
           const uploadPromises = fileArray.map(async (file) => {
             if (!file) return null;
-            
+
             try {
               // Upload to Cloudinary with auto-expiration
               const result = await cloudinary.uploader.upload(file.filepath, {
@@ -93,15 +93,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                   { quality: 'auto:good' }, // Optimize quality
                 ],
               });
-              
+
               // Store the public_id for later cleanup
               if (result.public_id) {
                 uploadedImageIds.push(result.public_id);
               }
-              
+
               // Delete the temporary file
               fs.unlinkSync(file.filepath);
-              
+
               return {
                 url: result.secure_url,
                 public_id: result.public_id,
@@ -111,23 +111,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               return null;
             }
           });
-          
+
           const uploadResults = (await Promise.all(uploadPromises)).filter(Boolean);
-          const uploadedUrls = uploadResults.map(result => result?.url).filter(Boolean);
-          
+          const uploadedUrls = uploadResults.map((result) => result?.url).filter(Boolean);
+
           // Clean up temporary directory
           try {
             fs.rmdirSync(uploadDir);
           } catch (cleanupError) {
             console.error('Error cleaning up temp directory:', cleanupError);
           }
-          
+
           // Run cleanup to ensure we don't exceed storage limits
           cleanupOldImages();
-          
-          res.status(200).json({ 
+
+          res.status(200).json({
             urls: uploadedUrls,
-            message: 'Images uploaded successfully. They will be automatically deleted after usage to preserve storage.',
+            message:
+              'Images uploaded successfully. They will be automatically deleted after usage to preserve storage.',
           });
           return resolve(undefined);
         } catch (error) {

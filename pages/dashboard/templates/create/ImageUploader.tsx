@@ -113,8 +113,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onGenerate, onClose }) =>
   return (
     <Stack gap="xl">
       <Text size="sm" c="dimmed">
-        Upload images and provide a prompt to generate a template. The AI will analyze the images and
-        create a template based on your requirements.
+        Upload images and provide a prompt to generate a template. The AI will analyze the images
+        and create a template based on your requirements.
       </Text>
 
       {uploadedUrls.length > 0 ? (
@@ -143,9 +143,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onGenerate, onClose }) =>
                     radius="xl"
                     size="sm"
                     style={{ position: 'absolute', top: 5, right: 5, zIndex: 10 }}
-                    onClick={() =>
-                      setUploadedUrls((prev) => prev.filter((_, i) => i !== index))
-                    }
+                    onClick={() => setUploadedUrls((prev) => prev.filter((_, i) => i !== index))}
                   >
                     <IconX size={14} />
                   </ActionIcon>
@@ -305,14 +303,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onGenerate, onClose }) =>
             right: 0,
             bottom: 0,
             backgroundColor: 'rgba(0,0,0,0.5)',
-            zIndex: 100
+            zIndex: 100,
           }}
         >
           <Stack align="center">
             <Loader size="lg" color="blue" />
-            <Text c="white">
-              {isUploading ? 'Uploading images...' : 'Generating template...'}
-            </Text>
+            <Text c="white">{isUploading ? 'Uploading images...' : 'Generating template...'}</Text>
           </Stack>
         </Center>
       )}

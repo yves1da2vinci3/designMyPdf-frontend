@@ -44,31 +44,35 @@ The platform uses iframes to simulate different paper sizes, ensuring that what 
 ## 🚀 Quick Start
 
 1. Clone the repository:
-\`\`\`bash
-git clone https://github.com/yves1da2vinci3/designMyPdf-frontend.git
-cd designMyPdf-frontend
-\`\`\`
+   \`\`\`bash
+   git clone https://github.com/yves1da2vinci3/designMyPdf-frontend.git
+   cd designMyPdf-frontend
+   \`\`\`
 
 2. Install dependencies:
-\`\`\`bash
-yarn install
-\`\`\`
+   \`\`\`bash
+   yarn install
+   \`\`\`
 
 3. Set up environment variables:
+
    - Create a `.env.local` file in the root directory
    - Add the following variables:
-   \`\`\`
+     \`\`\`
+
    # Cloudinary Configuration
+
    CLOUDINARY_CLOUD_NAME=your-cloud-name
    CLOUDINARY_API_KEY=your-api-key
    CLOUDINARY_API_SECRET=your-api-secret
    \`\`\`
+
    - You can get these credentials by signing up at [Cloudinary](https://cloudinary.com/)
 
 4. Start the development server:
-\`\`\`bash
-yarn dev
-\`\`\`
+   \`\`\`bash
+   yarn dev
+   \`\`\`
 
 Visit [http://localhost:3000](http://localhost:3000) to see your app.
 

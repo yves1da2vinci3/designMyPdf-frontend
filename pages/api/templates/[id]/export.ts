@@ -129,7 +129,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Optimize images on the page
     await page.evaluate(() => {
       const images = document.querySelectorAll('img');
-      images.forEach(img => {
+      images.forEach((img) => {
         img.style.imageRendering = 'optimizeSpeed';
         // Remove any high-resolution attributes
         img.removeAttribute('srcset');

@@ -46,10 +46,9 @@ const DraggableItem: React.FC<{
   item: DndItem;
   index: number;
   moveItem: (dragIndex: number, hoverIndex: number) => void;
-  updateItem: (id: string, updates: Partial<DndItem>) => void;
   removeItem: (id: string) => void;
   openEditor: (id: string) => void;
-}> = ({ item, index, moveItem, updateItem, removeItem, openEditor }) => {
+}> = ({ item, index, moveItem, removeItem, openEditor }) => {
   const ref = useRef<HTMLDivElement>(null);
 
   const [{ isDragging }, drag] = useDrag({
@@ -328,16 +327,17 @@ const DragDropEditor: React.FC<DragDropEditorProps> = ({ onChange, initialConten
 
   // Ajouter un nouvel élément
   const addItem = (type: 'text' | 'image' | 'chart' | 'table') => {
-    const newItem: DndItem = {
-      id: `${type}-${Date.now()}`,
+    const newId = `item-${Date.now()}`;
+    const newItemObj: DndItem = {
+      id: newId,
       type,
-      content:
-        type === 'text' ? 'New Text' : type === 'image' ? 'https://via.placeholder.com/150' : {},
+      content: type === 'text' ? 'New Text' : '',
       position: { x: 0, y: 0 },
-      size: { width: 200, height: type === 'text' ? 50 : 150 },
-      style: type === 'text' ? { fontSize: '16px', color: '#000000' } : {},
+      size: { width: 200, height: type === 'text' ? 100 : 200 },
+      style: {},
     };
-    setItems((prevItems) => [...prevItems, newItem]);
+    
+    setItems((prevItems) => [...prevItems, newItemObj]);
   };
 
   return (
@@ -407,7 +407,6 @@ const DragDropEditor: React.FC<DragDropEditorProps> = ({ onChange, initialConten
                 item={item}
                 index={index}
                 moveItem={moveItem}
-                updateItem={updateItem}
                 removeItem={removeItem}
                 openEditor={openEditor}
               />
