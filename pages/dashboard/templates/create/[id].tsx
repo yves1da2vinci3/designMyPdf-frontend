@@ -517,7 +517,11 @@ const CreateTemplate: React.FC = () => {
       iframe.style.top = '-9999px';
       document.body.appendChild(iframe);
 
-      // Generate HTML content
+      // Use Handlebars to render the template with variables
+      const { default: Handlebars } = await import('handlebars');
+      const compiledTemplate = Handlebars.compile(code);
+      const renderedContent = compiledTemplate(variables);
+
       const htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -554,7 +558,7 @@ const CreateTemplate: React.FC = () => {
           </head>
           <body>
             <div class="page">
-              ${code}
+              ${renderedContent}
             </div>
             <script>
               // Initialize charts if any
@@ -1011,8 +1015,31 @@ const CreateTemplate: React.FC = () => {
                 Download Template
               </Menu.Item>
 
-              <Menu.Item leftSection={<IconFileExport size={16} />} onClick={exportPdf}>
-                Export as PDF
+              <Menu.Label>Export As</Menu.Label>
+              <Menu.Item
+                leftSection={<IconFileExport size={16} />}
+                onClick={() => {
+                  setExportFormat('pdf');
+                  exportPdf();
+                }}
+              >
+                PDF Document
+              </Menu.Item>
+              <Menu.Item
+                onClick={() => {
+                  setExportFormat('png');
+                  exportPdf();
+                }}
+              >
+                PNG Image
+              </Menu.Item>
+              <Menu.Item
+                onClick={() => {
+                  setExportFormat('jpg');
+                  exportPdf();
+                }}
+              >
+                JPG Image
               </Menu.Item>
 
               <Divider />
@@ -1067,17 +1094,19 @@ const CreateTemplate: React.FC = () => {
             gap="xl"
           >
             {sidebarCollapsed ? (
-              <ActionIcon
-                variant="subtle"
-                color="blue"
-                onClick={() => setSidebarCollapsed(false)}
-                style={{
-                  marginTop: '10px',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <IconChevronRight size={20} />
-              </ActionIcon>
+              <Center>
+                <ActionIcon
+                  variant="subtle"
+                  color="blue"
+                  onClick={() => setSidebarCollapsed(false)}
+                  style={{
+                    marginTop: '10px',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <IconChevronRight size={20} />
+                </ActionIcon>
+              </Center>
             ) : (
               <>
                 <Group justify="space-between">
