@@ -1,8 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { GoogleGenerativeAI, FileDataPart, InlineDataPart } from '@google/generative-ai';
+import { GoogleGenerativeAI, InlineDataPart } from '@google/generative-ai';
 import { faker } from '@faker-js/faker';
 import fs from 'fs';
 import path from 'path';
+import axios from 'axios';
 
 // Initialize the Google Generative AI client with proper error handling
 let genAI: GoogleGenerativeAI;
@@ -16,6 +17,18 @@ try {
   // Log initialization error but don't crash the server
   // We'll handle this in the API route
   genAI = null as any;
+}
+
+// Function to fetch image data and convert to base64
+async function fetchImageAsBase64(url: string): Promise<{ data: string; mimeType: string }> {
+  try {
+    const response = await axios.get(url, { responseType: 'arraybuffer' });
+    const contentType = response.headers['content-type'] || 'image/jpeg';
+    const base64Data = Buffer.from(response.data).toString('base64');
+    return { data: base64Data, mimeType: contentType };
+  } catch (error: any) {
+    throw new Error(`Failed to fetch image from ${url}: ${error.message}`);
+  }
 }
 
 // Add chart types
@@ -364,7 +377,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Prepare image parts for the model
     try {
-      const imageParts: (FileDataPart | InlineDataPart)[] = await Promise.all(
+      const imageParts: InlineDataPart[] = await Promise.all(
         imageUrls.map(async (url: string) => {
           try {
             // For local images, we need to read them from the filesystem
@@ -386,12 +399,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               } as InlineDataPart;
             }
 
-            // For external URLs, we can use them directly
+            // For external URLs (including Cloudinary), fetch the image and convert to base64
+            const { data, mimeType } = await fetchImageAsBase64(url);
             return {
-              fileData: {
-                fileUri: url,
+              inlineData: {
+                data,
+                mimeType,
               },
-            } as FileDataPart;
+            } as InlineDataPart;
           } catch (error: any) {
             // Log the error but continue with other images
             throw new Error(`Error processing image ${url}: ${error.message}`);
