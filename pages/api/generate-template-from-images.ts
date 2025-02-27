@@ -1,7 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { GoogleGenerativeAI, Part } from '@google/generative-ai';
+import { GoogleGenerativeAI, FileDataPart, InlineDataPart } from '@google/generative-ai';
 import { faker } from '@faker-js/faker';
-import notificationService from '@/services/NotificationService';
 import fs from 'fs';
 import path from 'path';
 
@@ -132,8 +131,8 @@ function extractVariablesFromTemplate(
       .replace(/^#|^\/|else/g, '')
       .split(' ');
     if (rawVariable && !rawVariable.includes('this.')) {
-      const path = rawVariable.split('.');
-      const rootVar = path[0];
+      const varPath = rawVariable.split('.');
+      const rootVar = varPath[0];
 
       // Check if it's inside an #each block
       const eachBlockRegex = new RegExp(`{{#each\\s+${rootVar}}}([\\s\\S]*?){{/each}}`, 'g');
@@ -164,12 +163,12 @@ function extractVariablesFromTemplate(
           path: [rootVar],
           arrayItemStructure,
         });
-      } else if (path.length > 1) {
+      } else if (varPath.length > 1) {
         // Handle nested object
         if (!variables.has(rootVar)) {
           variables.set(rootVar, { type: 'object', path: [rootVar] });
         }
-        variables.set(rawVariable, { type: 'value', path });
+        variables.set(rawVariable, { type: 'value', path: varPath });
       } else {
         variables.set(rawVariable, { type: 'value', path: [rawVariable] });
       }
@@ -267,16 +266,32 @@ function getExampleValue(prop: string): any {
   if (propLower.includes('position')) return faker.person.jobTitle();
 
   // Commerce related fields
-  if (propLower.includes('price') || propLower.includes('amount')) { return Number(faker.commerce.price()); }
-  if (propLower.includes('product')) { return faker.commerce.productName(); }
-  if (propLower.includes('description')) { return faker.commerce.productDescription(); }
-  if (propLower.includes('quantity') || propLower.includes('count')) { return faker.number.int({ min: 1, max: 100 }); }
-  if (propLower.includes('total')) { return Number(faker.commerce.price({ min: 100, max: 1000 })); }
-  if (propLower.includes('currency')) { return faker.finance.currencyCode(); }
+  if (propLower.includes('price') || propLower.includes('amount')) {
+    return Number(faker.commerce.price());
+  }
+  if (propLower.includes('product')) {
+    return faker.commerce.productName();
+  }
+  if (propLower.includes('description')) {
+    return faker.commerce.productDescription();
+  }
+  if (propLower.includes('quantity') || propLower.includes('count')) {
+    return faker.number.int({ min: 1, max: 100 });
+  }
+  if (propLower.includes('total')) {
+    return Number(faker.commerce.price({ min: 100, max: 1000 }));
+  }
+  if (propLower.includes('currency')) {
+    return faker.finance.currencyCode();
+  }
 
   // Date related fields
-  if (propLower.includes('date')) { return faker.date.recent().toISOString().split('T')[0]; }
-  if (propLower.includes('year')) { return faker.date.past().getFullYear(); }
+  if (propLower.includes('date')) {
+    return faker.date.recent().toISOString().split('T')[0];
+  }
+  if (propLower.includes('year')) {
+    return faker.date.past().getFullYear();
+  }
   if (propLower.includes('month')) return faker.date.month();
 
   // ID/Reference fields
@@ -321,7 +336,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     // Prepare image parts for the model
-    const imageParts: Part[] = await Promise.all(
+    const imageParts: (FileDataPart | InlineDataPart)[] = await Promise.all(
       imageUrls.map(async (url: string) => {
         // For local images, we need to read them from the filesystem
         if (url.startsWith('/uploads/')) {
@@ -329,21 +344,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const filePath = path.join(process.cwd(), 'public', url);
           const fileData = fs.readFileSync(filePath);
           const mimeType = `image/${path.extname(url).substring(1)}`;
-          
           return {
             inlineData: {
               data: Buffer.from(fileData).toString('base64'),
               mimeType,
             },
-          };
-        } else {
-          // For external URLs, we can use them directly
-          return {
-            fileData: {
-              fileUri: url,
-            },
-          };
+          } as InlineDataPart;
         }
+
+        // For external URLs, we can use them directly
+        return {
+          fileData: {
+            fileUri: url,
+          },
+        } as FileDataPart;
       })
     );
 
@@ -387,4 +401,4 @@ Return only the HTML code without any explanation or formatting.`;
     console.error('Error generating template from images:', error);
     return res.status(500).json({ error: 'Failed to generate template from images' });
   }
-} 
+}

@@ -143,7 +143,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onGenerate, onClose }) =>
                     radius="xl"
                     size="sm"
                     style={{ position: 'absolute', top: 5, right: 5, zIndex: 10 }}
-                    onClick={() => setUploadedUrls((prev) => prev.filter((_, i) => i !== index))}
+                    onClick={() =>
+                      setUploadedUrls((prev) => prev.filter((_, i) => i !== index))
+                    }
                   >
                     <IconX size={14} />
                   </ActionIcon>
@@ -162,7 +164,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onGenerate, onClose }) =>
           <Textarea
             label="Template Description"
             description="Describe what kind of template you want to generate based on these images"
-            placeholder="Create a modern invoice template inspired by these images with a clean header, company details section, itemized table with calculations, and a professional footer..."
+            placeholder={
+              'Create a modern invoice template inspired by these images with a clean header, ' +
+              'company details section, itemized table with calculations, and a professional footer...'
+            }
             minRows={3}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
@@ -292,10 +297,22 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onGenerate, onClose }) =>
       )}
 
       {(isUploading || isGenerating) && (
-        <Center style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 100 }}>
+        <Center
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            zIndex: 100
+          }}
+        >
           <Stack align="center">
             <Loader size="lg" color="blue" />
-            <Text c="white">{isUploading ? 'Uploading images...' : 'Generating template...'}</Text>
+            <Text c="white">
+              {isUploading ? 'Uploading images...' : 'Generating template...'}
+            </Text>
           </Stack>
         </Center>
       )}
@@ -303,4 +320,4 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onGenerate, onClose }) =>
   );
 };
 
-export default ImageUploader; 
+export default ImageUploader;

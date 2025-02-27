@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import formidable, { File } from 'formidable';
+import formidable from 'formidable';
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       maxFileSize: 10 * 1024 * 1024, // 10MB
     });
 
-    return new Promise((resolve) => {
+    return await new Promise((resolve) => {
       form.parse(req, async (err, fields, files) => {
         if (err) {
           console.error('Error parsing form:', err);
@@ -41,17 +41,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         try {
           const uploadedFiles = files.files;
           const fileArray = Array.isArray(uploadedFiles) ? uploadedFiles : [uploadedFiles];
-          
+
           const uploadedUrls = fileArray.map((file) => {
             if (!file) return null;
-            
+
             // Generate a unique filename
             const uniqueFilename = `${uuidv4()}${path.extname(file.originalFilename || '')}`;
             const finalPath = path.join(uploadDir, uniqueFilename);
-            
+
             // Move the file to the final location with the unique name
             fs.renameSync(file.filepath, finalPath);
-            
+
             // Return the public URL
             return `/uploads/${uniqueFilename}`;
           }).filter(Boolean);
@@ -69,4 +69,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Error in upload handler:', error);
     return res.status(500).json({ error: 'Server error' });
   }
-} 
+}
