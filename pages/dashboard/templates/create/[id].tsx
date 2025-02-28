@@ -619,8 +619,47 @@ const CreateTemplate: React.FC = () => {
 
       // Use Handlebars to render the template with variables
       const { default: Handlebars } = await import('handlebars');
-      const compiledTemplate = Handlebars.compile(code);
-      const renderedContent = compiledTemplate(variables);
+
+      // Process the template to properly stringify chart data
+      let processedCode = code;
+      // Find all instances of data-chart-data='{{...}}' and replace with stringified JSON
+      const chartDataRegex = /data-chart-data=['"]{{([^}]+)}}/g;
+      let match;
+      while ((match = chartDataRegex.exec(code)) !== null) {
+        const path = match[1].trim();
+        // Create a placeholder that we can replace with actual stringified data
+        const placeholder = `__CHART_DATA_${path.replace(/\./g, '_')}__`;
+        processedCode = processedCode.replace(match[0], `data-chart-data='${placeholder}'`);
+      }
+
+      const compiledTemplate = Handlebars.compile(processedCode);
+      let renderedContent = compiledTemplate(variables);
+
+      // Replace placeholders with stringified data
+      const placeholderRegex = /__CHART_DATA_([^_]+(?:_[^_]+)*)__/g;
+      while ((match = placeholderRegex.exec(renderedContent)) !== null) {
+        const path = match[1].replace(/_/g, '.');
+        const pathParts = path.split('.');
+
+        // Navigate to the data
+        let chartData: any = variables;
+        for (const part of pathParts) {
+          if (chartData && typeof chartData === 'object' && part in chartData) {
+            chartData = chartData[part];
+          } else {
+            chartData = {};
+            break;
+          }
+        }
+
+        // Replace placeholder with stringified data
+        if (chartData) {
+          renderedContent = renderedContent.replace(
+            match[0],
+            JSON.stringify(chartData).replace(/'/g, "\\'"),
+          );
+        }
+      }
 
       // Get paper dimensions based on format
       const paperDimensions = {
@@ -690,20 +729,32 @@ const CreateTemplate: React.FC = () => {
               // Initialize charts if any
               document.querySelectorAll('canvas[data-chart-type]').forEach(canvas => {
                 const type = canvas.getAttribute('data-chart-type');
-                const chartData = JSON.parse(canvas.getAttribute('data-chart-data') || '{}');
-                if (type && chartData) {
-                  try {
-                    new Chart(canvas, {
-                      type,
-                      data: chartData,
-                      options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                      }
-                    });
-                  } catch (error) {
-                    console.error('Error initializing chart:', error);
-                  }
+                const chartDataAttr = canvas.getAttribute('data-chart-data');
+                
+                // Skip if no chart data is available
+                if (!type || !chartDataAttr) return;
+                
+                let chartData;
+                try {
+                  // Try to parse as JSON first
+                  chartData = JSON.parse(chartDataAttr);
+                } catch (e) {
+                  console.error('Error parsing chart data:', e);
+                  // Use empty data as fallback
+                  chartData = { labels: [], datasets: [] };
+                }
+                
+                try {
+                  new Chart(canvas, {
+                    type,
+                    data: chartData,
+                    options: {
+                      responsive: true,
+                      maintainAspectRatio: true,
+                    }
+                  });
+                } catch (error) {
+                  console.error('Error initializing chart:', error);
                 }
               });
               // Signal that content is loaded
@@ -722,6 +773,9 @@ const CreateTemplate: React.FC = () => {
       iframeDoc.open();
       iframeDoc.write(htmlContent);
       iframeDoc.close();
+
+      // Pass variables to the iframe for chart data access
+      (iframe.contentWindow as any).templateVariables = variables;
 
       // Wait for content to be fully loaded
       await new Promise<void>((resolve) => {
