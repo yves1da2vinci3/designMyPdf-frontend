@@ -478,6 +478,23 @@ const CreateTemplate: React.FC = () => {
           }),
         });
 
+        // Check if the response is ok before trying to parse JSON
+        if (!response.ok) {
+          const errorText = await response.text();
+          let errorMessage = 'Failed to generate template';
+
+          try {
+            // Try to parse the error as JSON
+            const errorJson = JSON.parse(errorText);
+            errorMessage = errorJson.error || errorJson.details || errorMessage;
+          } catch (parseError) {
+            // If parsing fails, use the raw text
+            errorMessage = errorText || errorMessage;
+          }
+
+          throw new Error(errorMessage);
+        }
+
         const responseData = await response.json();
         if (responseData.content) {
           if (responseData.suggestedVariables) {
@@ -497,6 +514,23 @@ const CreateTemplate: React.FC = () => {
           body: JSON.stringify({ prompt }),
         });
 
+        // Check if the response is ok before trying to parse JSON
+        if (!response.ok) {
+          const errorText = await response.text();
+          let errorMessage = 'Failed to generate template';
+
+          try {
+            // Try to parse the error as JSON
+            const errorJson = JSON.parse(errorText);
+            errorMessage = errorJson.error || errorJson.details || errorMessage;
+          } catch (parseError) {
+            // If parsing fails, use the raw text
+            errorMessage = errorText || errorMessage;
+          }
+
+          throw new Error(errorMessage);
+        }
+
         const generatedData = await response.json();
         if (generatedData.content) {
           if (generatedData.suggestedVariables) {
@@ -508,8 +542,8 @@ const CreateTemplate: React.FC = () => {
         }
       }
     } catch (error: any) {
-      notificationService.showErrorNotification(error?.message || 'Error generating template');
       console.error('Error generating template:', error);
+      notificationService.showErrorNotification(error?.message || 'Error generating template');
     } finally {
       setIsGenerating(false);
     }
