@@ -3,7 +3,7 @@ import { Container, Grid, Text, Group, TextInput, Select, LoadingOverlay } from 
 import { IconSearch, IconFilter } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import TemplateCard from '../components/marketplace/TemplateCard';
-import { MainLayout } from '../layouts/MainLayout';
+import MainLayout from '../layouts/MainLayout';
 import { templateService, Template } from '../services/templateService';
 
 export default function Marketplace() {

@@ -1,62 +1,42 @@
-import { Button, Group, Paper, TextInput } from '@mantine/core';
-import { isNotEmpty, useForm } from '@mantine/form';
+import { Button, Group, Stack, TextInput } from '@mantine/core';
+import { useForm } from '@mantine/form';
 import { RequestStatus } from '@/api/request-status.enum';
 import { CreateNamespaceDto } from '@/api/namespaceApi';
 
 interface AddNamespaceProps {
-  onClose: () => void;
   onSubmit: (values: CreateNamespaceDto) => void;
+  onClose: () => void;
   requestStatus: RequestStatus;
 }
 
-const MARGIN_BOTTOM = 20;
-const MARGIN_TOP = 30;
-
-export function AddNamespaceForm({ onSubmit, onClose, requestStatus }: AddNamespaceProps) {
-  const addNamespaceForm = useForm<CreateNamespaceDto>({
+function AddNamespaceForm({ onSubmit, onClose, requestStatus }: AddNamespaceProps) {
+  const form = useForm({
     initialValues: {
       name: '',
-    },
-
-    clearInputErrorOnChange: false,
-    validateInputOnBlur: true,
-
-    validate: {
-      name: isNotEmpty('Enter a name '),
     },
   });
 
   return (
-    <Paper maw={'100%'} p={30} radius="md">
-      <form
-        onSubmit={addNamespaceForm.onSubmit((values: CreateNamespaceDto) =>
-          onSubmit({ ...values }),
-        )}
-      >
+    <form onSubmit={form.onSubmit(onSubmit)}>
+      <Stack>
         <TextInput
-          label="Name"
           withAsterisk
-          mb={MARGIN_BOTTOM}
-          placeholder={'My Namespace '}
-          {...addNamespaceForm.getInputProps('name')}
+          label="Namespace Name"
+          placeholder="Namespace name"
+          {...form.getInputProps('name')}
         />
 
-        <Group justify="flex-end" mt={MARGIN_TOP}>
-          <Button onClick={onClose} w={'8rem'} size="md" bg={'gray'}>
+        <Group justify="flex-end" mt="md">
+          <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-
-          <Button
-            type="submit"
-            w={'12rem'}
-            size="md"
-            disabled={!addNamespaceForm.isValid()}
-            loading={requestStatus === RequestStatus.InProgress}
-          >
-            Create
+          <Button type="submit" loading={requestStatus === RequestStatus.InProgress}>
+            Submit
           </Button>
         </Group>
-      </form>
-    </Paper>
+      </Stack>
+    </form>
   );
 }
+
+export default AddNamespaceForm;

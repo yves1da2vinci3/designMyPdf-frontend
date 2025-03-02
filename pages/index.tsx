@@ -1,19 +1,10 @@
-import { Stack } from '@mantine/core';
-import NavBar from '@/components/Navbar/Navbar';
-import Hero from '@/components/Hero/Hero';
-import Stats from '@/components/Stats/Stats';
-import Features from '@/components/Features/Features';
-import ColorSchemeToggle from '@/components/ColorSchemeToggle/ColorSchemeToggle';
+import { Stack, Text } from '@mantine/core';
 import classes from './index.module.scss';
 
 export default function HomePage() {
   return (
     <Stack className={classes.container}>
-      <NavBar />
-      <Hero />
-      <Stats />
-      <Features />
-      <ColorSchemeToggle />
+      <Text>this bullshit</Text>
     </Stack>
   );
 }

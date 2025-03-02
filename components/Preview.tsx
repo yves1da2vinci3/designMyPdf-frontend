@@ -10,14 +10,14 @@ interface PreviewProps {
   setTemplateContent?: (content: string) => void;
 }
 
-const Preview: React.FC<PreviewProps> = ({
+function Preview({
   format = 'a4',
   htmlContent,
   data,
   fonts = [],
   isLandscape = false,
   setTemplateContent,
-}) => {
+}: PreviewProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const chartInstancesRef = useRef<any[]>([]);
   const [pageCount, setPageCount] = useState(1);
@@ -389,6 +389,6 @@ const Preview: React.FC<PreviewProps> = ({
       )}
     </>
   );
-};
+}
 
 export default Preview;

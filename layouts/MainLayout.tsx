@@ -1,7 +1,8 @@
+import React from 'react';
 import { AppShell, Container, Group, Text } from '@mantine/core';
 import Link from 'next/link';
 
-export function MainLayout({ children }: { children: React.ReactNode }) {
+function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <AppShell header={{ height: 60 }} padding="md">
       <AppShell.Header>
@@ -27,3 +28,5 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     </AppShell>
   );
 }
+
+export default MainLayout;

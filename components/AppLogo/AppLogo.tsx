@@ -12,7 +12,7 @@ interface LogoProps {
   width: number;
 }
 
-export function Logo({ width, isWhite }: LogoProps) {
+function Logo({ width, isWhite }: LogoProps) {
   const router = useRouter();
 
   const handleApLogoClick = () => {
@@ -29,3 +29,5 @@ export function Logo({ width, isWhite }: LogoProps) {
     </Group>
   );
 }
+
+export default Logo;

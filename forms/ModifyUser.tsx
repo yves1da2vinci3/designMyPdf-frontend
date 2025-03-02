@@ -1,60 +1,44 @@
-import { Button, Group, Paper, PasswordInput, TextInput, rem } from '@mantine/core';
+import { Button, Group, Stack, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { RequestStatus } from '@/api/request-status.enum';
-import { authApi, updateUserDTO } from '@/api/authApi';
 
 interface ModifyUserProps {
-  onSubmit: (values: updateUserDTO) => void;
+  onSubmit: (values: { name: string; email: string }) => void;
   requestStatus: RequestStatus;
 }
 
-const MARGIN_BOTTOM = 20;
-const MARGIN_TOP = 30;
-
-export function ModifyUserForm({ onSubmit, requestStatus }: ModifyUserProps) {
+function ModifyUserForm({ onSubmit, requestStatus }: ModifyUserProps) {
   const form = useForm({
     initialValues: {
-      userName: authApi.getUserSession()?.userName,
-      password: '',
-      confirmPassword: '',
-    },
-
-    clearInputErrorOnChange: false,
-    validateInputOnBlur: true,
-
-    validate: {
-      confirmPassword: (value: string, values: { password: string }) =>
-        value === values.password ? null : 'Passwords do not match',
+      name: '',
+      email: '',
     },
   });
+
   return (
-    <Paper withBorder maw="100%" miw={rem(400)} p={30} radius="md">
-      <form onSubmit={form.onSubmit((values: updateUserDTO) => onSubmit(values))}>
-        <TextInput label="Username" mb={MARGIN_BOTTOM} {...form.getInputProps('userName')} />
-        <PasswordInput
-          label="New Password"
-          mb={MARGIN_BOTTOM}
-          placeholder="Your new password"
-          {...form.getInputProps('password')}
+    <form onSubmit={form.onSubmit(onSubmit)}>
+      <Stack>
+        <TextInput
+          withAsterisk
+          label="Name"
+          placeholder="Your name"
+          {...form.getInputProps('name')}
         />
-        <PasswordInput
-          label="Confirm Password"
-          mb={MARGIN_BOTTOM}
-          placeholder="Confirm your new password"
-          {...form.getInputProps('confirmPassword')}
+        <TextInput
+          withAsterisk
+          label="Email"
+          placeholder="your@email.com"
+          {...form.getInputProps('email')}
         />
 
-        <Group justify="flex-end" mt={MARGIN_TOP}>
-          <Button
-            type="submit"
-            w="12rem"
-            size="md"
-            loading={requestStatus === RequestStatus.InProgress}
-          >
-            Update
+        <Group justify="flex-end" mt="md">
+          <Button type="submit" loading={requestStatus === RequestStatus.InProgress}>
+            Submit
           </Button>
         </Group>
-      </form>
-    </Paper>
+      </Stack>
+    </form>
   );
 }
+
+export default ModifyUserForm;

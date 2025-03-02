@@ -1,68 +1,42 @@
-import { Button, Group, Paper, TextInput, useMantineTheme } from '@mantine/core';
-import { isNotEmpty, useForm } from '@mantine/form';
+import { Button, Group, Stack, TextInput } from '@mantine/core';
+import { useForm } from '@mantine/form';
 import { RequestStatus } from '@/api/request-status.enum';
 import { CreateKeyDto } from '@/api/keyApi';
 
 interface AddKeyProps {
-  onClose: () => void;
   onSubmit: (values: CreateKeyDto) => void;
+  onClose: () => void;
   requestStatus: RequestStatus;
 }
 
-const MARGIN_BOTTOM = 20;
-const MARGIN_TOP = 30;
-
-export function AddKeyForm({ onSubmit, onClose, requestStatus }: AddKeyProps) {
-  const addKeyForm = useForm<CreateKeyDto>({
+function AddKeyForm({ onSubmit, onClose, requestStatus }: AddKeyProps) {
+  const form = useForm({
     initialValues: {
       name: '',
-      key_count: '0',
-    },
-
-    clearInputErrorOnChange: false,
-    validateInputOnBlur: true,
-
-    validate: {
-      name: isNotEmpty('Enter a name '),
-      key_count: isNotEmpty('Enter a key count '),
     },
   });
 
   return (
-    <Paper maw={'100%'} p={30} radius="md">
-      <form onSubmit={addKeyForm.onSubmit((values: CreateKeyDto) => onSubmit({ ...values }))}>
+    <form onSubmit={form.onSubmit(onSubmit)}>
+      <Stack>
         <TextInput
-          label="Name"
           withAsterisk
-          mb={MARGIN_BOTTOM}
-          placeholder={'My Key '}
-          {...addKeyForm.getInputProps('name')}
-        />
-        <TextInput
-          label="KeyCount"
-          withAsterisk
-          mb={MARGIN_BOTTOM}
-          placeholder={'11'}
-          type="number"
-          {...addKeyForm.getInputProps('key_count')}
+          label="Key Name"
+          placeholder="Key name"
+          {...form.getInputProps('name')}
         />
 
-        <Group justify="flex-end" mt={MARGIN_TOP}>
-          <Button onClick={onClose} w={'8rem'} size="md" bg={'gray'}>
+        <Group justify="flex-end" mt="md">
+          <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-
-          <Button
-            type="submit"
-            w={'12rem'}
-            size="md"
-            disabled={!addKeyForm.isValid()}
-            loading={requestStatus === RequestStatus.InProgress}
-          >
-            Create key
+          <Button type="submit" loading={requestStatus === RequestStatus.InProgress}>
+            Submit
           </Button>
         </Group>
-      </form>
-    </Paper>
+      </Stack>
+    </form>
   );
 }
+
+export default AddKeyForm;
