@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Handlebars from 'handlebars';
 
-export type FormatType = 'a1' | 'a2' | 'a3' | 'a4' | 'a5' | 'a6';
+// Define the FormatType directly in this file
+type FormatType = 'a1' | 'a2' | 'a3' | 'a4' | 'a5' | 'a6';
 
 interface PreviewProps {
   htmlContent: string;
@@ -10,26 +11,6 @@ interface PreviewProps {
   fonts: string[];
   isLandscape?: boolean;
   setTemplateContent?: (string: string) => void;
-}
-
-function importFontCreation(fonts: string[]) {
-  try {
-    const encodedFont = encodeURIComponent(fonts[0]);
-    const fontUrl = `https://fonts.googleapis.com/css2?family=${encodedFont}:wght@100;200;300;400;500;600;700;800;900${fonts
-      .slice(1)
-      .map((font) => `&display=swap&family=${encodeURIComponent(font)}`)}`;
-    return `<link key="font-import" rel="stylesheet" href="${fontUrl}" />`;
-  } catch (error) {
-    return '';
-  }
-}
-
-function fontCssCreation(fonts: string[]) {
-  return `
-    body {
-      font-family: '${fonts[0]}', sans-serif;
-    }
-  `;
 }
 
 function Preview({
@@ -47,6 +28,27 @@ function Preview({
   const containerRef = useRef<HTMLDivElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
 
+  // Local utility functions
+  function createFontImport(fontList: string[]): string {
+    try {
+      const encodedFont = encodeURIComponent(fontList[0]);
+      const fontUrl = `https://fonts.googleapis.com/css2?family=${encodedFont}:wght@100;200;300;400;500;600;700;800;900${fontList
+        .slice(1)
+        .map((font) => `&display=swap&family=${encodeURIComponent(font)}`)}`;
+      return `<link key="font-import" rel="stylesheet" href="${fontUrl}" />`;
+    } catch (error) {
+      return '';
+    }
+  }
+
+  function createFontStyle(fontList: string[]): string {
+    return `
+      body {
+        font-family: '${fontList[0]}', sans-serif;
+      }
+    `;
+  }
+
   const formatToSize = {
     a1: { width: 841, height: 1189 },
     a2: { width: 594, height: 841 },
@@ -57,8 +59,8 @@ function Preview({
   };
 
   useEffect(() => {
-    setFontImport(importFontCreation(fonts));
-    setFontStyle(fontCssCreation(fonts));
+    setFontImport(createFontImport(fonts));
+    setFontStyle(createFontStyle(fonts));
   }, [fonts]);
 
   useEffect(() => {

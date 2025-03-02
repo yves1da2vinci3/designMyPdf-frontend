@@ -7,34 +7,38 @@ interface MiniPreviewProps {
   fonts: string[];
 }
 
-const importFontCreation = (fonts: string[]) => {
-  if (fonts.length === 0) return '';
-  try {
-    const encodedFont = encodeURIComponent(fonts[0]);
-    const fontUrl = `https://fonts.googleapis.com/css2?family=${encodedFont}:wght@100;200;300;400;500;600;700;800;900${fonts
-      .slice(1)
-      .map((font) => `&display=swap&family=${encodeURIComponent(font)}`)
-      .join('')}`;
-    return `<link rel="stylesheet" href="${fontUrl}" />`;
-  } catch {
-    return '';
-  }
-};
-
-const fontCssCreation = (fonts: string[]) => `
-  body {
-    font-family: '${fonts[0]}', sans-serif;
-  }
-`;
-
-const MiniPreview: React.FC<MiniPreviewProps> = ({ htmlContent, data, fonts }) => {
+function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
   const [renderedContent, setRenderedContent] = useState('');
   const [fontImport, setFontImport] = useState('');
   const [fontStyle, setFontStyle] = useState('');
 
+  // Local utility functions
+  function createFontImport(fontList: string[]): string {
+    if (fontList.length === 0) return '';
+    try {
+      const encodedFont = encodeURIComponent(fontList[0]);
+      const fontUrl = `https://fonts.googleapis.com/css2?family=${encodedFont}:wght@100;200;300;400;500;600;700;800;900${fontList
+        .slice(1)
+        .map((font) => `&display=swap&family=${encodeURIComponent(font)}`)
+        .join('')}`;
+      return `<link rel="stylesheet" href="${fontUrl}" />`;
+    } catch {
+      return '';
+    }
+  }
+
+  function createFontStyle(fontList: string[]): string {
+    if (fontList.length === 0) return '';
+    return `
+      body {
+        font-family: '${fontList[0]}', sans-serif;
+      }
+    `;
+  }
+
   useEffect(() => {
-    setFontImport(importFontCreation(fonts));
-    setFontStyle(fontCssCreation(fonts));
+    setFontImport(createFontImport(fonts));
+    setFontStyle(createFontStyle(fonts));
   }, [fonts]);
 
   useEffect(() => {
@@ -94,6 +98,6 @@ const MiniPreview: React.FC<MiniPreviewProps> = ({ htmlContent, data, fonts }) =
       />
     </div>
   );
-};
+}
 
 export default MiniPreview;

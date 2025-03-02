@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -19,9 +18,7 @@ import {
 import { IconShoppingCart } from '@tabler/icons-react';
 import { RequestStatus } from '@/api/request-status.enum';
 import { TemplateDTO, templateApi } from '@/api/templateApi';
-
-// Import Preview component dynamically to avoid SSR issues
-const Preview = dynamic(() => import('@/components/Preview'), { ssr: false });
+import Preview from '@/components/Preview';
 
 interface MarketplaceTemplate extends TemplateDTO {
   id: string;

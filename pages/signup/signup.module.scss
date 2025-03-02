@@ -19,12 +19,12 @@
 }
 
 .formContainer {
-  min-width: rem(500px);
+  min-width: rem(500);
 }
 
 @media screen and (max-width: 1200px) {
   .formContainer {
-    min-width: rem(300px);
+    min-width: rem(300);
   }
 }
 

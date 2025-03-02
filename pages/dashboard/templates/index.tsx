@@ -11,7 +11,7 @@ import { CreateTemplateDto, TemplateDTO, templateApi } from '@/api/templateApi';
 import { CreateNamespaceDto, NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
 import { RequestStatus } from '@/api/request-status.enum';
 
-const TemplateHome = () => {
+function TemplatesPage() {
   const router = useRouter();
   const [addTemplateOpened, { open: openAddTemplate, close: closeAddTemplate }] =
     useDisclosure(false);
@@ -190,8 +190,8 @@ const TemplateHome = () => {
       </Group>
     </Stack>
   );
-};
+}
 
-TemplateHome.getLayout = (page: React.ReactNode) => <DashboardLayout>{page}</DashboardLayout>;
+TemplatesPage.getLayout = (page: React.ReactNode) => <DashboardLayout>{page}</DashboardLayout>;
 
-export default TemplateHome;
+export default TemplatesPage;

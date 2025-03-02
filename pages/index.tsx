@@ -1,19 +1,18 @@
-import { Stack } from '@mantine/core';
-import NavBar from '@/components/Navbar/Navbar';
-import Hero from '@/components/Hero/Hero';
-import Stats from '@/components/Stats/Stats';
-import Features from '@/components/Features/Features';
-import ColorSchemeToggle from '@/components/ColorSchemeToggle/ColorSchemeToggle';
+'use client';
+
+import { Stack, Text } from '@mantine/core';
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
 import classes from './index.module.scss';
 
 export default function HomePage() {
+  const router = useRouter();
+  useEffect(() => {
+    router.push('/login');
+  }, []);
   return (
     <Stack className={classes.container}>
-      <NavBar />
-      <Hero />
-      <Stats />
-      <Features />
-      <ColorSchemeToggle />
+      <Text>you are going to be redirected to the login page...</Text>
     </Stack>
   );
 }

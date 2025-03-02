@@ -1,12 +1,12 @@
-import { Button, Group, Paper, Select, TextInput, useMantineTheme } from '@mantine/core';
-import { isNotEmpty, useForm } from '@mantine/form';
+import { Button, Group, Stack, TextInput } from '@mantine/core';
+import { useForm } from '@mantine/form';
 import { RequestStatus } from '@/api/request-status.enum';
 import { CreateTemplateDto } from '@/api/templateApi';
 import { cssframeworkTypes, cssframeworkTypesMapper } from '@/utils/enums';
 
 interface AddTemplateProps {
-  onClose: () => void;
   onSubmit: (values: CreateTemplateDto) => void;
+  onClose: () => void;
   requestStatus: RequestStatus;
 }
 
@@ -18,56 +18,34 @@ const DataForRolesSelect = Array.from(cssframeworkTypesMapper.entries()).map(([v
   label,
 }));
 
-export function AddTemplateForm({ onSubmit, onClose, requestStatus }: AddTemplateProps) {
-  const addTemplateForm = useForm<CreateTemplateDto>({
+function AddTemplateForm({ onSubmit, onClose, requestStatus }: AddTemplateProps) {
+  const form = useForm({
     initialValues: {
       name: '',
-    },
-
-    clearInputErrorOnChange: false,
-    validateInputOnBlur: true,
-
-    validate: {
-      name: isNotEmpty('Enter a name '),
     },
   });
 
   return (
-    <Paper maw={'100%'} p={30} radius="md">
-      <form
-        onSubmit={addTemplateForm.onSubmit((values: CreateTemplateDto) => onSubmit({ ...values }))}
-      >
+    <form onSubmit={form.onSubmit(onSubmit)}>
+      <Stack>
         <TextInput
-          label="Name"
           withAsterisk
-          mb={MARGIN_BOTTOM}
-          placeholder={'My Template invoice'}
-          {...addTemplateForm.getInputProps('name')}
-        />
-        <Select
-          label="Css Framework"
-          withAsterisk
-          placeholder="tailwind"
-          {...addTemplateForm.getInputProps('cssframework')}
-          data={DataForRolesSelect}
+          label="Template Name"
+          placeholder="Template name"
+          {...form.getInputProps('name')}
         />
 
-        <Group justify="flex-end" mt={MARGIN_TOP}>
-          <Button onClick={onClose} w={'8rem'} size="md" bg={'gray'}>
+        <Group justify="flex-end" mt="md">
+          <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-
-          <Button
-            type="submit"
-            w={'12rem'}
-            size="md"
-            disabled={!addTemplateForm.isValid()}
-            loading={requestStatus === RequestStatus.InProgress}
-          >
-            Create an template
+          <Button type="submit" loading={requestStatus === RequestStatus.InProgress}>
+            Submit
           </Button>
         </Group>
-      </form>
-    </Paper>
+      </Stack>
+    </form>
   );
 }
+
+export default AddTemplateForm;

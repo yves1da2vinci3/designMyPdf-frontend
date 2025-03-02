@@ -1,6 +1,6 @@
 import { AppShell, Group, ScrollArea, Stack } from '@mantine/core';
 import React, { ReactNode } from 'react';
-import { DashboardNav } from './DashboardNav';
+import DashboardNav from './DashboardNav';
 import { useDisclosure } from '@mantine/hooks';
 
 interface DashboardLayoutProps {

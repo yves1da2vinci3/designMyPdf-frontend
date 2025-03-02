@@ -29,7 +29,7 @@ const features = [
   },
 ];
 
-const Features = () => {
+function Features() {
   const items = features.map((feature) => (
     <div className={classes.feature} key={feature.title}>
       <feature.icon style={{ width: rem(50), height: rem(50) }} stroke={1.5} />
@@ -57,6 +57,6 @@ const Features = () => {
       </SimpleGrid>
     </Container>
   );
-};
+}
 
 export default Features;

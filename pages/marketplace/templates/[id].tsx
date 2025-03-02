@@ -1,5 +1,4 @@
 import React from 'react';
-import dynamic from 'next/dynamic';
 import { GetStaticProps, GetStaticPaths } from 'next';
 import { useRouter } from 'next/router';
 import {
@@ -20,11 +19,11 @@ import {
 import { IconCheck, IconChevronLeft, IconShoppingCart } from '@tabler/icons-react';
 import { DEFAULT_TEMPLATE } from '@/constants/template';
 import { templateService } from '@/services/templateService';
-
-// Import Preview component dynamically to avoid SSR issues
-const Preview = dynamic(() => import('@/components/Preview'), {
-  ssr: false,
-});
+import Preview from '@/components/Preview';
+// // Import Preview component dynamically to avoid SSR issues
+// const PreviewComponent = dynamic(() => import('@/components/Preview'), {
+//   ssr: false,
+// });
 
 interface MarketplaceTemplate {
   id: string;

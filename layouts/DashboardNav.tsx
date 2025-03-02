@@ -12,7 +12,7 @@ import {
 import classes from './DashboardNav.module.scss';
 import { useRouter } from 'next/router';
 import { authApi } from '@/api/authApi';
-import { Logo } from '@/components/AppLogo/AppLogo';
+import Logo from '@/components/AppLogo/AppLogo';
 
 const data = [
   { link: '/dashboard/', label: 'Overview', icon: IconWaveSawTool },
@@ -22,7 +22,7 @@ const data = [
   { link: '/dashboard/account', label: 'Account', icon: IconUserCircle },
 ];
 
-export function DashboardNav() {
+function DashboardNav() {
   const [active, setActive] = useState('Overview');
   const router = useRouter();
 
@@ -76,3 +76,5 @@ export function DashboardNav() {
     </nav>
   );
 }
+
+export default DashboardNav;

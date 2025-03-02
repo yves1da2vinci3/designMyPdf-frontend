@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React from 'react';
 import { useDrop } from 'react-dnd';
 import { Group, Text, rem, useMantineTheme } from '@mantine/core';
 import { IconFolderFilled } from '@tabler/icons-react';
@@ -14,13 +14,13 @@ interface NamespaceItemProps {
   updateOnClient: (id: number, namespaceId: number) => void;
 }
 
-const NamespaceItem: FC<NamespaceItemProps> = ({
+function NamespaceItem({
   id,
   namespace,
   setNamespaceId,
   updateOnClient,
   selected = false,
-}: NamespaceItemProps) => {
+}: NamespaceItemProps) {
   const theme = useMantineTheme();
   const { name } = namespace;
 
@@ -65,6 +65,6 @@ const NamespaceItem: FC<NamespaceItemProps> = ({
       <Text fw="bold">{limitText(name, 10)}</Text>
     </Group>
   );
-};
+}
 
 export default NamespaceItem;

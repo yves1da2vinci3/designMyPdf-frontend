@@ -10,7 +10,7 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { MainLayout } from '../../layouts/MainLayout';
+import MainLayout from '../../layouts/MainLayout';
 import { templateService } from '../../services/templateService';
 
 export default function AddTemplate() {

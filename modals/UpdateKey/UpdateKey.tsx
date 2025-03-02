@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, ModalProps, Title } from '@mantine/core';
-import { UpdateKeyForm } from '@/forms/UpdateKey';
-import { KeyDTO, UpdateKeyDto } from '@/api/keyApi'; // Ensure KeyDTO and UpdateKeyDto are imported
+import UpdateKeyForm from '@/forms/UpdateKey';
+import { KeyDTO, UpdateKeyDto } from '@/api/keyApi';
 import { RequestStatus } from '@/api/request-status.enum';
 
 interface UpdateKeyModalProps extends ModalProps {
@@ -16,26 +16,24 @@ const UpdateKeyModal: React.FC<UpdateKeyModalProps> = ({
   updateKeyStatus,
   Key,
   ...modalProps
-}) => {
-  return (
-    <Modal
-      centered
+}) => (
+  <Modal
+    centered
+    onClose={onClose}
+    {...modalProps}
+    title={
+      <Title order={3} my={4}>
+        Update a Key
+      </Title>
+    }
+  >
+    <UpdateKeyForm
       onClose={onClose}
-      {...modalProps}
-      title={
-        <Title order={3} my={4}>
-          Update a Key
-        </Title>
-      }
-    >
-      <UpdateKeyForm
-        onClose={onClose}
-        onSubmit={updateKeyHandler}
-        requestStatus={updateKeyStatus}
-        Key={Key}
-      />
-    </Modal>
-  );
-};
+      onSubmit={updateKeyHandler}
+      requestStatus={updateKeyStatus}
+      Key={Key || null}
+    />
+  </Modal>
+);
 
 export default UpdateKeyModal;
