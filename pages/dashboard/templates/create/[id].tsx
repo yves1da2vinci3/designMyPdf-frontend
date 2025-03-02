@@ -53,8 +53,15 @@ import { RequestStatus } from '@/api/request-status.enum';
 import { TemplateDTO, templateApi } from '@/api/templateApi';
 import notificationService from '@/services/NotificationService';
 import { FormatType } from '../../../../utils/types';
+import {
+  CHART_TYPES,
+  generateChartData,
+  processChartData,
+  replaceChartDataPlaceholders,
+} from '../../../../utils/chartUtils';
+import { exportPdfDocument } from '../../../../utils/pdfUtils';
+import { DEFAULT_FORMAT, getPageDimensions } from '../../../../utils/paperUtils';
 
-const DEFAULT_FORMAT = 'a4';
 const data = {
   fromCompany: {
     name: 'Example Corp',
@@ -85,109 +92,6 @@ const data = {
   },
   showTerms: true,
 };
-
-const CHART_TYPES = {
-  line: 'Line Chart',
-  bar: 'Bar Chart',
-  pie: 'Pie Chart',
-  doughnut: 'Doughnut Chart',
-  radar: 'Radar Chart',
-  polarArea: 'Polar Area',
-  bubble: 'Bubble Chart',
-  scatter: 'Scatter Plot',
-} as const;
-
-function generateChartData(type: keyof typeof CHART_TYPES) {
-  const labels = Array.from({ length: 6 }, (_, i) => `Label ${i + 1}`);
-
-  switch (type) {
-    case 'line':
-    case 'bar':
-      return {
-        labels,
-        datasets: [
-          {
-            label: 'Dataset 1',
-            data: labels.map(() => Math.floor(Math.random() * 100)),
-            borderColor: '#3B82F6',
-            backgroundColor: '#60A5FA',
-          },
-          {
-            label: 'Dataset 2',
-            data: labels.map(() => Math.floor(Math.random() * 100)),
-            borderColor: '#10B981',
-            backgroundColor: '#34D399',
-          },
-        ],
-      };
-
-    case 'pie':
-    case 'doughnut':
-    case 'polarArea':
-      return {
-        labels: labels.slice(0, 4),
-        datasets: [
-          {
-            data: Array.from({ length: 4 }, () => Math.floor(Math.random() * 100)),
-            backgroundColor: ['#3B82F6', '#10B981', '#6366F1', '#EC4899'],
-          },
-        ],
-      };
-
-    case 'radar':
-      return {
-        labels: Array.from({ length: 5 }, (_, i) => `Category ${i + 1}`),
-        datasets: [
-          {
-            label: 'Dataset',
-            data: Array.from({ length: 5 }, () => Math.floor(Math.random() * 100)),
-            borderColor: '#3B82F6',
-            backgroundColor: 'rgba(59, 130, 246, 0.2)',
-          },
-        ],
-      };
-
-    case 'bubble':
-      return {
-        datasets: [
-          {
-            label: 'Dataset',
-            data: Array.from({ length: 10 }, () => ({
-              x: Math.floor(Math.random() * 200) - 100,
-              y: Math.floor(Math.random() * 200) - 100,
-              r: Math.floor(Math.random() * 15) + 5,
-            })),
-            backgroundColor: 'rgba(59, 130, 246, 0.5)',
-          },
-        ],
-      };
-
-    case 'scatter':
-      return {
-        datasets: [
-          {
-            label: 'Dataset',
-            data: Array.from({ length: 10 }, () => ({
-              x: Math.floor(Math.random() * 200) - 100,
-              y: Math.floor(Math.random() * 200) - 100,
-            })),
-            backgroundColor: '#3B82F6',
-          },
-        ],
-      };
-
-    default:
-      return {
-        labels,
-        datasets: [
-          {
-            label: 'Dataset',
-            data: labels.map(() => Math.floor(Math.random() * 100)),
-          },
-        ],
-      };
-  }
-}
 
 const CreateTemplate: React.FC = () => {
   const params = useParams();
@@ -604,276 +508,36 @@ const CreateTemplate: React.FC = () => {
     try {
       if (!template) return;
 
-      // Show loading notification
-      notificationService.showInformationNotification(
-        `Exporting document as ${format.toUpperCase()}...`,
-      );
-
-      // Create a hidden iframe to render the template
-      const iframe = document.createElement('iframe');
-      iframe.style.width = '100%';
-      iframe.style.height = '1000px';
-      iframe.style.position = 'absolute';
-      iframe.style.top = '-9999px';
-      iframe.style.left = '-9999px';
-      document.body.appendChild(iframe);
-
       // Use Handlebars to render the template with variables
       const { default: Handlebars } = await import('handlebars');
 
-      // Process the template to properly stringify chart data
-      let processedCode = code;
-      // Find all instances of data-chart-data='{{...}}' and replace with stringified JSON
-      const chartDataRegex = /data-chart-data=['"]{{([^}]+)}}/g;
-      let match;
-      while ((match = chartDataRegex.exec(code)) !== null) {
-        const path = match[1].trim();
-        // Create a placeholder that we can replace with actual stringified data
-        const placeholder = `__CHART_DATA_${path.replace(/\./g, '_')}__`;
-        processedCode = processedCode.replace(match[0], `data-chart-data='${placeholder}'`);
-      }
-
+      // Process the template to handle chart data
+      const processedCode = processChartData(code);
       const compiledTemplate = Handlebars.compile(processedCode);
       let renderedContent = compiledTemplate(variables);
 
-      // Replace placeholders with stringified data
-      const placeholderRegex = /__CHART_DATA_([^_]+(?:_[^_]+)*)__/g;
-      while ((match = placeholderRegex.exec(renderedContent)) !== null) {
-        const path = match[1].replace(/_/g, '.');
-        const pathParts = path.split('.');
+      // Replace chart data placeholders with actual data
+      renderedContent = replaceChartDataPlaceholders(renderedContent, variables);
 
-        // Navigate to the data
-        let chartData: any = variables;
-        for (const part of pathParts) {
-          if (chartData && typeof chartData === 'object' && part in chartData) {
-            chartData = chartData[part];
-          } else {
-            chartData = {};
-            break;
-          }
-        }
+      // Get page dimensions based on format and orientation
+      const { width: pageWidth, height: pageHeight } = getPageDimensions(format, isLandScape);
 
-        // Replace placeholder with stringified data
-        if (chartData) {
-          renderedContent = renderedContent.replace(
-            match[0],
-            JSON.stringify(chartData).replace(/'/g, "\\'"),
-          );
-        }
-      }
-
-      // Get paper dimensions based on format
-      const paperDimensions = {
-        a1: { width: 841, height: 1189 },
-        a2: { width: 594, height: 841 },
-        a3: { width: 420, height: 594 },
-        a4: { width: 210, height: 297 },
-        a5: { width: 148, height: 210 },
-        a6: { width: 105, height: 148 },
-      };
-
-      // Get dimensions for the selected format
-      const dimensions = paperDimensions[format as keyof typeof paperDimensions];
-
-      // Apply landscape orientation if selected
-      const pageWidth = isLandScape ? dimensions.height : dimensions.width;
-      const pageHeight = isLandScape ? dimensions.width : dimensions.height;
-
-      // Prepare the HTML content with proper CSS for pagination
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            ${fontsSelected
-              .map(
-                (font) =>
-                  `<link href="https://fonts.googleapis.com/css2?family=${font.replace(
-                    / /g,
-                    '+',
-                  )}&display=swap" rel="stylesheet">`,
-              )
-              .join('')}
-            <script src="https://cdn.tailwindcss.com"></script>
-            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-            <style>
-              @page {
-                size: ${format} ${isLandScape ? 'landscape' : 'portrait'};
-                margin: 0;
-              }
-              html, body {
-                margin: 0;
-                padding: 0;
-                font-family: ${fontsSelected[0] || 'system-ui'}, sans-serif;
-                background-color: white;
-              }
-              #content-container {
-                width: ${pageWidth}mm;
-                background-color: white;
-                margin: 0 auto;
-                padding: 10mm;
-                box-sizing: border-box;
-              }
-              /* Any page break elements will still work as manual breaks */
-              .page-break {
-                page-break-after: always;
-                break-after: page;
-              }
-            </style>
-          </head>
-          <body>
-            <div id="content-container">
-              ${renderedContent}
-            </div>
-            <script>
-              // Initialize charts if any
-              document.querySelectorAll('canvas[data-chart-type]').forEach(canvas => {
-                const type = canvas.getAttribute('data-chart-type');
-                const chartDataAttr = canvas.getAttribute('data-chart-data');
-                
-                // Skip if no chart data is available
-                if (!type || !chartDataAttr) return;
-                
-                let chartData;
-                try {
-                  // Try to parse as JSON first
-                  chartData = JSON.parse(chartDataAttr);
-                } catch (e) {
-                  console.error('Error parsing chart data:', e);
-                  // Use empty data as fallback
-                  chartData = { labels: [], datasets: [] };
-                }
-                
-                try {
-                  new Chart(canvas, {
-                    type,
-                    data: chartData,
-                    options: {
-                      responsive: true,
-                      maintainAspectRatio: true,
-                    }
-                  });
-                } catch (error) {
-                  console.error('Error initializing chart:', error);
-                }
-              });
-              // Signal that content is loaded
-              window.parent.postMessage('contentLoaded', '*');
-            </script>
-          </body>
-        </html>
-      `;
-
-      // Set the content to the iframe
-      const iframeDoc = iframe.contentWindow?.document;
-      if (!iframeDoc) {
-        throw new Error('Could not access iframe document');
-      }
-
-      iframeDoc.open();
-      iframeDoc.write(htmlContent);
-      iframeDoc.close();
-
-      // Pass variables to the iframe for chart data access
-      (iframe.contentWindow as any).templateVariables = variables;
-
-      // Wait for content to be fully loaded
-      await new Promise<void>((resolve) => {
-        window.addEventListener('message', function handler(event) {
-          if (event.data === 'contentLoaded') {
-            window.removeEventListener('message', handler);
-            // Give charts and fonts more time to render
-            setTimeout(resolve, 2000);
-          }
-        });
-      });
-
-      // Import required libraries
-      const { default: jsPDF } = await import('jspdf');
-      const { default: html2canvas } = await import('html2canvas');
-
-      // Create jsPDF instance with the correct dimensions
-      const JsPDF = jsPDF;
-      const pdf = new JsPDF({
-        orientation: isLandScape ? 'landscape' : 'portrait',
-        unit: 'mm',
+      // Call the extracted PDF export function
+      await exportPdfDocument({
+        template,
         format,
+        isLandScape,
+        pageWidth,
+        pageHeight,
+        fontsSelected,
+        variables,
+        renderedContent,
       });
-
-      // Get the content container
-      const contentContainer = iframeDoc.getElementById('content-container');
-      if (!contentContainer) {
-        throw new Error('Content container not found');
-      }
-
-      // Calculate the scale factor to convert pixels to mm
-      const PIXELS_PER_MM = 3.779527559; // Approximately 96 DPI / 25.4 mm per inch
-
-      // Get the total height of the content in pixels
-      const contentHeightPx = contentContainer.scrollHeight;
-
-      // Convert to mm
-      const contentHeightMm = contentHeightPx / PIXELS_PER_MM;
-
-      // Calculate available height per page (accounting for margins)
-      const availableHeightMm = pageHeight - 20; // 10mm margin top and bottom
-
-      // Calculate how many pages we need
-      const totalPages = Math.ceil(contentHeightMm / availableHeightMm);
-
-      // For each page, render a portion of the content
-      for (let pageNum = 0; pageNum < totalPages; pageNum += 1) {
-        // If not the first page, add a new page
-        if (pageNum > 0) {
-          pdf.addPage();
-        }
-
-        // Calculate the portion of the content to render for this page
-        const startY = pageNum * availableHeightMm * PIXELS_PER_MM;
-        const heightToRender = Math.min(
-          availableHeightMm * PIXELS_PER_MM,
-          contentHeightPx - startY,
-        );
-
-        // Create a canvas for this portion
-        const canvas = await html2canvas(contentContainer, {
-          scale: 2, // Higher scale for better quality
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: 'white',
-          windowHeight: contentHeightPx,
-          y: startY,
-          height: heightToRender,
-        });
-
-        // Add the canvas to the PDF
-        const imgData = canvas.toDataURL('image/png');
-        pdf.addImage(
-          imgData,
-          'PNG',
-          10, // X position (10mm margin)
-          10, // Y position (10mm margin)
-          pageWidth - 20, // Width (accounting for margins)
-          heightToRender / PIXELS_PER_MM, // Height in mm
-          '', // Alias
-          'FAST', // Compression
-        );
-      }
-
-      // Clean up
-      document.body.removeChild(iframe);
-
-      // Save the PDF with the template name and paper size
-      pdf.save(`${template.name || 'template'}_${format.toUpperCase()}.pdf`);
-
-      // Show success notification
-      notificationService.showSuccessNotification(
-        `Document exported as ${format.toUpperCase()} PDF with ${totalPages} page${totalPages > 1 ? 's' : ''}!`,
-      );
     } catch (error) {
-      console.error('Error exporting PDF:', error);
-      notificationService.showErrorNotification('Failed to export document. Please try again.');
+      console.error('Error preparing PDF export:', error);
+      notificationService.showErrorNotification(
+        'Failed to prepare document for export. Please try again.',
+      );
     }
   };
 
