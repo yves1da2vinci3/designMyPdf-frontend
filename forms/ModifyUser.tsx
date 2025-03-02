@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect } from 'react';
 import { Box, Button, Group, Stack, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { RequestStatus } from '@/api/request-status.enum';
@@ -8,13 +11,32 @@ interface ModifyUserProps {
 }
 
 function ModifyUserForm({ onSubmit, requestStatus }: ModifyUserProps) {
-  const user = JSON.parse(localStorage.getItem('userSession') || '{}');
   const form = useForm({
     initialValues: {
-      name: user.userName,
+      name: '',
       password: '',
     },
   });
+
+  // We intentionally don't include form in dependencies to avoid infinite loops
+  // as form.setFieldValue would trigger re-renders
+  // eslint-disable-next-line
+  useEffect(() => {
+    // Check if we're in a browser environment and localStorage is available
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        // Only access localStorage on the client side
+        const storedUser = localStorage.getItem('userSession');
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          form.setFieldValue('name', parsedUser.userName || '');
+        }
+      } catch (error) {
+        // Handle JSON parse error silently
+        console.error('Error accessing or parsing user session:', error);
+      }
+    }
+  }, []);
 
   return (
     <Box
@@ -36,7 +58,7 @@ function ModifyUserForm({ onSubmit, requestStatus }: ModifyUserProps) {
           <TextInput
             withAsterisk
             label="Password"
-            placeholder="your password"
+            placeholder="Your password"
             {...form.getInputProps('password')}
           />
 
