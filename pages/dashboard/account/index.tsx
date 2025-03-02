@@ -144,7 +144,11 @@ export default function Account() {
           <Stack
             flex={1}
             h="90vh"
-            style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
           >
             <ModifyUserForm
               onSubmit={(values) =>

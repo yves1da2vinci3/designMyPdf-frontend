@@ -789,91 +789,76 @@ const CreateTemplate: React.FC = () => {
         });
       });
 
-      // Load html2pdf.js for better pagination support
+      // Import required libraries
       const { default: jsPDF } = await import('jspdf');
       const { default: html2canvas } = await import('html2canvas');
 
       // Create jsPDF instance with the correct dimensions
-      const PDF = jsPDF;
-      const pdf = new PDF({
+      const JsPDF = jsPDF;
+      const pdf = new JsPDF({
         orientation: isLandScape ? 'landscape' : 'portrait',
         unit: 'mm',
         format,
       });
 
-      // Function to get element height in PDF units (mm)
-      const getPdfHeight = (element: HTMLElement): number => {
-        const heightPx = element.offsetHeight;
-        // Convert pixels to mm (assuming 96 DPI)
-        return (heightPx * 25.4) / 96;
-      };
-
-      // Function to get element width in PDF units (mm)
-      const getPdfWidth = (element: HTMLElement): number => {
-        const widthPx = element.offsetWidth;
-        // Convert pixels to mm (assuming 96 DPI)
-        return (widthPx * 25.4) / 96;
-      };
-
-      // Get content container
+      // Get the content container
       const contentContainer = iframeDoc.getElementById('content-container');
       if (!contentContainer) {
         throw new Error('Content container not found');
       }
 
-      // Get all child elements of the content container
-      const elements = Array.from(contentContainer.children);
+      // Calculate the scale factor to convert pixels to mm
+      const PIXELS_PER_MM = 3.779527559; // Approximately 96 DPI / 25.4 mm per inch
 
-      // Determine available height for content (page height minus margins)
-      const contentHeight = pageHeight - 20; // 10mm margin top and bottom
+      // Get the total height of the content in pixels
+      const contentHeightPx = contentContainer.scrollHeight;
 
-      let currentPageHeight = 0;
-      let pageCount = 1;
+      // Convert to mm
+      const contentHeightMm = contentHeightPx / PIXELS_PER_MM;
 
-      for (let i = 0; i < elements.length; i += 1) {
-        const element = elements[i] as HTMLElement;
+      // Calculate available height per page (accounting for margins)
+      const availableHeightMm = pageHeight - 20; // 10mm margin top and bottom
 
-        // If element is a page break, start a new page
-        if (element.classList.contains('page-break')) {
+      // Calculate how many pages we need
+      const totalPages = Math.ceil(contentHeightMm / availableHeightMm);
+
+      // For each page, render a portion of the content
+      for (let pageNum = 0; pageNum < totalPages; pageNum += 1) {
+        // If not the first page, add a new page
+        if (pageNum > 0) {
           pdf.addPage();
-          currentPageHeight = 0;
-          pageCount += 1;
-        } else {
-          const elementHeight = getPdfHeight(element);
-
-          // Check if element fits on current page
-          if (currentPageHeight + elementHeight > contentHeight && currentPageHeight > 0) {
-            // Element doesn't fit, add a new page
-            pdf.addPage();
-            currentPageHeight = 0;
-            pageCount += 1;
-          }
-
-          // Capture this element
-          const canvas = await html2canvas(element, {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: 'white',
-          });
-
-          const imgData = canvas.toDataURL('image/png');
-          const imgWidth = getPdfWidth(element);
-          const imgHeight = elementHeight;
-
-          // Add element to PDF at the current position
-          pdf.addImage(
-            imgData,
-            'PNG',
-            10, // X position (10mm margin)
-            10 + currentPageHeight, // Y position (10mm margin + current height)
-            imgWidth,
-            imgHeight,
-          );
-
-          // Update current page height
-          currentPageHeight += imgHeight;
         }
+
+        // Calculate the portion of the content to render for this page
+        const startY = pageNum * availableHeightMm * PIXELS_PER_MM;
+        const heightToRender = Math.min(
+          availableHeightMm * PIXELS_PER_MM,
+          contentHeightPx - startY,
+        );
+
+        // Create a canvas for this portion
+        const canvas = await html2canvas(contentContainer, {
+          scale: 2, // Higher scale for better quality
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: 'white',
+          windowHeight: contentHeightPx,
+          y: startY,
+          height: heightToRender,
+        });
+
+        // Add the canvas to the PDF
+        const imgData = canvas.toDataURL('image/png');
+        pdf.addImage(
+          imgData,
+          'PNG',
+          10, // X position (10mm margin)
+          10, // Y position (10mm margin)
+          pageWidth - 20, // Width (accounting for margins)
+          heightToRender / PIXELS_PER_MM, // Height in mm
+          '', // Alias
+          'FAST', // Compression
+        );
       }
 
       // Clean up
@@ -884,9 +869,10 @@ const CreateTemplate: React.FC = () => {
 
       // Show success notification
       notificationService.showSuccessNotification(
-        `Document exported as ${format.toUpperCase()} PDF with ${pageCount} page${pageCount > 1 ? 's' : ''}!`,
+        `Document exported as ${format.toUpperCase()} PDF with ${totalPages} page${totalPages > 1 ? 's' : ''}!`,
       );
     } catch (error) {
+      console.error('Error exporting PDF:', error);
       notificationService.showErrorNotification('Failed to export document. Please try again.');
     }
   };
