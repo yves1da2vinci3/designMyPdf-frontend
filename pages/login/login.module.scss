@@ -19,12 +19,13 @@
 }
 
 .formContainer {
-  min-width: rem(500px);
+  min-width: rem(500);
 }
 
 @media screen and (max-width: 1200px) {
   .formContainer {
     min-width: rem(300px);
+    
   }
 }
 
@@ -32,6 +33,7 @@
   .formContainer {
     padding-left: rem(100);
     padding-right: rem(100);
+    min-width: rem(400);
   }
 }
 
@@ -39,6 +41,7 @@
   .formContainer {
     padding-left: rem(50);
     padding-right: rem(50);
+    min-width: rem(300);
   }
 }
 
@@ -46,6 +49,7 @@
   .formContainer {
     padding-left: rem(20);
     padding-right: rem(20);
+    min-width: rem(300);
   }
 }
 
@@ -53,5 +57,6 @@
   .formContainer {
     padding-left: rem(0);
     padding-right: rem(0);
+    min-width: rem(300);
   }
 }
