@@ -16,4 +16,4 @@ export function fontCssCreation(fonts: string[]): string {
       font-family: '${fonts[0]}', sans-serif;
     }
   `;
-} 
+}
