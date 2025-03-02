@@ -1,8 +1,8 @@
 'use client';
 
+import { get } from 'lodash';
 import { apiClient } from './apiClient';
 import notificationService from '@/services/NotificationService';
-import { get } from 'lodash';
 
 export interface LoginDto {
   email: string;
