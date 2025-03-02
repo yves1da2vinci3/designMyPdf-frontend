@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import Head from 'next/head';
 import {
   Box,
   Button,
@@ -42,6 +43,7 @@ import {
   IconFileExport,
   IconDotsVertical,
 } from '@tabler/icons-react';
+
 import { useMonaco } from '@monaco-editor/react';
 import IDE from './CodeEditor';
 import Preview from './Preview';
@@ -61,6 +63,9 @@ import {
 } from '../../../../utils/chartUtils';
 import { exportPdfDocument } from '../../../../utils/pdfUtils';
 import { DEFAULT_FORMAT, getPageDimensions } from '../../../../utils/paperUtils';
+import { manuallyStartTour, resetTour } from '../../../../utils/tourUtils';
+import { useLocalStorage } from '../../../../utils/useLocalStorage';
+import 'driver.js/dist/driver.css';
 
 const data = {
   fromCompany: {
@@ -122,6 +127,8 @@ const CreateTemplate: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const openRef = useRef<() => void>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showTourButton, setShowTourButton] = useState(false);
+  const [hasSeenTour, setHasSeenTour] = useLocalStorage('hasSeenTemplateEditorTour', false);
 
   const fetchTemplate = async () => {
     try {
@@ -541,8 +548,74 @@ const CreateTemplate: React.FC = () => {
     }
   };
 
+  // Initialize the tour when the component mounts
+  useEffect(() => {
+    // Only start the tour after the template has loaded
+    if (isLoading === RequestStatus.Succeeded) {
+      console.log('Template loaded, preparing to start tour');
+      console.log('Has seen tour:', hasSeenTour);
+
+      // Use setTimeout to ensure the DOM is fully rendered
+      const tourTimeout = setTimeout(() => {
+        console.log('Starting tour now');
+        // Check if tour target elements exist
+        const elements = [
+          '#editor-container',
+          '#preview-container',
+          '#variables-section',
+          '#paper-settings',
+          '#fonts-section',
+          '#charts-section',
+          '#export-button',
+          '#ai-generate-button',
+          '#action-icon',
+          '#save-button',
+        ];
+
+        // Verify all elements exist
+        const allElementsExist = elements.every((selector) => {
+          const el = document.querySelector(selector);
+          console.log(`Element ${selector} exists:`, !!el);
+          return !!el;
+        });
+
+        if (!allElementsExist) {
+          console.error('Some tour elements are missing from the DOM');
+          return;
+        }
+
+        try {
+          // Only show the tour if the user hasn't seen it before
+          if (!hasSeenTour) {
+            console.log('User has not seen tour, starting tour');
+            const driverInstance = manuallyStartTour(() => {
+              console.log('Tour completed, updating hasSeenTour');
+              setHasSeenTour(true);
+            });
+            console.log('Tour driver instance:', driverInstance);
+          } else {
+            console.log('User has already seen tour, not showing automatically');
+          }
+        } catch (error) {
+          console.error('Error starting tour:', error);
+        }
+
+        setShowTourButton(true);
+      }, 1500); // Increased timeout to ensure DOM is fully rendered
+
+      return () => clearTimeout(tourTimeout);
+    }
+    return undefined;
+  }, [isLoading, hasSeenTour, setHasSeenTour]);
+
   return (
     <Stack style={{ overflow: 'hidden' }} gap={0}>
+      <Head>
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/driver.js@1.3.5/dist/driver.css"
+        />
+      </Head>
       {/* Manage variable */}
       <AddVariable
         opened={addVariableOpened}
@@ -842,8 +915,99 @@ const CreateTemplate: React.FC = () => {
         </Group>
 
         <Group gap="md">
+          {showTourButton && (
+            <Tooltip label="Show guided tour">
+              <Button
+                onClick={() => {
+                  manuallyStartTour(() => {
+                    setHasSeenTour(true);
+                  });
+                }}
+                variant="subtle"
+                color="gray"
+                styles={{
+                  root: {
+                    transition: 'all 0.2s ease',
+                    '&:hover': { transform: 'translateY(-1px)' },
+                  },
+                }}
+              >
+                Help Tour
+              </Button>
+            </Tooltip>
+          )}
+
+          <Tooltip label="Reset tour state and start again">
+            <Button
+              onClick={() => {
+                console.log('Resetting tour state and forcing tour to start');
+                resetTour();
+                setHasSeenTour(false);
+
+                // Force start the tour after a short delay
+                setTimeout(() => {
+                  manuallyStartTour(() => {
+                    console.log('Forced tour completed');
+                    setHasSeenTour(true);
+                  });
+                }, 500);
+              }}
+              variant="subtle"
+              color="blue"
+              styles={{
+                root: {
+                  transition: 'all 0.2s ease',
+                  '&:hover': { transform: 'translateY(-1px)' },
+                },
+              }}
+            >
+              Reset & Start Tour
+            </Button>
+          </Tooltip>
+
+          {process.env.NODE_ENV === 'development' && (
+            <Tooltip label="Debug tour elements">
+              <Button
+                onClick={() => {
+                  console.log('Checking tour elements in DOM');
+                  const elements = [
+                    '#editor-container',
+                    '#preview-container',
+                    '#variables-section',
+                    '#paper-settings',
+                    '#fonts-section',
+                    '#charts-section',
+                    '#sidebar-export-button',
+                    '#ai-generate-button',
+                    '#action-icon',
+                    '#save-button',
+                  ];
+
+                  elements.forEach((selector) => {
+                    const el = document.querySelector(selector);
+                    console.log(`Element ${selector} exists:`, !!el);
+                    if (el) {
+                      console.log(`Element position: ${el.getBoundingClientRect()}`);
+                    }
+                  });
+                }}
+                variant="subtle"
+                color="gray"
+                styles={{
+                  root: {
+                    transition: 'all 0.2s ease',
+                    '&:hover': { transform: 'translateY(-1px)' },
+                  },
+                }}
+              >
+                Debug Tour
+              </Button>
+            </Tooltip>
+          )}
+
           <Tooltip label="Improve design with AI">
             <Button
+              id="improve-button"
               onClick={improveTemplateUI}
               loading={isImproving}
               leftSection={<IconSparkles size={16} />}
@@ -861,6 +1025,7 @@ const CreateTemplate: React.FC = () => {
           </Tooltip>
           <Tooltip label="Generate with AI">
             <Button
+              id="ai-generate-button"
               onClick={openPromptDrawer}
               leftSection={<IconWand size={16} />}
               variant="light"
@@ -877,51 +1042,54 @@ const CreateTemplate: React.FC = () => {
           </Tooltip>
 
           {/* Actions Menu */}
-          <Menu shadow="md" width={200}>
-            <Menu.Target>
-              <Button
-                variant="light"
-                color="gray"
-                leftSection={<IconDotsVertical size={16} />}
-                styles={{
-                  root: {
-                    transition: 'all 0.2s ease',
-                    '&:hover': { transform: 'translateY(-1px)' },
-                  },
-                }}
-              >
-                Actions
-              </Button>
-            </Menu.Target>
+          <Box id="action-icon">
+            <Menu shadow="md" width={200}>
+              <Menu.Target>
+                <Button
+                  variant="light"
+                  color="gray"
+                  leftSection={<IconDotsVertical size={16} />}
+                  styles={{
+                    root: {
+                      transition: 'all 0.2s ease',
+                      '&:hover': { transform: 'translateY(-1px)' },
+                    },
+                  }}
+                >
+                  Actions
+                </Button>
+              </Menu.Target>
 
-            <Menu.Dropdown>
-              <Menu.Label>Document</Menu.Label>
-              <Menu.Item
-                leftSection={<IconDownload size={16} />}
-                onClick={() => uploadTemplate(templateContent)}
-              >
-                Download Template
-              </Menu.Item>
+              <Menu.Dropdown>
+                <Menu.Label>Document</Menu.Label>
+                <Menu.Item
+                  leftSection={<IconDownload size={16} />}
+                  onClick={() => uploadTemplate(templateContent)}
+                >
+                  Download Template
+                </Menu.Item>
 
-              <Menu.Label>Export PDF</Menu.Label>
-              <Menu.Item leftSection={<IconFileExport size={16} />} onClick={exportPdf}>
-                Export as {format.toUpperCase()} PDF
-              </Menu.Item>
+                <Menu.Label>Export PDF</Menu.Label>
+                <Menu.Item leftSection={<IconFileExport size={16} />} onClick={exportPdf}>
+                  Export as {format.toUpperCase()} PDF
+                </Menu.Item>
 
-              <Divider />
+                <Divider />
 
-              <Menu.Label>Marketplace</Menu.Label>
-              <Menu.Item
-                leftSection={<IconShoppingCart size={16} />}
-                onClick={publishToMarketplace}
-                disabled={isPublishing}
-              >
-                Publish to Marketplace
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
+                <Menu.Label>Marketplace</Menu.Label>
+                <Menu.Item
+                  leftSection={<IconShoppingCart size={16} />}
+                  onClick={publishToMarketplace}
+                  disabled={isPublishing}
+                >
+                  Publish to Marketplace
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          </Box>
 
           <Button
+            id="save-button"
             onClick={updateTemplate}
             variant="filled"
             color="blue"
@@ -992,7 +1160,7 @@ const CreateTemplate: React.FC = () => {
                 </Group>
 
                 {/* Paper size and orientation */}
-                <Group align="center" mb="lg">
+                <Group id="paper-settings" align="center" mb="lg">
                   <Select
                     size="sm"
                     label="Paper Size"
@@ -1061,6 +1229,7 @@ const CreateTemplate: React.FC = () => {
                     PDF export will use the paper size and orientation selected above.
                   </Text>
                   <Button
+                    id="sidebar-export-button"
                     fullWidth
                     leftSection={<IconFileExport size={16} />}
                     onClick={exportPdf}
@@ -1079,7 +1248,7 @@ const CreateTemplate: React.FC = () => {
                 </Box>
 
                 {/* Variables section */}
-                <Box>
+                <Box id="variables-section">
                   <Group justify="space-between" mb="xs">
                     <Text size="sm" fw={600} c="white" fs="uppercase">
                       Variables
@@ -1163,7 +1332,7 @@ const CreateTemplate: React.FC = () => {
                 </Box>
 
                 {/* Fonts section */}
-                <Box>
+                <Box id="fonts-section">
                   <Group justify="space-between" mb="xs">
                     <Text size="sm" fw={600} c="white" fs="uppercase">
                       Fonts
@@ -1234,7 +1403,7 @@ const CreateTemplate: React.FC = () => {
                 </Box>
 
                 {/* Charts section */}
-                <Stack h={300}>
+                <Stack id="charts-section" h={300}>
                   <Box p="xs">
                     <Text size="sm" fw={600} c="white" mb="md" tt="uppercase">
                       Charts
@@ -1329,6 +1498,7 @@ const CreateTemplate: React.FC = () => {
 
           {/* Code editor */}
           <Box
+            id="editor-container"
             style={{
               width: sidebarCollapsed ? 'calc(60% - 20px)' : '50%',
               height: '100%',
@@ -1354,6 +1524,7 @@ const CreateTemplate: React.FC = () => {
 
           {/* Preview */}
           <Box
+            id="preview-container"
             style={{
               width: sidebarCollapsed ? 'calc(40% - 20px)' : '32%',
               height: '100%',
