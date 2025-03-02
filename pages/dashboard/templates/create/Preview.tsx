@@ -196,6 +196,131 @@ function Preview({
         })();
       `;
 
+      // Script to calculate and add page breaks
+      const pageBreakScript = `
+        (function() {
+          function addPageBreakIndicators() {
+            // Get content container
+            const contentContainer = document.querySelector('.content');
+            if (!contentContainer) return;
+            
+            // Get the total height of the content
+            const contentHeight = contentContainer.scrollHeight;
+            
+            // Get the page height in pixels (minus padding)
+            const pageHeightMm = ${getSize().height};
+            const PIXELS_PER_MM = 3.779527559; // Approximately 96 DPI / 25.4 mm per inch
+            const pageHeightPx = pageHeightMm * PIXELS_PER_MM;
+            const availableHeightPx = pageHeightPx - (20 * PIXELS_PER_MM); // 10mm margin top and bottom
+            
+            // Calculate page breaks
+            const pageBreaks = [];
+            let currentHeight = availableHeightPx;
+            
+            while (currentHeight < contentHeight) {
+              pageBreaks.push(currentHeight);
+              currentHeight += availableHeightPx;
+            }
+            
+            // Add page break indicators
+            pageBreaks.forEach((height, index) => {
+              const delimiter = document.createElement('div');
+              delimiter.className = 'page-delimiter preview-only';
+              delimiter.style.position = 'absolute';
+              delimiter.style.top = height + 'px';
+              delimiter.style.left = '0';
+              delimiter.style.width = '100%';
+              delimiter.style.height = '2px';
+              delimiter.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
+              delimiter.style.zIndex = '1000';
+              delimiter.style.boxShadow = '0 0 4px rgba(255, 0, 0, 0.5)';
+              
+              // Add page end label
+              const endLabel = document.createElement('div');
+              endLabel.className = 'preview-only';
+              endLabel.style.position = 'absolute';
+              endLabel.style.right = '10px';
+              endLabel.style.top = '-12px';
+              endLabel.style.backgroundColor = 'rgba(255, 0, 0, 0.8)';
+              endLabel.style.color = 'white';
+              endLabel.style.padding = '3px 8px';
+              endLabel.style.borderRadius = '4px';
+              endLabel.style.fontSize = '11px';
+              endLabel.style.fontWeight = 'bold';
+              endLabel.style.whiteSpace = 'nowrap';
+              endLabel.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.3)';
+              endLabel.textContent = 'Page ' + (index + 1) + ' end';
+              
+              // Add page start label
+              const startLabel = document.createElement('div');
+              startLabel.className = 'preview-only';
+              startLabel.style.position = 'absolute';
+              startLabel.style.left = '10px';
+              startLabel.style.top = '4px';
+              startLabel.style.backgroundColor = 'rgba(255, 0, 0, 0.8)';
+              startLabel.style.color = 'white';
+              startLabel.style.padding = '3px 8px';
+              startLabel.style.borderRadius = '4px';
+              startLabel.style.fontSize = '11px';
+              startLabel.style.fontWeight = 'bold';
+              startLabel.style.whiteSpace = 'nowrap';
+              startLabel.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.3)';
+              startLabel.textContent = 'Page ' + (index + 2) + ' start';
+              
+              delimiter.appendChild(endLabel);
+              delimiter.appendChild(startLabel);
+              contentContainer.appendChild(delimiter);
+            });
+            
+            // Add info tooltip if there are page breaks
+            if (pageBreaks.length > 0) {
+              const infoTooltip = document.createElement('div');
+              infoTooltip.className = 'preview-only';
+              infoTooltip.style.position = 'fixed';
+              infoTooltip.style.top = '10px';
+              infoTooltip.style.right = '10px';
+              infoTooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+              infoTooltip.style.color = 'white';
+              infoTooltip.style.padding = '8px 12px';
+              infoTooltip.style.borderRadius = '6px';
+              infoTooltip.style.fontSize = '12px';
+              infoTooltip.style.maxWidth = '200px';
+              infoTooltip.style.boxShadow = '0 2px 5px rgba(0, 0, 0, 0.2)';
+              infoTooltip.style.zIndex = '1000';
+              
+              const tooltipTitle = document.createElement('div');
+              tooltipTitle.style.fontWeight = 'bold';
+              tooltipTitle.style.marginBottom = '4px';
+              tooltipTitle.textContent = 'Page Breaks';
+              
+              const tooltipContent = document.createElement('div');
+              tooltipContent.innerHTML = 'Red lines show page breaks in preview only.<br>They won\\'t appear in the exported PDF.';
+              
+              infoTooltip.appendChild(tooltipTitle);
+              infoTooltip.appendChild(tooltipContent);
+              document.body.appendChild(infoTooltip);
+            }
+          }
+          
+          // Add page break indicators when DOM is fully loaded and after a short delay for rendering
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => setTimeout(addPageBreakIndicators, 500));
+          } else {
+            setTimeout(addPageBreakIndicators, 500);
+          }
+          
+          // Recalculate on window resize
+          window.addEventListener('resize', () => {
+            // Remove existing delimiters
+            document.querySelectorAll('.page-delimiter').forEach(el => el.remove());
+            document.querySelectorAll('.preview-only').forEach(el => el.remove());
+            
+            // Add new ones
+            setTimeout(addPageBreakIndicators, 500);
+          });
+        })();
+      `;
+
       // Build the complete preview HTML.
       const previewContent = `<!doctype html>
 <html>
@@ -214,16 +339,24 @@ function Preview({
         min-height: 100vh;
         width: 100%;
         background: white;
+        position: relative;
       }
       .content {
         width: 100%;
         height: auto;
         min-height: 100vh;
         padding: 2rem;
+        position: relative;
       }
       canvas {
         max-width: 100%;
         margin: 0 auto;
+      }
+      /* This class will be used to hide elements during export */
+      @media print {
+        .preview-only {
+          display: none !important;
+        }
       }
     </style>
   </head>
@@ -233,11 +366,13 @@ function Preview({
     </div>
     <script>
       ${chartScript}
+      ${pageBreakScript}
     </script>
   </body>
 </html>`;
 
       // Build template content for download using the raw htmlContent.
+      // Note: We don't include the page break script in the template content
       const templateContent = `<!doctype html>
 <html>
   <head>
@@ -265,6 +400,12 @@ function Preview({
       canvas {
         max-width: 100%;
         margin: 0 auto;
+      }
+      /* Hide preview-only elements in the exported PDF */
+      @media print {
+        .preview-only {
+          display: none !important;
+        }
       }
     </style>
   </head>
