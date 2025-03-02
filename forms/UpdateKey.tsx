@@ -14,17 +14,30 @@ function UpdateKeyForm({ onSubmit, Key, onClose, requestStatus }: UpdateKeyProps
   const form = useForm({
     initialValues: {
       name: Key?.name || '',
+      key_count: Key?.key_count || 0,
     },
   });
 
   return (
-    <form onSubmit={form.onSubmit(onSubmit)}>
+    <form
+      onSubmit={form.onSubmit((values) =>
+        onSubmit({ ...values, key_count: String(values.key_count) }),
+      )}
+    >
       <Stack>
         <TextInput
           withAsterisk
           label="Key Name"
           placeholder="Key name"
           {...form.getInputProps('name')}
+        />
+
+        <TextInput
+          withAsterisk
+          label="Key Count"
+          placeholder="Key count"
+          type="number"
+          {...form.getInputProps('key_count')}
         />
 
         <Group justify="flex-end" mt="md">
