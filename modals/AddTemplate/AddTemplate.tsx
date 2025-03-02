@@ -1,9 +1,9 @@
-import { RequestStatus } from '@/api/request-status.enum';
-import { CreateTemplateDto, templateApi } from '@/api/templateApi';
-import { AddTemplateForm } from '@/forms/AddTemplate';
-import { Button, Group, Modal, ModalProps, Title } from '@mantine/core';
-import { useRouter } from 'next/router';
+import { Modal, ModalProps, Title } from '@mantine/core';
 import React from 'react';
+import { RequestStatus } from '@/api/request-status.enum';
+import { CreateTemplateDto } from '@/api/templateApi';
+
+import AddTemplateForm from '@/forms/AddTemplate';
 
 interface AddTemplateModalProps extends ModalProps {
   addTemplateHandler: (values: CreateTemplateDto) => void;
@@ -15,25 +15,23 @@ const AddTemplate: React.FC<AddTemplateModalProps> = ({
   addTemplateHandler,
   addTemplateRequestatus,
   ...modalProps
-}) => {
-  return (
-    <Modal
-      centered
+}) => (
+  <Modal
+    centered
+    onClose={onClose}
+    {...modalProps}
+    title={
+      <Title order={3} my={4}>
+        Create a new template
+      </Title>
+    }
+  >
+    <AddTemplateForm
       onClose={onClose}
-      {...modalProps}
-      title={
-        <Title order={3} my={4}>
-          Create a new template
-        </Title>
-      }
-    >
-      <AddTemplateForm
-        onClose={onClose}
-        onSubmit={addTemplateHandler}
-        requestStatus={addTemplateRequestatus}
-      />
-    </Modal>
-  );
-};
+      onSubmit={addTemplateHandler}
+      requestStatus={addTemplateRequestatus}
+    />
+  </Modal>
+);
 
 export default AddTemplate;

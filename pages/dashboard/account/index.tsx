@@ -17,7 +17,7 @@ import { authApi, updateUserDTO } from '@/api/authApi';
 import { CreateNamespaceDto, NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
 import { RequestStatus } from '@/api/request-status.enum';
 import ManagedNamespaceItem from '@/components/ManageNamespaceItem/ManagedNamespaceItem';
-import { ModifyUserForm } from '@/forms/ModifyUser';
+import ModifyUserForm from '@/forms/ModifyUser';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import AddNamespace from '@/modals/AddNamespace/AddNamespace';
 
@@ -146,7 +146,15 @@ export default function Account() {
             h="90vh"
             style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
           >
-            <ModifyUserForm onSubmit={updateUserHandler} requestStatus={updateUserRequestStatus} />
+            <ModifyUserForm
+              onSubmit={(values) =>
+                updateUserHandler({
+                  userName: values.name,
+                  password: values.password,
+                })
+              }
+              requestStatus={updateUserRequestStatus}
+            />
           </Stack>
         </Tabs.Panel>
 

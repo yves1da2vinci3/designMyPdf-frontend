@@ -44,7 +44,7 @@ import {
 } from '@tabler/icons-react';
 import { useMonaco } from '@monaco-editor/react';
 import IDE from './CodeEditor';
-import Preview, { FormatType } from './Preview';
+import Preview from './Preview';
 import AddVariable from '@/modals/AddVariable/AddVariable';
 import VariableBadge from '@/components/VariableBadge/VariableBadge';
 import { DEFAULT_TEMPLATE } from '@/constants/template';
@@ -52,6 +52,7 @@ import { DEFAULT_FONT, fonts } from '@/constants/fonts';
 import { RequestStatus } from '@/api/request-status.enum';
 import { TemplateDTO, templateApi } from '@/api/templateApi';
 import notificationService from '@/services/NotificationService';
+import { FormatType } from '../../../../utils/types';
 
 const DEFAULT_FORMAT = 'a4';
 const data = {

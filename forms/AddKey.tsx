@@ -15,9 +15,12 @@ function AddKeyForm({ onSubmit, onClose, requestStatus }: AddKeyProps) {
       name: '',
     },
   });
+  const handleSubmit = (values: { name: string }) => {
+    onSubmit({ name: values.name, key_count: 1 });
+  };
 
   return (
-    <form onSubmit={form.onSubmit(onSubmit)}>
+    <form onSubmit={form.onSubmit(handleSubmit)}>
       <Stack>
         <TextInput
           withAsterisk

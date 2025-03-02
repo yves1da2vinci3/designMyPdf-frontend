@@ -3,7 +3,7 @@ import { apiClient } from './apiClient';
 
 export interface CreateKeyDto {
   name: string;
-  key_count: string;
+  key_count: number;
 }
 export interface UpdateKeyDto {
   name?: string;
@@ -63,7 +63,7 @@ export const keyApi = {
       const getKeysResponse = await apiClient.get('/keys');
       return getKeysResponse.data.keys;
     } catch (error) {
-      throw new Error('Error fetching keys:' + error);
+      throw new Error(error instanceof Error ? error.message : 'An unknown error occurred');
     }
   },
 };

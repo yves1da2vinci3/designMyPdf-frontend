@@ -3,7 +3,7 @@ import { useForm } from '@mantine/form';
 import { RequestStatus } from '@/api/request-status.enum';
 
 interface ModifyUserProps {
-  onSubmit: (values: { name: string; email: string }) => void;
+  onSubmit: (values: { name: string; password: string }) => void;
   requestStatus: RequestStatus;
 }
 
@@ -11,7 +11,7 @@ function ModifyUserForm({ onSubmit, requestStatus }: ModifyUserProps) {
   const form = useForm({
     initialValues: {
       name: '',
-      email: '',
+      password: '',
     },
   });
 
@@ -26,9 +26,9 @@ function ModifyUserForm({ onSubmit, requestStatus }: ModifyUserProps) {
         />
         <TextInput
           withAsterisk
-          label="Email"
-          placeholder="your@email.com"
-          {...form.getInputProps('email')}
+          label="Password"
+          placeholder="your password"
+          {...form.getInputProps('password')}
         />
 
         <Group justify="flex-end" mt="md">

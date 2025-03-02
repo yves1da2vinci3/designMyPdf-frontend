@@ -5,7 +5,7 @@ import { KeyDTO, UpdateKeyDto } from '@/api/keyApi';
 
 interface UpdateKeyProps {
   onSubmit: (values: UpdateKeyDto) => void;
-  Key: KeyDTO;
+  Key: KeyDTO | null;
   onClose: () => void;
   requestStatus: RequestStatus;
 }
@@ -13,7 +13,7 @@ interface UpdateKeyProps {
 function UpdateKeyForm({ onSubmit, Key, onClose, requestStatus }: UpdateKeyProps) {
   const form = useForm({
     initialValues: {
-      name: Key.name,
+      name: Key?.name || '',
     },
   });
 
