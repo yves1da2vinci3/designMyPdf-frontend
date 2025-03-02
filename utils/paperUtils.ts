@@ -25,9 +25,9 @@ export const DEFAULT_FORMAT: FormatType = 'a4';
  */
 export function getPageDimensions(format: FormatType, isLandscape: boolean) {
   const dimensions = PAPER_DIMENSIONS[format];
-  
+
   return {
     width: isLandscape ? dimensions.height : dimensions.width,
     height: isLandscape ? dimensions.width : dimensions.height,
   };
-} 
+}

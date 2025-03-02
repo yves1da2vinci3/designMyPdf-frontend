@@ -192,10 +192,7 @@ export async function exportPdfDocument({
 
       // Calculate the portion of the content to render for this page
       const startY = pageNum * availableHeightMm * PIXELS_PER_MM;
-      const heightToRender = Math.min(
-        availableHeightMm * PIXELS_PER_MM,
-        contentHeightPx - startY,
-      );
+      const heightToRender = Math.min(availableHeightMm * PIXELS_PER_MM, contentHeightPx - startY);
 
       // Create a canvas for this portion
       const canvas = await html2canvas(contentContainer, {
@@ -239,4 +236,4 @@ export async function exportPdfDocument({
     console.error('Error exporting PDF:', error);
     notificationService.showErrorNotification('Failed to export document. Please try again.');
   }
-} 
+}

@@ -118,7 +118,7 @@ export function generateChartData(type: keyof typeof CHART_TYPES) {
 export function processChartData(code: string) {
   // Process the template to properly stringify chart data
   let processedCode = code;
-  
+
   // Find all instances of data-chart-data='{{...}}' and replace with stringified JSON
   const chartDataRegex = /data-chart-data=['"]{{([^}]+)}}/g;
   let match;
@@ -138,11 +138,14 @@ export function processChartData(code: string) {
  * @param variables The variables containing chart data
  * @returns The content with placeholders replaced by actual data
  */
-export function replaceChartDataPlaceholders(renderedContent: string, variables: Record<string, any>) {
+export function replaceChartDataPlaceholders(
+  renderedContent: string,
+  variables: Record<string, any>,
+) {
   let result = renderedContent;
   const placeholderRegex = /__CHART_DATA_([^_]+(?:_[^_]+)*)__/g;
   let match;
-  
+
   while ((match = placeholderRegex.exec(renderedContent)) !== null) {
     const path = match[1].replace(/_/g, '.');
     const pathParts = path.split('.');
@@ -160,12 +163,9 @@ export function replaceChartDataPlaceholders(renderedContent: string, variables:
 
     // Replace placeholder with stringified data
     if (chartData) {
-      result = result.replace(
-        match[0],
-        JSON.stringify(chartData).replace(/'/g, "\\'")
-      );
+      result = result.replace(match[0], JSON.stringify(chartData).replace(/'/g, "\\'"));
     }
   }
 
   return result;
-} 
+}

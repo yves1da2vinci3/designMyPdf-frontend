@@ -178,7 +178,16 @@ function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
   }, [htmlContent, data, fontImport, fontStyle]);
 
   return (
-    <div style={{ width: '100%', height: '100px', overflow: 'hidden', position: 'relative', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+    <div
+      style={{
+        width: '100%',
+        height: '100px',
+        overflow: 'hidden',
+        position: 'relative',
+        borderRadius: '4px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+      }}
+    >
       <iframe
         title="mini-Preview"
         srcDoc={renderedContent}
