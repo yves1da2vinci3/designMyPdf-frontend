@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Group, Code, Box } from '@mantine/core';
+import { Group, Code, Box, Button } from '@mantine/core';
+import { useRouter } from 'next/router';
 import {
   IconKey,
   IconLogout,
@@ -7,10 +8,8 @@ import {
   IconReceipt,
   IconNotebook,
   IconUserCircle,
-  IconBoxSeam,
 } from '@tabler/icons-react';
 import classes from './DashboardNav.module.scss';
-import { useRouter } from 'next/router';
 import { authApi } from '@/api/authApi';
 import Logo from '@/components/AppLogo/AppLogo';
 
@@ -24,11 +23,19 @@ const data = [
 
 function DashboardNav() {
   const [active, setActive] = useState('Overview');
+  const [isLogoutLoading, setIsLogoutLoading] = useState(false);
   const router = useRouter();
 
   const Logout = async () => {
-    await authApi.logout();
-    router.push('/login');
+    try {
+      setIsLogoutLoading(true);
+      await authApi.logout();
+      router.push('/login');
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLogoutLoading(false);
+    }
   };
   const navigate = (label: string, link: string) => {
     router.push(link);
@@ -62,16 +69,18 @@ function DashboardNav() {
       </div>
 
       <div className={classes.footer}>
-        <Box
+        <Button
+          leftSection={<IconLogout />}
           className={classes.link}
+          disabled={isLogoutLoading}
+          loading={isLogoutLoading}
           onClick={(event) => {
             event.preventDefault();
             Logout();
           }}
         >
-          <IconLogout className={classes.linkIcon} stroke={1.5} />
-          <span>Logout</span>
-        </Box>
+          Logout
+        </Button>
       </div>
     </nav>
   );
