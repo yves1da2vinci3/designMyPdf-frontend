@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Handlebars from 'handlebars';
+import { Switch, Tooltip } from '@mantine/core';
 
 // Define the FormatType directly in this file
 type FormatType = 'a1' | 'a2' | 'a3' | 'a4' | 'a5' | 'a6';
@@ -27,6 +28,7 @@ function Preview({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
+  const [showPageDelimiters, setShowPageDelimiters] = useState(true);
 
   // Local utility functions
   function createFontImport(fontList: string[]): string {
@@ -62,6 +64,17 @@ function Preview({
     setFontImport(createFontImport(fonts));
     setFontStyle(createFontStyle(fonts));
   }, [fonts]);
+
+  // Update delimiters visibility when the toggle changes
+  useEffect(() => {
+    if (iframeRef.current && iframeRef.current.contentWindow) {
+      // Use postMessage to communicate with the iframe
+      iframeRef.current.contentWindow.postMessage(
+        { type: 'togglePageDelimiters', show: showPageDelimiters },
+        '*',
+      );
+    }
+  }, [showPageDelimiters]);
 
   useEffect(() => {
     // Append Tailwind CSS if not already present in the parent document.
@@ -196,6 +209,196 @@ function Preview({
         })();
       `;
 
+      // Script to calculate and add page breaks
+      const pageBreakScript = `
+        (function() {
+          // Initial visibility state
+          let showDelimiters = ${showPageDelimiters};
+          
+          // Listen for messages from parent window
+          window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'togglePageDelimiters') {
+              showDelimiters = event.data.show;
+              updateDelimitersVisibility(showDelimiters);
+            }
+          });
+          
+          function updateDelimitersVisibility(show) {
+            const elements = document.querySelectorAll('.page-delimiter, .preview-only');
+            elements.forEach(el => {
+              el.style.display = show ? 'block' : 'none';
+            });
+          }
+          
+          function addPageBreakIndicators() {
+            // Get content container
+            const contentContainer = document.querySelector('.content');
+            if (!contentContainer) return;
+            
+            // Get the total height of the content
+            const contentHeight = contentContainer.scrollHeight;
+            
+            // Get the page dimensions based on format and orientation
+            const format = '${format}';
+            const isLandscape = ${isLandscape};
+            
+            // Paper dimensions in mm
+            const paperSizes = {
+              a1: { width: 841, height: 1189 },
+              a2: { width: 594, height: 841 },
+              a3: { width: 420, height: 594 },
+              a4: { width: 210, height: 297 },
+              a5: { width: 148, height: 210 },
+              a6: { width: 105, height: 148 }
+            };
+            
+            // Get dimensions based on orientation
+            const paperSize = paperSizes[format];
+            const pageWidth = isLandscape ? paperSize.height : paperSize.width;
+            const pageHeight = isLandscape ? paperSize.width : paperSize.height;
+            
+            // Convert to pixels
+            const PIXELS_PER_MM = 3.779527559; // Approximately 96 DPI / 25.4 mm per inch
+            const pageHeightPx = pageHeight * PIXELS_PER_MM;
+            const pageWidthPx = pageWidth * PIXELS_PER_MM;
+            
+            // Account for margins (10mm on each side)
+            const marginPx = 10 * PIXELS_PER_MM;
+            const availableHeightPx = pageHeightPx - (marginPx * 2);
+            
+            // Remove any existing delimiters
+            document.querySelectorAll('.page-delimiter, .page-break-tooltip').forEach(el => el.remove());
+            
+            // Calculate page breaks
+            const pageBreaks = [];
+            let currentHeight = availableHeightPx;
+            
+            while (currentHeight < contentHeight) {
+              pageBreaks.push(currentHeight);
+              currentHeight += availableHeightPx;
+            }
+            
+            // Add page break indicators
+            pageBreaks.forEach((height, index) => {
+              const delimiter = document.createElement('div');
+              delimiter.className = 'page-delimiter preview-only';
+              delimiter.style.position = 'absolute';
+              delimiter.style.top = height + 'px';
+              delimiter.style.left = '0';
+              delimiter.style.width = '100%';
+              delimiter.style.height = '2px';
+              delimiter.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
+              delimiter.style.zIndex = '1000';
+              delimiter.style.boxShadow = '0 0 4px rgba(255, 0, 0, 0.5)';
+              delimiter.style.display = showDelimiters ? 'block' : 'none';
+              
+              // Add page end label
+              const endLabel = document.createElement('div');
+              endLabel.className = 'preview-only';
+              endLabel.style.position = 'absolute';
+              endLabel.style.right = '10px';
+              endLabel.style.top = '-12px';
+              endLabel.style.backgroundColor = 'rgba(255, 0, 0, 0.8)';
+              endLabel.style.color = 'white';
+              endLabel.style.padding = '3px 8px';
+              endLabel.style.borderRadius = '4px';
+              endLabel.style.fontSize = '11px';
+              endLabel.style.fontWeight = 'bold';
+              endLabel.style.whiteSpace = 'nowrap';
+              endLabel.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.3)';
+              endLabel.textContent = 'Page ' + (index + 1) + ' end';
+              endLabel.style.display = showDelimiters ? 'block' : 'none';
+              
+              // Add page start label
+              const startLabel = document.createElement('div');
+              startLabel.className = 'preview-only';
+              startLabel.style.position = 'absolute';
+              startLabel.style.left = '10px';
+              startLabel.style.top = '4px';
+              startLabel.style.backgroundColor = 'rgba(255, 0, 0, 0.8)';
+              startLabel.style.color = 'white';
+              startLabel.style.padding = '3px 8px';
+              startLabel.style.borderRadius = '4px';
+              startLabel.style.fontSize = '11px';
+              startLabel.style.fontWeight = 'bold';
+              startLabel.style.whiteSpace = 'nowrap';
+              startLabel.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.3)';
+              startLabel.textContent = 'Page ' + (index + 2) + ' start';
+              startLabel.style.display = showDelimiters ? 'block' : 'none';
+              
+              delimiter.appendChild(endLabel);
+              delimiter.appendChild(startLabel);
+              contentContainer.appendChild(delimiter);
+            });
+            
+            // Add info tooltip if there are page breaks
+            if (pageBreaks.length > 0) {
+              const infoTooltip = document.createElement('div');
+              infoTooltip.className = 'preview-only page-break-tooltip';
+              infoTooltip.style.position = 'fixed';
+              infoTooltip.style.top = '10px';
+              infoTooltip.style.right = '10px';
+              infoTooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+              infoTooltip.style.color = 'white';
+              infoTooltip.style.padding = '8px 12px';
+              infoTooltip.style.borderRadius = '6px';
+              infoTooltip.style.fontSize = '12px';
+              infoTooltip.style.maxWidth = '200px';
+              infoTooltip.style.boxShadow = '0 2px 5px rgba(0, 0, 0, 0.2)';
+              infoTooltip.style.zIndex = '1000';
+              infoTooltip.style.display = showDelimiters ? 'block' : 'none';
+              
+              const tooltipTitle = document.createElement('div');
+              tooltipTitle.style.fontWeight = 'bold';
+              tooltipTitle.style.marginBottom = '4px';
+              tooltipTitle.textContent = 'Page Breaks';
+              
+              const tooltipContent = document.createElement('div');
+              tooltipContent.innerHTML = 'Red lines show page breaks in preview only.<br>They won\\'t appear in the exported PDF.';
+              
+              infoTooltip.appendChild(tooltipTitle);
+              infoTooltip.appendChild(tooltipContent);
+              document.body.appendChild(infoTooltip);
+              
+              // Add page count info
+              const pageCountInfo = document.createElement('div');
+              pageCountInfo.className = 'preview-only page-break-tooltip';
+              pageCountInfo.style.position = 'fixed';
+              pageCountInfo.style.bottom = '10px';
+              pageCountInfo.style.right = '10px';
+              pageCountInfo.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+              pageCountInfo.style.color = 'white';
+              pageCountInfo.style.padding = '8px 12px';
+              pageCountInfo.style.borderRadius = '6px';
+              pageCountInfo.style.fontSize = '12px';
+              pageCountInfo.style.boxShadow = '0 2px 5px rgba(0, 0, 0, 0.2)';
+              pageCountInfo.style.zIndex = '1000';
+              pageCountInfo.style.display = showDelimiters ? 'block' : 'none';
+              pageCountInfo.textContent = 'Total pages: ' + (pageBreaks.length + 1);
+              document.body.appendChild(pageCountInfo);
+              
+              // Send page count to parent window
+              window.parent.postMessage({
+                type: 'pageCount',
+                count: pageBreaks.length + 1
+              }, '*');
+            }
+          }
+          
+          // Add page break indicators when DOM is fully loaded and after a short delay for rendering
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => setTimeout(addPageBreakIndicators, 500));
+          } else {
+            setTimeout(addPageBreakIndicators, 500);
+          }
+          
+          // Recalculate on window resize
+          window.addEventListener('resize', () => {
+            setTimeout(addPageBreakIndicators, 500);
+          });
+        })();
+      `;
+
       // Build the complete preview HTML.
       const previewContent = `<!doctype html>
 <html>
@@ -214,16 +417,24 @@ function Preview({
         min-height: 100vh;
         width: 100%;
         background: white;
+        position: relative;
       }
       .content {
         width: 100%;
         height: auto;
         min-height: 100vh;
         padding: 2rem;
+        position: relative;
       }
       canvas {
         max-width: 100%;
         margin: 0 auto;
+      }
+      /* This class will be used to hide elements during export */
+      @media print {
+        .preview-only {
+          display: none !important;
+        }
       }
     </style>
   </head>
@@ -233,11 +444,13 @@ function Preview({
     </div>
     <script>
       ${chartScript}
+      ${pageBreakScript}
     </script>
   </body>
 </html>`;
 
       // Build template content for download using the raw htmlContent.
+      // Note: We don't include the page break script in the template content
       const templateContent = `<!doctype html>
 <html>
   <head>
@@ -265,6 +478,12 @@ function Preview({
       canvas {
         max-width: 100%;
         margin: 0 auto;
+      }
+      /* Hide preview-only elements in the exported PDF */
+      @media print {
+        .preview-only {
+          display: none !important;
+        }
       }
     </style>
   </head>
@@ -298,7 +517,17 @@ function Preview({
 </html>
       `);
     }
-  }, [htmlContent, data, fontImport, fontStyle, fonts, setTemplateContent]);
+  }, [
+    htmlContent,
+    data,
+    fontImport,
+    fontStyle,
+    fonts,
+    setTemplateContent,
+    format,
+    isLandscape,
+    showPageDelimiters,
+  ]);
 
   const getSize = () => {
     const selectedSize = formatToSize[format];
@@ -336,11 +565,33 @@ function Preview({
     return () => window.removeEventListener('resize', updatePaperSize);
   }, [a4AspectRatio, getSize]);
 
+  // Toggle page delimiters using postMessage
+  const togglePageDelimiters = (value: boolean) => {
+    setShowPageDelimiters(value);
+    // The useEffect hook will handle sending the message to the iframe
+  };
+
   return (
     <div
       ref={containerRef}
       className="h-full w-full flex flex-col items-center justify-center overflow-visible"
     >
+      <div className="absolute top-2 right-2 z-10 flex items-center gap-2 bg-gray-800 bg-opacity-70 p-2 rounded">
+        <Tooltip label={showPageDelimiters ? 'Hide page breaks' : 'Show page breaks'}>
+          <Switch
+            style={{
+              color: '#fff',
+            }}
+            checked={showPageDelimiters}
+            onChange={(event) => togglePageDelimiters(event.currentTarget.checked)}
+            color="red"
+            size="sm"
+            label="Page breaks"
+            labelPosition="left"
+          />
+        </Tooltip>
+      </div>
+
       <div ref={paperRef} className="shadow-lg bg-white rounded overflow-visible relative">
         <iframe
           ref={iframeRef}

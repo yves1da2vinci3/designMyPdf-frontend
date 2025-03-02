@@ -80,6 +80,10 @@ export async function exportPdfDocument({
               page-break-after: always;
               break-after: page;
             }
+            /* Hide preview-only elements during PDF export */
+            .preview-only {
+              display: none !important;
+            }
           </style>
         </head>
         <body>
