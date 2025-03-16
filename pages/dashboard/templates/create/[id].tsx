@@ -42,6 +42,7 @@ import {
   IconChevronRight,
   IconFileExport,
   IconDotsVertical,
+  IconHelp,
 } from '@tabler/icons-react';
 
 import { useMonaco } from '@monaco-editor/react';
@@ -63,7 +64,7 @@ import {
 } from '../../../../utils/chartUtils';
 import { exportPdfDocument } from '../../../../utils/pdfUtils';
 import { DEFAULT_FORMAT, getPageDimensions } from '../../../../utils/paperUtils';
-import { manuallyStartTour, resetTour } from '../../../../utils/tourUtils';
+import { manuallyStartTour } from '../../../../utils/tourUtils';
 import { useLocalStorage } from '../../../../utils/useLocalStorage';
 import 'driver.js/dist/driver.css';
 
@@ -566,7 +567,7 @@ const CreateTemplate: React.FC = () => {
           '#paper-settings',
           '#fonts-section',
           '#charts-section',
-          '#export-button',
+          '#sidebar-export-button',
           '#ai-generate-button',
           '#action-icon',
           '#save-button',
@@ -923,8 +924,9 @@ const CreateTemplate: React.FC = () => {
                     setHasSeenTour(true);
                   });
                 }}
+                leftSection={<IconHelp size={16} />}
                 variant="subtle"
-                color="gray"
+                color="blue"
                 styles={{
                   root: {
                     transition: 'all 0.2s ease',
@@ -933,74 +935,6 @@ const CreateTemplate: React.FC = () => {
                 }}
               >
                 Help Tour
-              </Button>
-            </Tooltip>
-          )}
-
-          <Tooltip label="Reset tour state and start again">
-            <Button
-              onClick={() => {
-                console.log('Resetting tour state and forcing tour to start');
-                resetTour();
-                setHasSeenTour(false);
-
-                // Force start the tour after a short delay
-                setTimeout(() => {
-                  manuallyStartTour(() => {
-                    console.log('Forced tour completed');
-                    setHasSeenTour(true);
-                  });
-                }, 500);
-              }}
-              variant="subtle"
-              color="blue"
-              styles={{
-                root: {
-                  transition: 'all 0.2s ease',
-                  '&:hover': { transform: 'translateY(-1px)' },
-                },
-              }}
-            >
-              Reset & Start Tour
-            </Button>
-          </Tooltip>
-
-          {process.env.NODE_ENV === 'development' && (
-            <Tooltip label="Debug tour elements">
-              <Button
-                onClick={() => {
-                  console.log('Checking tour elements in DOM');
-                  const elements = [
-                    '#editor-container',
-                    '#preview-container',
-                    '#variables-section',
-                    '#paper-settings',
-                    '#fonts-section',
-                    '#charts-section',
-                    '#sidebar-export-button',
-                    '#ai-generate-button',
-                    '#action-icon',
-                    '#save-button',
-                  ];
-
-                  elements.forEach((selector) => {
-                    const el = document.querySelector(selector);
-                    console.log(`Element ${selector} exists:`, !!el);
-                    if (el) {
-                      console.log(`Element position: ${el.getBoundingClientRect()}`);
-                    }
-                  });
-                }}
-                variant="subtle"
-                color="gray"
-                styles={{
-                  root: {
-                    transition: 'all 0.2s ease',
-                    '&:hover': { transform: 'translateY(-1px)' },
-                  },
-                }}
-              >
-                Debug Tour
               </Button>
             </Tooltip>
           )}

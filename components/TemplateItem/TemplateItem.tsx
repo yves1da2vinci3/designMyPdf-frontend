@@ -1,6 +1,6 @@
 import { useDrag } from 'react-dnd';
-import { Paper, Box, Menu, rem, Text } from '@mantine/core';
-import { IconDots, IconTrash } from '@tabler/icons-react';
+import { Paper, Box, Menu, Text, Group, ActionIcon } from '@mantine/core';
+import { IconDots, IconTrash, IconEdit } from '@tabler/icons-react';
 import { useRouter } from 'next/router';
 import React from 'react';
 import { TemplateDTO, templateApi } from '@/api/templateApi';
@@ -46,42 +46,78 @@ export default function TemplateItem({
   return (
     <Paper
       ref={drag}
-      p={20}
+      p="md"
       withBorder
-      mt={0}
-      w="30%"
-      h={200}
-      shadow="sm"
-      style={{ opacity: isDragging ? 0.5 : 1, cursor: 'pointer' }}
-      onClick={navigateToTemplate} // Move navigation to Paper's onClick
+      shadow="xs"
+      radius="md"
+      style={{
+        opacity: isDragging ? 0.5 : 1,
+        cursor: 'pointer',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'transform 0.2s, box-shadow 0.2s',
+        ':hover': {
+          transform: 'translateY(-5px)',
+          boxShadow: '0 10px 20px rgba(0,0,0,0.1)',
+        },
+      }}
+      onClick={navigateToTemplate}
     >
-      <Box style={{ position: 'relative' }}>
-        <Menu shadow="md" width={200}>
+      <Group justify="space-between" mb="xs">
+        <Text fw={500} lineClamp={1} style={{ flex: 1 }}>
+          {name || 'Unnamed Template'}
+        </Text>
+        <Menu shadow="md" width={200} position="bottom-end" id="template-actions">
           <Menu.Target>
-            <IconDots
-              style={{ position: 'absolute', top: 10, right: 10, zIndex: 100 }}
-              onClick={(e) => e.stopPropagation()} // Prevent propagation to avoid triggering Paper's onClick
-            />
+            <ActionIcon variant="subtle" onClick={(e) => e.stopPropagation()}>
+              <IconDots size={16} />
+            </ActionIcon>
           </Menu.Target>
           <Menu.Dropdown>
             <Menu.Item
+              leftSection={<IconEdit size={14} />}
               onClick={(e) => {
-                e.stopPropagation(); // Prevent propagation to avoid triggering Paper's onClick
+                e.stopPropagation();
+                navigateToTemplate();
+              }}
+            >
+              Edit
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item
+              color="red"
+              leftSection={<IconTrash size={14} />}
+              onClick={(e) => {
+                e.stopPropagation();
                 deleteTemplate();
               }}
-              color="red"
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
             >
               Delete
             </Menu.Item>
           </Menu.Dropdown>
         </Menu>
-        <Box>
-          <MiniPreview htmlContent={content || ''} data={variables || []} fonts={fonts || []} />
-        </Box>
+      </Group>
+
+      <Box
+        style={{
+          flex: 1,
+          position: 'relative',
+          borderRadius: '4px',
+          overflow: 'hidden',
+          marginBottom: '12px',
+          border: '1px solid #eaeaea',
+          background: '#f9f9f9',
+        }}
+      >
+        <MiniPreview htmlContent={content || ''} data={variables || []} fonts={fonts || []} />
       </Box>
-      <Text>{name || 'Unnamed Template'}</Text>
-      <Text c="gray">created {timeAgo(CreatedAt || new Date().toISOString())}</Text>
+
+      <Group justify="space-between" mt="auto">
+        <Text size="xs" c="dimmed">
+          {timeAgo(CreatedAt || new Date().toISOString())}
+        </Text>
+      </Group>
     </Paper>
   );
 }
