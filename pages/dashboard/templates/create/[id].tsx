@@ -42,6 +42,7 @@ import {
   IconChevronRight,
   IconFileExport,
   IconDotsVertical,
+  IconHelp,
 } from '@tabler/icons-react';
 
 import { useMonaco } from '@monaco-editor/react';
@@ -566,7 +567,7 @@ const CreateTemplate: React.FC = () => {
           '#paper-settings',
           '#fonts-section',
           '#charts-section',
-          '#export-button',
+          '#sidebar-export-button',
           '#ai-generate-button',
           '#action-icon',
           '#save-button',
@@ -939,6 +940,7 @@ const CreateTemplate: React.FC = () => {
 
           <Tooltip label="Reset tour state and start again">
             <Button
+              leftSection={<IconHelp size={16} />}
               onClick={() => {
                 console.log('Resetting tour state and forcing tour to start');
                 resetTour();
@@ -961,7 +963,7 @@ const CreateTemplate: React.FC = () => {
                 },
               }}
             >
-              Reset & Start Tour
+              Help Tour
             </Button>
           </Tooltip>
 

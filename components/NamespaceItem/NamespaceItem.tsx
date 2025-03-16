@@ -1,10 +1,9 @@
 import React from 'react';
 import { useDrop } from 'react-dnd';
-import { Group, Text, rem, useMantineTheme } from '@mantine/core';
+import { Group, Text, Paper } from '@mantine/core';
 import { IconFolderFilled } from '@tabler/icons-react';
 import { NamespaceDTO } from '@/api/namespaceApi';
 import { templateApi } from '@/api/templateApi';
-import { limitText } from '@/utils/formatDate';
 
 interface NamespaceItemProps {
   id: number;
@@ -21,7 +20,6 @@ function NamespaceItem({
   updateOnClient,
   selected = false,
 }: NamespaceItemProps) {
-  const theme = useMantineTheme();
   const { name } = namespace;
 
   const [{ isOver }, drop] = useDrop(() => ({
@@ -43,27 +41,32 @@ function NamespaceItem({
   };
 
   return (
-    <Group
-      onClick={() => setNamespaceId(namespace.ID)}
+    <Paper
       ref={drop}
-      component="button"
-      style={{
-        borderRadius: rem(8),
-        borderColor: 'var(--mantine-color-red)',
-        backgroundColor: isOver
-          ? 'lightgreen'
+      p="xs"
+      withBorder={selected}
+      bg={
+        isOver
+          ? 'green.0'
           : selected
-            ? theme.colors.blue[5]
-            : theme.colors.blue[2],
+            ? 'blue.0'
+            : 'transparent'
+      }
+      style={{
+        cursor: 'pointer',
+        borderRadius: '4px',
+        transition: 'background-color 0.2s',
       }}
-      variant="light"
-      c="white"
-      px={rem(12)}
-      h={rem(44)}
+      onClick={() => setNamespaceId(namespace.ID)}
     >
-      <IconFolderFilled />
-      <Text fw="bold">{limitText(name, 10)}</Text>
-    </Group>
+      <Group>
+        <IconFolderFilled
+          size={18}
+          color={selected ? '#228be6' : '#868e96'}
+        />
+        <Text size="sm">{name}</Text>
+      </Group>
+    </Paper>
   );
 }
 
