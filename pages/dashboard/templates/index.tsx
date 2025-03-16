@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import Head from 'next/head';
 import {
   Button,
   Group,
@@ -11,16 +12,23 @@ import {
   Text,
   Box,
   Grid,
-  Paper,
-  Tabs,
   ActionIcon,
   Menu,
   Input,
-  Flex
+  Flex,
+  Tooltip,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import {
+  IconPlus,
+  IconSearch,
+  IconDotsVertical,
+  IconFileText,
+  IconFolderPlus,
+  IconHelp,
+} from '@tabler/icons-react';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import TemplateItem from '@/components/TemplateItem/TemplateItem';
 import AddTemplate from '@/modals/AddTemplate/AddTemplate';
@@ -29,15 +37,9 @@ import AddNamespace from '@/modals/AddNamespace/AddNamespace';
 import { CreateTemplateDto, TemplateDTO, templateApi } from '@/api/templateApi';
 import { CreateNamespaceDto, NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
 import { RequestStatus } from '@/api/request-status.enum';
-import {
-  IconFolderFilled,
-  IconPlus,
-  IconSearch,
-  IconFilter,
-  IconDotsVertical,
-  IconFileText,
-  IconFolderPlus
-} from '@tabler/icons-react';
+import { manuallyStartTour, resetTour } from '@/utils/tourUtils';
+import { useLocalStorage } from '@/utils/useLocalStorage';
+import 'driver.js/dist/driver.css';
 
 function TemplatesPage() {
   const router = useRouter();
@@ -52,7 +54,8 @@ function TemplatesPage() {
   );
   const [selectedNamespaceId, setSelectedNamespaceId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<string | null>('all');
+  const [showTourButton, setShowTourButton] = useState(false);
+  const [hasSeenTour, setHasSeenTour] = useLocalStorage('hasSeenTemplatesDashboardTour', false);
 
   const fetchTemplatesAndNamespaces = async () => {
     setFetchTemplatesRequestStatus(RequestStatus.InProgress);
@@ -81,9 +84,10 @@ function TemplatesPage() {
     : templates;
 
   // Filter templates by search query
-  const searchedTemplates = searchQuery 
-    ? filteredTemplates.filter(template => 
-        template.name?.toLowerCase().includes(searchQuery.toLowerCase()))
+  const searchedTemplates = searchQuery
+    ? filteredTemplates.filter((template) =>
+        template.name?.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
     : filteredTemplates;
 
   // Namespace Management
@@ -140,8 +144,70 @@ function TemplatesPage() {
     setTemplates(templates.filter((template) => template.ID !== id));
   };
 
+  // Initialize the tour when the component mounts
+  useEffect(() => {
+    // Only start the tour after the templates have loaded
+    if (fetchTemplatesRequestStatus === RequestStatus.Succeeded) {
+      console.log('Templates loaded, preparing to start tour');
+      console.log('Has seen tour:', hasSeenTour);
+
+      // Use setTimeout to ensure the DOM is fully rendered
+      const tourTimeout = setTimeout(() => {
+        console.log('Starting tour now');
+        // Check if tour target elements exist
+        const elements = [
+          '#templates-header',
+          '#create-template-button',
+          '#create-folder-button',
+          '#folders-section',
+          '#search-templates',
+          '#templates-grid',
+        ];
+
+        // Verify all elements exist
+        const allElementsExist = elements.every((selector) => {
+          const el = document.querySelector(selector);
+          console.log(`Element ${selector} exists:`, !!el);
+          return !!el;
+        });
+
+        if (!allElementsExist) {
+          console.error('Some tour elements are missing from the DOM');
+          return;
+        }
+
+        try {
+          // Only show the tour if the user hasn't seen it before
+          if (!hasSeenTour) {
+            console.log('User has not seen tour, starting tour');
+            const driverInstance = manuallyStartTour(() => {
+              console.log('Tour completed, updating hasSeenTour');
+              setHasSeenTour(true);
+            }, 'dashboard');
+            console.log('Tour driver instance:', driverInstance);
+          } else {
+            console.log('User has already seen tour, not showing automatically');
+          }
+        } catch (error) {
+          console.error('Error starting tour:', error);
+        }
+
+        setShowTourButton(true);
+      }, 1500); // Increased timeout to ensure DOM is fully rendered
+
+      return () => clearTimeout(tourTimeout);
+    }
+    return undefined;
+  }, [fetchTemplatesRequestStatus, hasSeenTour, setHasSeenTour]);
+
   return (
     <DndProvider backend={HTML5Backend}>
+      <Head>
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/driver.js@1.3.5/dist/driver.css"
+        />
+      </Head>
       <Stack h="98vh">
         <AddTemplate
           opened={addTemplateOpened}
@@ -155,20 +221,45 @@ function TemplatesPage() {
           addNamespaceHandler={AddNamespaceHandler}
           addNamespaceRequestatus={addNamespaceRequestStatus}
         />
-        
+
         {/* Header */}
-        <Group p="md" justify="space-between" style={{ borderBottom: '1px solid #eaeaea' }}>
-          <Title order={2}>Templates</Title>
+        <Group
+          p="md"
+          justify="space-between"
+          style={{ borderBottom: '1px solid #eaeaea' }}
+          id="templates-header"
+        >
           <Group>
-            <Button 
-              leftSection={<IconPlus size={16} />} 
+            <Title order={2}>Templates</Title>
+            {showTourButton && (
+              <Tooltip label="Show guided tour">
+                <Button
+                  variant="subtle"
+                  size="sm"
+                  leftSection={<IconHelp size={16} />}
+                  onClick={() => {
+                    manuallyStartTour(() => {
+                      setHasSeenTour(true);
+                    }, 'dashboard');
+                  }}
+                >
+                  Help Tour
+                </Button>
+              </Tooltip>
+            )}
+          </Group>
+          <Group>
+            <Button
+              id="create-template-button"
+              leftSection={<IconPlus size={16} />}
               onClick={openAddTemplate}
               variant="filled"
             >
               New template
             </Button>
-            <Button 
-              leftSection={<IconFolderPlus size={16} />} 
+            <Button
+              id="create-folder-button"
+              leftSection={<IconFolderPlus size={16} />}
               onClick={openAddNamespace}
               variant="outline"
             >
@@ -184,6 +275,19 @@ function TemplatesPage() {
                 <Menu.Item onClick={() => router.push('/dashboard/account?tabName=namespace')}>
                   Manage folders
                 </Menu.Item>
+                <Menu.Item
+                  onClick={() => {
+                    resetTour('dashboard');
+                    setHasSeenTour(false);
+                    setTimeout(() => {
+                      manuallyStartTour(() => {
+                        setHasSeenTour(true);
+                      }, 'dashboard');
+                    }, 500);
+                  }}
+                >
+                  Reset & Show Tour
+                </Menu.Item>
               </Menu.Dropdown>
             </Menu>
           </Group>
@@ -192,16 +296,19 @@ function TemplatesPage() {
         {/* Main content */}
         <Flex style={{ flex: 1 }}>
           {/* Sidebar */}
-          <Box 
-            w={250} 
-            p="md" 
-            style={{ 
+          <Box
+            id="folders-section"
+            w={250}
+            p="md"
+            style={{
               borderRight: '1px solid #eaeaea',
               height: '100%',
-              overflowY: 'auto'
+              overflowY: 'auto',
             }}
           >
-            <Text fw={600} mb="md">Folders</Text>
+            <Text fw={600} mb="md">
+              Folders
+            </Text>
             <Stack>
               {fetchTemplatesRequestStatus === RequestStatus.InProgress ? (
                 <Center>
@@ -229,23 +336,13 @@ function TemplatesPage() {
             {/* Search and filters */}
             <Group mb="md" justify="space-between">
               <Input
+                id="search-templates"
                 leftSection={<IconSearch size={16} />}
                 placeholder="Search templates..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.currentTarget.value)}
                 style={{ width: '300px' }}
               />
-              <Group>
-                <Tabs value={activeTab} onChange={setActiveTab}>
-                  <Tabs.List>
-                    <Tabs.Tab value="all">All files</Tabs.Tab>
-                    <Tabs.Tab value="recent">Recently modified</Tabs.Tab>
-                  </Tabs.List>
-                </Tabs>
-                <ActionIcon variant="subtle">
-                  <IconFilter size={18} />
-                </ActionIcon>
-              </Group>
             </Group>
 
             {/* Templates grid */}
@@ -259,9 +356,9 @@ function TemplatesPage() {
                 <Text c="dimmed" mt="md">
                   {searchQuery ? 'No templates match your search' : 'No templates in this folder'}
                 </Text>
-                <Button 
-                  variant="light" 
-                  mt="md" 
+                <Button
+                  variant="light"
+                  mt="md"
                   leftSection={<IconPlus size={16} />}
                   onClick={openAddTemplate}
                 >
@@ -269,7 +366,7 @@ function TemplatesPage() {
                 </Button>
               </Center>
             ) : (
-              <Grid gutter="md">
+              <Grid id="templates-grid" gutter="md">
                 {searchedTemplates.map((template) => (
                   <Grid.Col key={template.ID} span={4}>
                     <TemplateItem

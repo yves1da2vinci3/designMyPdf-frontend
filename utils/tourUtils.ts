@@ -102,7 +102,74 @@ export const templateEditorTourSteps: DriveStep[] = [
   },
 ];
 
-// Function to start the tour
+// Define tour steps for the templates dashboard
+export const templatesDashboardTourSteps: DriveStep[] = [
+  {
+    element: '#templates-header',
+    popover: {
+      title: 'Templates Dashboard',
+      description: 'This is your templates dashboard where you can manage all your PDF templates.',
+      side: 'bottom' as const,
+      align: 'center' as const,
+    },
+  },
+  {
+    element: '#create-template-button',
+    popover: {
+      title: 'Create New Template',
+      description: 'Click here to create a new PDF template from scratch.',
+      side: 'bottom' as const,
+      align: 'center' as const,
+    },
+  },
+  {
+    element: '#create-folder-button',
+    popover: {
+      title: 'Create New Folder',
+      description: 'Organize your templates by creating folders to group related templates together.',
+      side: 'bottom' as const,
+      align: 'center' as const,
+    },
+  },
+  {
+    element: '#folders-section',
+    popover: {
+      title: 'Folders',
+      description: 'Navigate between different folders to organize your templates. You can also drag and drop templates to move them between folders.',
+      side: 'right' as const,
+      align: 'start' as const,
+    },
+  },
+  {
+    element: '#search-templates',
+    popover: {
+      title: 'Search Templates',
+      description: 'Quickly find templates by searching for their names.',
+      side: 'bottom' as const,
+      align: 'start' as const,
+    },
+  },
+  {
+    element: '#templates-grid',
+    popover: {
+      title: 'Templates',
+      description: 'Your templates are displayed here. Click on a template to edit it, or use the menu to perform other actions.',
+      side: 'top' as const,
+      align: 'center' as const,
+    },
+  },
+  {
+    element: '#template-actions',
+    popover: {
+      title: 'Template Actions',
+      description: 'Each template has a menu with actions like edit, duplicate, download, or delete.',
+      side: 'left' as const,
+      align: 'center' as const,
+    },
+  },
+];
+
+// Function to start the template editor tour
 export function startTemplateEditorTour(
   hasSeenTour: boolean = false,
   onComplete?: () => void,
@@ -152,16 +219,68 @@ export function startTemplateEditorTour(
   }
 }
 
-// Function to manually start the tour (for a button or help menu)
-export function manuallyStartTour(onComplete?: () => void): Driver | undefined {
-  console.log('manuallyStartTour called');
+// Function to start the templates dashboard tour
+export function startTemplatesDashboardTour(
+  hasSeenTour: boolean = false,
+  onComplete?: () => void,
+): Driver | undefined {
+  console.log('startTemplatesDashboardTour called with hasSeenTour:', hasSeenTour);
+
+  // Skip if user has already seen the tour
+  if (hasSeenTour) {
+    console.log('User has already seen tour, skipping');
+    return undefined;
+  }
 
   try {
-    console.log('Creating driver instance for manual tour');
+    console.log('Creating driver instance with steps:', templatesDashboardTourSteps);
 
     const driverObj = driver({
       showProgress: true,
-      steps: templateEditorTourSteps,
+      steps: templatesDashboardTourSteps,
+      nextBtnText: 'Next',
+      prevBtnText: 'Previous',
+      doneBtnText: 'Done',
+      onDestroyed: onComplete,
+      stagePadding: 10,
+      animate: true,
+      allowClose: true,
+      overlayOpacity: 0.6,
+      smoothScroll: true,
+      onHighlightStarted: (element) => {
+        console.log('Highlighting element:', element);
+        return true; // continue highlighting
+      },
+      onDeselected: (element) => {
+        console.log('Element deselected:', element);
+        return true; // continue
+      },
+    });
+
+    // Start the tour
+    console.log('Starting tour drive');
+    driverObj.drive();
+    console.log('Tour drive started');
+
+    return driverObj;
+  } catch (error) {
+    console.error('Error in startTemplatesDashboardTour:', error);
+    return undefined;
+  }
+}
+
+// Function to manually start the tour (for a button or help menu)
+export function manuallyStartTour(onComplete?: () => void, tourType: 'editor' | 'dashboard' = 'editor'): Driver | undefined {
+  console.log('manuallyStartTour called for', tourType);
+
+  try {
+    console.log('Creating driver instance for manual tour');
+    
+    const steps = tourType === 'editor' ? templateEditorTourSteps : templatesDashboardTourSteps;
+
+    const driverObj = driver({
+      showProgress: true,
+      steps,
       nextBtnText: 'Next',
       prevBtnText: 'Previous',
       doneBtnText: 'Done',
@@ -193,10 +312,11 @@ export function manuallyStartTour(onComplete?: () => void): Driver | undefined {
 }
 
 // Function to reset the tour (for testing or if user wants to see it again)
-export function resetTour(): void {
-  console.log('Resetting tour state');
+export function resetTour(tourType: 'editor' | 'dashboard' = 'editor'): void {
+  console.log('Resetting tour state for', tourType);
   if (typeof window !== 'undefined') {
-    localStorage.removeItem('hasSeenTemplateEditorTour');
+    const key = tourType === 'editor' ? 'hasSeenTemplateEditorTour' : 'hasSeenTemplatesDashboardTour';
+    localStorage.removeItem(key);
     console.log('Tour state reset successfully');
   } else {
     console.warn('Cannot reset tour state: window is undefined (SSR context)');

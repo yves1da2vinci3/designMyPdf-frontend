@@ -68,7 +68,7 @@ export default function TemplateItem({
         <Text fw={500} lineClamp={1} style={{ flex: 1 }}>
           {name || 'Unnamed Template'}
         </Text>
-        <Menu shadow="md" width={200} position="bottom-end">
+        <Menu shadow="md" width={200} position="bottom-end" id="template-actions">
           <Menu.Target>
             <ActionIcon variant="subtle" onClick={(e) => e.stopPropagation()}>
               <IconDots size={16} />
