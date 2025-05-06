@@ -1,17 +1,18 @@
-import { useState } from 'react';
-import { Group, Code, Box, Button } from '@mantine/core';
-import { useRouter } from 'next/router';
-import {
-  IconKey,
-  IconLogout,
-  IconWaveSawTool,
-  IconReceipt,
-  IconNotebook,
-  IconUserCircle,
-} from '@tabler/icons-react';
-import classes from './DashboardNav.module.scss';
 import { authApi } from '@/api/authApi';
 import Logo from '@/components/AppLogo/AppLogo';
+import { Box, Button, Code, Group } from '@mantine/core';
+import {
+  IconInfoCircle,
+  IconKey,
+  IconLogout,
+  IconNotebook,
+  IconReceipt,
+  IconUserCircle,
+  IconWaveSawTool,
+} from '@tabler/icons-react';
+import { useRouter } from 'next/router';
+import { useState } from 'react';
+import classes from './DashboardNav.module.scss';
 
 const data = [
   { link: '/dashboard/', label: 'Overview', icon: IconWaveSawTool },
@@ -19,6 +20,7 @@ const data = [
   { link: '/dashboard/backtrace', label: 'Logs', icon: IconNotebook },
   { link: '/dashboard/keys', label: 'Api Keys', icon: IconKey },
   { link: '/dashboard/account', label: 'Account', icon: IconUserCircle },
+  { link: '/documentation', label: 'Documentation API', icon: IconInfoCircle },
 ];
 
 function DashboardNav() {
