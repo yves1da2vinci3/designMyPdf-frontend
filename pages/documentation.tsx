@@ -1,3 +1,4 @@
+import { CodeHighlight } from '@mantine/code-highlight';
 import { Alert, Box, Container, Divider, Grid, Paper, Text } from '@mantine/core';
 import Head from 'next/head';
 
@@ -101,15 +102,8 @@ const Documentation = () => (
                 </Text>
 
                 <Box mb="sm">
-                  <pre
-                    style={{
-                      backgroundColor: '#f1f1f1',
-                      padding: '10px',
-                      borderRadius: '5px',
-                      overflowX: 'auto',
-                    }}
-                  >
-                    {`fetch('https://v0s8g4wckkso40ocg8ogk4gk.yvesdavinci.tech/api/generate-pdf/YOUR_TEMPLATE_ID', {
+                  <CodeHighlight
+                    code={`fetch('https://v0s8g4wckkso40ocg8ogk4gk.yvesdavinci.tech/api/generate-pdf/YOUR_TEMPLATE_ID', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -129,7 +123,8 @@ const Documentation = () => (
   console.log('PDF URL:', data.path);
 })
 .catch(error => console.error('Erreur:', error));`}
-                  </pre>
+                    language="javascript"
+                  />
                 </Box>
               </Paper>
             </Grid.Col>
@@ -181,18 +176,12 @@ const Documentation = () => (
             </Text>
 
             <Box>
-              <pre
-                style={{
-                  backgroundColor: '#f1f1f1',
-                  padding: '10px',
-                  borderRadius: '5px',
-                  overflowX: 'auto',
-                }}
-              >
-                {`{
+              <CodeHighlight
+                code={`{
   "path": "https://storage.backblazeb2.com/file/your-bucket/templates/generated-pdf-file.pdf"
 }`}
-              </pre>
+                language="json"
+              />
             </Box>
           </Paper>
         </Box>
@@ -213,17 +202,11 @@ const Documentation = () => (
                 <Text fw={500} mb="xs">
                   Variables simples
                 </Text>
-                <pre
-                  style={{
-                    backgroundColor: '#f1f1f1',
-                    padding: '10px',
-                    borderRadius: '5px',
-                    overflowX: 'auto',
-                  }}
-                >
-                  {`<p>Bonjour, {{name}}!</p>
+                <CodeHighlight
+                  code={`<p>Bonjour, {{name}}!</p>
 <p>Votre email: {{email}}</p>`}
-                </pre>
+                  language="html"
+                />
               </Paper>
             </Grid.Col>
 
@@ -232,20 +215,14 @@ const Documentation = () => (
                 <Text fw={500} mb="xs">
                   Conditions
                 </Text>
-                <pre
-                  style={{
-                    backgroundColor: '#f1f1f1',
-                    padding: '10px',
-                    borderRadius: '5px',
-                    overflowX: 'auto',
-                  }}
-                >
-                  {`{{#if premium}}
+                <CodeHighlight
+                  code={`{{#if premium}}
   <p>Vous êtes un utilisateur premium!</p>
 {{else}}
   <p>Passez au plan premium!</p>
 {{/if}}`}
-                </pre>
+                  language="html"
+                />
               </Paper>
             </Grid.Col>
 
@@ -254,15 +231,8 @@ const Documentation = () => (
                 <Text fw={500} mb="xs">
                   Boucles
                 </Text>
-                <pre
-                  style={{
-                    backgroundColor: '#f1f1f1',
-                    padding: '10px',
-                    borderRadius: '5px',
-                    overflowX: 'auto',
-                  }}
-                >
-                  {`<table>
+                <CodeHighlight
+                  code={`<table>
   <tr>
     <th>Produit</th>
     <th>Prix</th>
@@ -274,7 +244,8 @@ const Documentation = () => (
   </tr>
   {{/each}}
 </table>`}
-                </pre>
+                  language="html"
+                />
               </Paper>
             </Grid.Col>
           </Grid>

@@ -2778,6 +2778,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@mantine/code-highlight@npm:^8.0.0":
+  version: 8.0.0
+  resolution: "@mantine/code-highlight@npm:8.0.0"
+  dependencies:
+    clsx: "npm:^2.1.1"
+    highlight.js: "npm:^11.10.0"
+  peerDependencies:
+    "@mantine/core": 8.0.0
+    "@mantine/hooks": 8.0.0
+    react: ^18.x || ^19.x
+    react-dom: ^18.x || ^19.x
+  checksum: 10c0/b99511b56dc1cb871323f707f727995723d0f6a7e87dca86909f507cf107cdd6968d2077a02c2438f8ad6e02ffd14834c12dddcf5507198751e6a3c652e1e5a5
+  languageName: node
+  linkType: hard
+
 "@mantine/core@npm:7.8.1":
   version: 7.8.1
   resolution: "@mantine/core@npm:7.8.1"
@@ -7097,7 +7112,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"clsx@npm:^2.0.0":
+"clsx@npm:^2.0.0, clsx@npm:^2.1.1":
   version: 2.1.1
   resolution: "clsx@npm:2.1.1"
   checksum: 10c0/c4c8eb865f8c82baab07e71bfa8897c73454881c4f99d6bc81585aecd7c441746c1399d08363dc096c550cceaf97bd4ce1e8854e1771e9998d9f94c4fe075839
@@ -9889,6 +9904,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"highlight.js@npm:^11.10.0, highlight.js@npm:^11.11.1":
+  version: 11.11.1
+  resolution: "highlight.js@npm:11.11.1"
+  checksum: 10c0/40f53ac19dac079891fcefd5bd8a21cf2e8931fd47da5bd1dca73b7e4375c1defed0636fc39120c639b9c44119b7d110f7f0c15aa899557a5a1c8910f3c0144c
+  languageName: node
+  linkType: hard
+
 "highlightjs-vue@npm:^1.0.0":
   version: 1.0.0
   resolution: "highlightjs-vue@npm:1.0.0"
@@ -11724,6 +11746,7 @@ __metadata:
     "@faker-js/faker": "npm:^9.5.0"
     "@google/generative-ai": "npm:^0.22.0"
     "@mantine/charts": "npm:^7.10.1"
+    "@mantine/code-highlight": "npm:^8.0.0"
     "@mantine/core": "npm:7.8.1"
     "@mantine/dropzone": "npm:^7.17.0"
     "@mantine/form": "npm:^7.10.1"
@@ -11773,6 +11796,7 @@ __metadata:
     eslint-plugin-testing-library: "npm:^6.2.0"
     formidable: "npm:^3.5.2"
     handlebars: "npm:^4.7.8"
+    highlight.js: "npm:^11.11.1"
     html2canvas: "npm:^1.4.1"
     jest: "npm:^29.7.0"
     jest-environment-jsdom: "npm:^29.7.0"

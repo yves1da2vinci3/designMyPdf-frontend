@@ -22,6 +22,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.22.0",
     "@mantine/charts": "^7.10.1",
+    "@mantine/code-highlight": "^8.0.0",
     "@mantine/core": "7.8.1",
     "@mantine/dropzone": "^7.17.0",
     "@mantine/form": "^7.10.1",
@@ -38,6 +39,7 @@
     "ejs-browser": "^3.2.2",
     "formidable": "^3.5.2",
     "handlebars": "^4.7.8",
+    "highlight.js": "^11.11.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.0",
     "lodash": "^4.17.21",
