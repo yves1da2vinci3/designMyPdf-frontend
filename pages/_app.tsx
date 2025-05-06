@@ -1,25 +1,34 @@
-import { authApi } from '@/api/authApi';
+// Imports React
+import { ReactElement, ReactNode, useEffect } from 'react';
+
+// Imports Next.js
+import { NextPage } from 'next';
+import type { AppProps } from 'next/app';
+import Head from 'next/head';
+import { useRouter } from 'next/router';
+
+// Imports tiers
 import { CodeHighlightAdapterProvider, createHighlightJsAdapter } from '@mantine/code-highlight';
-import '@mantine/code-highlight/styles.css';
 import { MantineProvider } from '@mantine/core';
-import '@mantine/core/styles.css';
 import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
-import '@mantine/notifications/styles.css';
 import hljs from 'highlight.js/lib/core';
 import javascript from 'highlight.js/lib/languages/javascript';
 import json from 'highlight.js/lib/languages/json';
 import typescript from 'highlight.js/lib/languages/typescript';
 import xml from 'highlight.js/lib/languages/xml';
-import 'highlight.js/styles/atom-one-dark.css';
-import { NextPage } from 'next';
-import type { AppProps } from 'next/app';
-import Head from 'next/head';
-import { useRouter } from 'next/router';
-import { ReactElement, ReactNode, useEffect } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+
+// Imports des styles
+import '@mantine/code-highlight/styles.css';
+import '@mantine/core/styles.css';
+import '@mantine/notifications/styles.css';
+import 'highlight.js/styles/atom-one-dark.css';
 import '../styles/global.css';
+
+// Imports locaux
+import { authApi } from '@/api/authApi';
 import { theme } from '../theme';
 
 // Enregistrer les langages nécessaires
