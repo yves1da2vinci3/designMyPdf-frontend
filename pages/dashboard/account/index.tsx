@@ -1,5 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/router';
+import { authApi, updateUserDTO } from '@/api/authApi';
+import { CreateNamespaceDto, NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
+import { RequestStatus } from '@/api/request-status.enum';
+import ManagedNamespaceItem from '@/components/ManageNamespaceItem/ManagedNamespaceItem';
+import { WebhookManager } from '@/components/Webhook/WebhookManager';
+import ModifyUserForm from '@/forms/ModifyUser';
+import DashboardLayout from '@/layouts/DashboardLayout';
+import AddNamespace from '@/modals/AddNamespace/AddNamespace';
 import {
   Button,
   Group,
@@ -12,17 +18,13 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconUserCircle, IconFolderFilled } from '@tabler/icons-react';
-import { authApi, updateUserDTO } from '@/api/authApi';
-import { CreateNamespaceDto, NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
-import { RequestStatus } from '@/api/request-status.enum';
-import ManagedNamespaceItem from '@/components/ManageNamespaceItem/ManagedNamespaceItem';
-import ModifyUserForm from '@/forms/ModifyUser';
-import DashboardLayout from '@/layouts/DashboardLayout';
-import AddNamespace from '@/modals/AddNamespace/AddNamespace';
+import { IconFolderFilled, IconUserCircle, IconWebhook } from '@tabler/icons-react';
+import { useRouter } from 'next/router';
+import React, { useEffect, useMemo, useState } from 'react';
 
 const ACCOUNT_TAB_NAME = 'account';
 const NAMESPACE_TAB_NAME = 'namespace';
+const WEBHOOK_TAB_NAME = 'webhook';
 
 export default function Account() {
   const theme = useMantineTheme();
@@ -138,6 +140,17 @@ export default function Account() {
           >
             Namespaces
           </Tabs.Tab>
+          <Tabs.Tab
+            value={WEBHOOK_TAB_NAME}
+            style={() => (selectedTabName === WEBHOOK_TAB_NAME ? selectedStyle : notselectedStyle)}
+            leftSection={
+              <IconWebhook
+                style={selectedTabName === WEBHOOK_TAB_NAME ? iconStyleSelected : iconStyle}
+              />
+            }
+          >
+            Webhook
+          </Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value={ACCOUNT_TAB_NAME}>
@@ -194,6 +207,12 @@ export default function Account() {
                 <Title>No Namespaces</Title>
               )}
             </Group>
+          </Stack>
+        </Tabs.Panel>
+
+        <Tabs.Panel value={WEBHOOK_TAB_NAME}>
+          <Stack flex={1} h="90vh" mt={8}>
+            <WebhookManager />
           </Stack>
         </Tabs.Panel>
       </Tabs>

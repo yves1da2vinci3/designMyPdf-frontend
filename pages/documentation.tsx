@@ -342,6 +342,97 @@ const Documentation = () => (
           </Grid>
         </Box>
 
+        <Box mb="xl">
+          <Text size="xl" fw={700} c="#333" mb="md" component="h2">
+            Notifications via Webhook
+          </Text>
+
+          <Text mb="md">
+            Pour recevoir des notifications en temps réel sur le statut de vos générations de PDF,
+            vous pouvez configurer un webhook dans votre tableau de bord. Une fois configuré, nous
+            enverrons une requête POST à votre URL avec les informations suivantes :
+          </Text>
+
+          <Grid>
+            <Grid.Col span={{ base: 12, md: 6 }}>
+              <Paper shadow="xs" p="md" mb="md" style={{ backgroundColor: '#f5f5f5' }}>
+                <Text fw={500} mb="xs">
+                  Exemple de payload webhook (Succès)
+                </Text>
+                <CodeHighlight
+                  code={`{
+  "status": "success",
+  "templateId": "template_123",
+  "pdfUrl": "https://storage.backblazeb2.com/file/your-bucket/generated.pdf",
+  "generatedAt": "2024-01-20T15:30:00Z",
+  "metadata": {
+    "requestId": "req_abc123",
+    "processingTime": "2.5s"
+  }
+}`}
+                  language="json"
+                />
+              </Paper>
+            </Grid.Col>
+
+            <Grid.Col span={{ base: 12, md: 6 }}>
+              <Paper shadow="xs" p="md" mb="md" style={{ backgroundColor: '#f5f5f5' }}>
+                <Text fw={500} mb="xs">
+                  Exemple de payload webhook (Échec)
+                </Text>
+                <CodeHighlight
+                  code={`{
+  "status": "error",
+  "templateId": "template_123",
+  "error": {
+    "code": "GENERATION_FAILED",
+    "message": "Une erreur est survenue lors de la génération du PDF"
+  },
+  "generatedAt": "2024-01-20T15:30:00Z",
+  "metadata": {
+    "requestId": "req_abc123"
+  }
+}`}
+                  language="json"
+                />
+              </Paper>
+            </Grid.Col>
+          </Grid>
+
+          <Alert color="blue" my="md">
+            Assurez-vous que votre endpoint webhook est capable de traiter les requêtes POST et
+            renvoie un code HTTP 2xx pour confirmer la réception. En cas d'échec, nous réessaierons
+            jusqu'à 3 fois avec un délai exponentiel.
+          </Alert>
+
+          <Text size="lg" fw={500} mb="md">
+            Sécurité des Webhooks
+          </Text>
+
+          <Text mb="md">
+            Pour sécuriser vos webhooks, nous incluons un en-tête de signature dans chaque requête.
+            Vous devriez toujours vérifier cette signature avant de traiter les données :
+          </Text>
+
+          <CodeHighlight
+            code={`// Exemple de vérification de signature en Node.js
+const crypto = require('crypto');
+
+function verifyWebhookSignature(payload, signature, secret) {
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(JSON.stringify(payload))
+    .digest('hex');
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expectedSignature)
+  );
+}`}
+            language="javascript"
+          />
+        </Box>
+
         <Divider my="xl" />
       </Paper>
     </Container>
