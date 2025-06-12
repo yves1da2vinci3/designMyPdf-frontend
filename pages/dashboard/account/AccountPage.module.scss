@@ -1,0 +1,21 @@
+.tab {
+  font-weight: bold;
+  color: black;
+}
+
+.tabSelected {
+  background-color: var(--mantine-color-blue-5);
+  color: white;
+  font-weight: bold;
+}
+
+.icon {
+  width: rem(20px);
+  height: rem(20px);
+}
+
+.iconSelected {
+  width: rem(20px);
+  height: rem(20px);
+  color: white;
+}

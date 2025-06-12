@@ -19,7 +19,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         breakpoint: 'sm',
         collapsed: { mobile: !opened },
       }}
-      padding="md"
+      // padding="md" // Removed AppShell padding to allow pages to control their own
     >
       <AppShell.Navbar
         style={{

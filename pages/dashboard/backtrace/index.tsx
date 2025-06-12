@@ -7,6 +7,8 @@ import {
   Center,
   Loader,
   Pagination,
+  Paper,
+  Space,
   Stack,
   Table,
   Text,
@@ -57,18 +59,27 @@ export default function Log() {
   const currentLogs = logs.slice((currentPage - 1) * logsPerPage, currentPage * logsPerPage);
   const rows = currentLogs.map((logItem: LogDTO) => (
     <Table.Tr key={logItem.id}>
-      <Table.Td>{formatDate(logItem.called_at)}</Table.Td>
-      <Table.Td>{logItem.template.name}</Table.Td>
-      <Table.Td>{logItem.key.value}</Table.Td>
-      <Table.Td>
+      <Table.Td ta="left">{formatDate(logItem.called_at)}</Table.Td>
+      <Table.Td ta="left">{logItem.template.name}</Table.Td>
+      <Table.Td ta="left">{logItem.key.value}</Table.Td>
+      <Table.Td ta="left">
         {logItem.status_code === HttpStatusCode.Ok ? (
-          <Badge color="green">success</Badge>
+          <Badge color="green" variant="light">
+            Success
+          </Badge>
         ) : (
-          <Badge color="red">failed</Badge>
+          <Badge color="red" variant="light">
+            Failed
+          </Badge>
         )}
       </Table.Td>
-      <Table.Td style={{ justifyContent: 'flex-end', display: 'flex' }}>
-        <Button onClick={() => viewLog(logItem)} variant="outline" leftSection={<IconEye />}>
+      <Table.Td ta="right">
+        <Button
+          onClick={() => viewLog(logItem)}
+          variant="outline"
+          leftSection={<IconEye size={16} />}
+          size="xs"
+        >
           View backtrace
         </Button>
       </Table.Td>
@@ -79,11 +90,11 @@ export default function Log() {
     <>
       {fetchLogRequestStatus === RequestStatus.InProgress ||
       fetchLogRequestStatus === RequestStatus.NotStated ? (
-        <Center h="95vh" w="100%">
+        <Center h="calc(100vh - var(--app-shell-header-height, 0px))" w="100%">
           <Loader type="bars" size="xl" />
         </Center>
       ) : (
-        <Stack h="95vh">
+        <Stack p="md" gap="md">
           {selectedLog && (
             <ViewBacktrace
               Log={selectedLog}
@@ -94,47 +105,54 @@ export default function Log() {
             />
           )}
 
-          <Title>Logs</Title>
+          <Title order={2} mb="xs">
+            Logs
+          </Title>
 
-          <Table withRowBorders withColumnBorders>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>
-                  <Text fw="bold" ta="center">
-                    Called At
-                  </Text>
-                </Table.Th>
-                <Table.Th>
-                  <Text fw="bold" ta="center">
-                    Template
-                  </Text>
-                </Table.Th>
-                <Table.Th>
-                  <Text fw="bold" ta="center">
-                    API Key Used
-                  </Text>
-                </Table.Th>
-                <Table.Th>
-                  <Text fw="bold" ta="center">
-                    Status
-                  </Text>
-                </Table.Th>
-                <Table.Th>
-                  <Text fw="bold" ta="center">
-                    Actions
-                  </Text>
-                </Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>{rows}</Table.Tbody>
-          </Table>
-          <Box flex={1} />
-          <Pagination
-            style={{ alignSelf: 'flex-end' }}
-            total={Math.ceil(logs.length / logsPerPage)}
-            value={currentPage}
-            onChange={handlePageChange}
-          />
+          <Paper shadow="sm" p="lg" withBorder>
+            <Table.ScrollContainer minWidth={600}>
+              <Table striped highlightOnHover verticalSpacing="sm">
+                <Table.Thead style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+                  <Table.Tr>
+                    <Table.Th ta="left" fw="bold">
+                      Called At
+                    </Table.Th>
+                    <Table.Th ta="left" fw="bold">
+                      Template
+                    </Table.Th>
+                    <Table.Th ta="left" fw="bold">
+                      API Key Used
+                    </Table.Th>
+                    <Table.Th ta="left" fw="bold">
+                      Status
+                    </Table.Th>
+                    <Table.Th ta="right" fw="bold">
+                      Actions
+                    </Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                {rows.length > 0 ? <Table.Tbody>{rows}</Table.Tbody> : null}
+              </Table>
+            </Table.ScrollContainer>
+            {rows.length === 0 && fetchLogRequestStatus === RequestStatus.Succeeded && (
+              <Center p="lg">
+                <Text c="dimmed">No logs found.</Text>
+              </Center>
+            )}
+            {fetchLogRequestStatus === RequestStatus.Failed && (
+              <Center p="lg">
+                <Text c="red">Failed to load logs. Please try again later.</Text>
+              </Center>
+            )}
+            {(rows.length > 0 || fetchLogRequestStatus === RequestStatus.InProgress) && <Space h="lg" />}
+            <Pagination
+              style={{ alignSelf: 'flex-end', display: rows.length > 0 ? 'flex' : 'none' }}
+              total={Math.ceil(logs.length / logsPerPage)}
+              value={currentPage}
+              onChange={handlePageChange}
+              size="sm"
+            />
+          </Paper>
         </Stack>
       )}
     </>

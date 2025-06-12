@@ -17,6 +17,7 @@ import {
   Input,
   Flex,
   Tooltip,
+  useMantineTheme,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { DndProvider } from 'react-dnd';
@@ -43,6 +44,7 @@ import 'driver.js/dist/driver.css';
 
 function TemplatesPage() {
   const router = useRouter();
+  const theme = useMantineTheme();
   const [addTemplateOpened, { open: openAddTemplate, close: closeAddTemplate }] =
     useDisclosure(false);
   const [addNamespaceOpened, { open: openAddNamespace, close: closeAddNamespace }] =
@@ -208,7 +210,7 @@ function TemplatesPage() {
           href="https://cdn.jsdelivr.net/npm/driver.js@1.3.5/dist/driver.css"
         />
       </Head>
-      <Stack h="98vh">
+      <Stack p="md" gap="lg" style={{ minHeight: 'calc(100vh - var(--app-shell-header-height, 0px))' }}>
         <AddTemplate
           opened={addTemplateOpened}
           onClose={closeAddTemplate}
@@ -224,9 +226,9 @@ function TemplatesPage() {
 
         {/* Header */}
         <Group
-          p="md"
           justify="space-between"
-          style={{ borderBottom: '1px solid #eaeaea' }}
+          pb="md"
+          style={{ borderBottom: `1px solid ${theme.colors.gray[2]}` }}
           id="templates-header"
         >
           <Group>
@@ -234,7 +236,7 @@ function TemplatesPage() {
             {showTourButton && (
               <Tooltip label="Show guided tour">
                 <Button
-                  variant="subtle"
+                  variant="default"
                   size="sm"
                   leftSection={<IconHelp size={16} />}
                   onClick={() => {
@@ -254,28 +256,34 @@ function TemplatesPage() {
               leftSection={<IconPlus size={16} />}
               onClick={openAddTemplate}
               variant="filled"
+              size="sm"
             >
-              New template
+              New Template
             </Button>
             <Button
               id="create-folder-button"
               leftSection={<IconFolderPlus size={16} />}
               onClick={openAddNamespace}
               variant="outline"
+              size="sm"
             >
-              New folder
+              New Folder
             </Button>
             <Menu shadow="md" width={200} position="bottom-end">
               <Menu.Target>
-                <ActionIcon variant="subtle" size="lg">
+                <ActionIcon variant="outline" size="lg" aria-label="Menu">
                   <IconDotsVertical size={18} />
                 </ActionIcon>
               </Menu.Target>
               <Menu.Dropdown>
-                <Menu.Item onClick={() => router.push('/dashboard/account?tabName=namespace')}>
-                  Manage folders
+                <Menu.Item
+                  leftSection={<IconFolderPlus size={14} />}
+                  onClick={() => router.push('/dashboard/account?tabName=namespace')}
+                >
+                  Manage Folders
                 </Menu.Item>
                 <Menu.Item
+                  leftSection={<IconHelp size={14} />}
                   onClick={() => {
                     resetTour('dashboard');
                     setHasSeenTour(false);
@@ -294,19 +302,19 @@ function TemplatesPage() {
         </Group>
 
         {/* Main content */}
-        <Flex style={{ flex: 1 }}>
+        <Flex style={{ flex: 1, minHeight: 0 }}>
           {/* Sidebar */}
           <Box
             id="folders-section"
             w={250}
-            p="md"
+            p="sm"
             style={{
-              borderRight: '1px solid #eaeaea',
+              borderRight: `1px solid ${theme.colors.gray[2]}`,
               height: '100%',
               overflowY: 'auto',
             }}
           >
-            <Text fw={600} mb="md">
+            <Text fw="bold" size="lg" mb="sm">
               Folders
             </Text>
             <Stack>
@@ -334,41 +342,43 @@ function TemplatesPage() {
           {/* Main content area */}
           <Box style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
             {/* Search and filters */}
-            <Group mb="md" justify="space-between">
+            <Group mb="lg" justify="space-between">
               <Input
                 id="search-templates"
                 leftSection={<IconSearch size={16} />}
-                placeholder="Search templates..."
+                placeholder="Search templates by name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.currentTarget.value)}
-                style={{ width: '300px' }}
+                radius="md"
+                style={{ flex: 1, maxWidth: '400px' }}
               />
             </Group>
 
             {/* Templates grid */}
             {fetchTemplatesRequestStatus === RequestStatus.InProgress ? (
-              <Center style={{ height: '200px' }}>
-                <Loader size="lg" />
+              <Center style={{ height: '300px' }}>
+                <Loader size="xl" />
               </Center>
             ) : searchedTemplates.length === 0 ? (
-              <Center style={{ height: '200px', flexDirection: 'column' }}>
-                <IconFileText size={48} color="#868e96" style={{ opacity: 0.5 }} />
-                <Text c="dimmed" mt="md">
+              <Center style={{ height: '300px', flexDirection: 'column' }}>
+                <IconFileText size={52} color={theme.colors.gray[5]} />
+                <Text c="dimmed" mt="md" size="lg">
                   {searchQuery ? 'No templates match your search' : 'No templates in this folder'}
                 </Text>
                 <Button
-                  variant="light"
-                  mt="md"
-                  leftSection={<IconPlus size={16} />}
+                  variant="outline"
+                  mt="xl"
+                  leftSection={<IconPlus size={18} />}
                   onClick={openAddTemplate}
+                  size="sm"
                 >
-                  Create new template
+                  Create New Template
                 </Button>
               </Center>
             ) : (
-              <Grid id="templates-grid" gutter="md">
+              <Grid id="templates-grid" gutter="lg">
                 {searchedTemplates.map((template) => (
-                  <Grid.Col key={template.ID} span={4}>
+                  <Grid.Col key={template.ID} span={{ base: 12, sm: 6, md: 4 }}>
                     <TemplateItem
                       DeleteTemplateFromClient={DeleteTemplateFromClient}
                       id={template?.ID}
@@ -380,9 +390,9 @@ function TemplatesPage() {
             )}
 
             {/* Pagination */}
-            {searchedTemplates.length > 0 && (
-              <Group justify="flex-end" mt="xl">
-                <Pagination total={Math.ceil(searchedTemplates.length / 12)} />
+            {searchedTemplates.length > 0 && Math.ceil(searchedTemplates.length / 12) > 1 && (
+              <Group justify="center" mt="xl">
+                <Pagination total={Math.ceil(searchedTemplates.length / 12)} size="sm" />
               </Group>
             )}
           </Box>

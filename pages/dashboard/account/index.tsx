@@ -2,8 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import {
   Button,
+  Grid,
   Group,
   LoadingOverlay,
+  Paper,
   Stack,
   Tabs,
   Text,
@@ -20,6 +22,7 @@ import ManagedNamespaceItem from '@/components/ManageNamespaceItem/ManagedNamesp
 import ModifyUserForm from '@/forms/ModifyUser';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import AddNamespace from '@/modals/AddNamespace/AddNamespace';
+import styles from './AccountPage.module.scss';
 
 const ACCOUNT_TAB_NAME = 'account';
 const NAMESPACE_TAB_NAME = 'namespace';
@@ -27,18 +30,6 @@ const NAMESPACE_TAB_NAME = 'namespace';
 export default function Account() {
   const theme = useMantineTheme();
   const router = useRouter();
-
-  const iconStyle = { width: rem(20), height: rem(20) };
-  const iconStyleSelected = { width: rem(20), height: rem(20), color: 'white' };
-  const selectedStyle = {
-    backgroundColor: theme.colors.blue[5],
-    color: 'white',
-    fontWeight: 'bold',
-  };
-  const notselectedStyle = {
-    color: 'black',
-    fontWeight: 'bold',
-  };
 
   // UserManagement
   const [updateUserRequestStatus, setUserRequestStatus] = useState<RequestStatus>(
@@ -116,10 +107,10 @@ export default function Account() {
         <Tabs.List>
           <Tabs.Tab
             value={ACCOUNT_TAB_NAME}
-            style={() => (selectedTabName === ACCOUNT_TAB_NAME ? selectedStyle : notselectedStyle)}
+            className={selectedTabName === ACCOUNT_TAB_NAME ? styles.tabSelected : styles.tab}
             leftSection={
               <IconUserCircle
-                style={selectedTabName === ACCOUNT_TAB_NAME ? iconStyleSelected : iconStyle}
+                className={selectedTabName === ACCOUNT_TAB_NAME ? styles.iconSelected : styles.icon}
               />
             }
           >
@@ -127,12 +118,10 @@ export default function Account() {
           </Tabs.Tab>
           <Tabs.Tab
             value={NAMESPACE_TAB_NAME}
-            style={() =>
-              selectedTabName === NAMESPACE_TAB_NAME ? selectedStyle : notselectedStyle
-            }
+            className={selectedTabName === NAMESPACE_TAB_NAME ? styles.tabSelected : styles.tab}
             leftSection={
               <IconFolderFilled
-                style={selectedTabName === NAMESPACE_TAB_NAME ? iconStyleSelected : iconStyle}
+                className={selectedTabName === NAMESPACE_TAB_NAME ? styles.iconSelected : styles.icon}
               />
             }
           >
@@ -141,24 +130,18 @@ export default function Account() {
         </Tabs.List>
 
         <Tabs.Panel value={ACCOUNT_TAB_NAME}>
-          <Stack
-            flex={1}
-            h="90vh"
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <ModifyUserForm
-              onSubmit={(values) =>
-                updateUserHandler({
+          <Stack flex={1} h="90vh" justify="center" align="center" p="md">
+            <Paper shadow="xs" p="xl" withBorder>
+              <ModifyUserForm
+                onSubmit={(values) =>
+                  updateUserHandler({
                   userName: values.name,
                   password: values.password,
                 })
               }
               requestStatus={updateUserRequestStatus}
             />
+            </Paper>
           </Stack>
         </Tabs.Panel>
 
@@ -170,30 +153,39 @@ export default function Account() {
             addNamespaceRequestatus={addNamespaceRequestStatus}
           />
 
-          <Stack flex={1} h="90vh" mt={8}>
-            <Group px={12} style={{ borderBottom: 2, borderColor: 'red' }} justify="space-between">
-              <Title order={5}>Namespaces</Title>
-              <Button onClick={openAddNamespace}>create new nameSpace</Button>
+          <Stack flex={1} p="md" mt={8}>
+            <Group justify="space-between" pb="md" style={{ borderBottom: `1px solid ${theme.colors.gray[3]}` }}>
+              <Title order={3}>Namespaces</Title>
+              <Button onClick={openAddNamespace} variant="outline">
+                Create New Namespace
+              </Button>
             </Group>
-            <Text mx={12} c="gray">
-              Separate your templates into namespace
+            <Text size="sm" c="dimmed" py="sm">
+              Separate your templates into namespaces for better organization.
             </Text>
-            <Group>
+            <Grid>
               {fetchNamespacesRequestStatus === RequestStatus.Succeeded && namespaces.length > 0 ? (
                 namespaces.map((namespace) => (
-                  <ManagedNamespaceItem
-                    namespace={namespace}
-                    id={namespace.ID}
-                    key={namespace.ID}
-                    DeleteFromClient={DeleteFromClient}
-                  />
+                  <Grid.Col span={{ base: 12, sm: 6, md: 4 }} key={namespace.ID}>
+                    <Paper shadow="xs" p="md" withBorder>
+                      <ManagedNamespaceItem
+                        namespace={namespace}
+                        id={namespace.ID}
+                        DeleteFromClient={DeleteFromClient}
+                      />
+                    </Paper>
+                  </Grid.Col>
                 ))
               ) : fetchNamespacesRequestStatus === RequestStatus.Failed ? (
-                <Title>Failed to fetch namespaces</Title>
+                <Grid.Col span={12}>
+                  <Text c="red">Failed to fetch namespaces.</Text>
+                </Grid.Col>
               ) : (
-                <Title>No Namespaces</Title>
+                <Grid.Col span={12}>
+                  <Text>No namespaces found. Create one to get started!</Text>
+                </Grid.Col>
               )}
-            </Group>
+            </Grid>
           </Stack>
         </Tabs.Panel>
       </Tabs>
