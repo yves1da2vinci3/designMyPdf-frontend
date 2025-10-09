@@ -38,8 +38,7 @@ export default function Signup() {
   const onSubmit = async (signupDto: SignupDto) => {
     setIsLoading(RequestStatus.InProgress);
     try {
-      const registerResponse = await authApi.signup(signupDto);
-      console.log(registerResponse);
+      await authApi.signup(signupDto);
       router.push(Links.LOGIN);
     } catch (error) {
       setIsLoading(RequestStatus.Failed);

@@ -1,28 +1,17 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { GoogleGenerativeAI, InlineDataPart } from '@google/generative-ai';
+import Anthropic from '@anthropic-ai/sdk';
 import { faker } from '@faker-js/faker';
 import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
 
-// Initialize the Google Generative AI client with proper error handling
-let genAI: GoogleGenerativeAI;
-try {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is not defined in environment variables');
-  }
-  genAI = new GoogleGenerativeAI(apiKey);
-} catch (error) {
-  // Log initialization error but don't crash the server
-  // We'll handle this in the API route
-  genAI = null as any;
-}
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || '',
+});
 
 // Function to fetch image data and convert to base64
 async function fetchImageAsBase64(url: string): Promise<{ data: string; mimeType: string }> {
   try {
-    console.log(`Fetching image from: ${url}`);
     const response = await axios.get(url, {
       responseType: 'arraybuffer',
       timeout: 10000, // 10 second timeout
@@ -38,7 +27,6 @@ async function fetchImageAsBase64(url: string): Promise<{ data: string; mimeType
     }
 
     const contentType = response.headers['content-type'] || 'image/jpeg';
-    console.log(`Image content type: ${contentType}`);
 
     if (!contentType.startsWith('image/')) {
       throw new Error(`Invalid content type: ${contentType}. Expected an image.`);
@@ -47,16 +35,7 @@ async function fetchImageAsBase64(url: string): Promise<{ data: string; mimeType
     const base64Data = Buffer.from(response.data).toString('base64');
     return { data: base64Data, mimeType: contentType };
   } catch (error: any) {
-    console.error(`Error fetching image from ${url}:`, error);
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error(`Status: ${error.response.status}`);
-      console.error('Headers:', error.response.headers);
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error('No response received:', error.request);
-    }
+    // Silently handle image fetching errors
     throw new Error(`Failed to fetch image from ${url}: ${error.message}`);
   }
 }
@@ -378,14 +357,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Check if Gemini API is properly initialized
-    if (!genAI) {
-      return res.status(500).json({
-        error:
-          'Google Generative AI client not initialized. Please check your GEMINI_API_KEY environment variable.',
-      });
-    }
-
     const { prompt, imageUrls } = req.body;
 
     if (!prompt) {
@@ -403,44 +374,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-    // Prepare image parts for the model
     try {
-      const imageParts: InlineDataPart[] = await Promise.all(
+      // Prepare image parts for the model
+      const imageParts: any[] = await Promise.all(
         imageUrls.map(async (url: string) => {
-          try {
-            // For local images, we need to read them from the filesystem
-            if (url.startsWith('/uploads/')) {
-              const filePath = path.join(process.cwd(), 'public', url);
+          let base64Data: string;
+          let mimeType: string;
 
-              // Check if file exists
-              if (!fs.existsSync(filePath)) {
-                throw new Error(`File not found: ${url}`);
-              }
-
-              const fileData = fs.readFileSync(filePath);
-              const mimeType = `image/${path.extname(url).substring(1)}`;
-              return {
-                inlineData: {
-                  data: Buffer.from(fileData).toString('base64'),
-                  mimeType,
-                },
-              } as InlineDataPart;
+          if (url.startsWith('/uploads/')) {
+            const filePath = path.join(process.cwd(), 'public', url);
+            if (!fs.existsSync(filePath)) {
+              throw new Error(`File not found: ${url}`);
             }
-
-            // For external URLs (including Cloudinary), fetch the image and convert to base64
-            const { data, mimeType } = await fetchImageAsBase64(url);
-            return {
-              inlineData: {
-                data,
-                mimeType,
-              },
-            } as InlineDataPart;
-          } catch (error: any) {
-            // Log the error but continue with other images
-            throw new Error(`Error processing image ${url}: ${error.message}`);
+            const fileData = fs.readFileSync(filePath);
+            base64Data = Buffer.from(fileData).toString('base64');
+            mimeType = `image/${path.extname(url).substring(1)}`;
+          } else {
+            const fetchedImage = await fetchImageAsBase64(url);
+            base64Data = fetchedImage.data;
+            mimeType = fetchedImage.mimeType;
           }
+
+          return {
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: mimeType,
+              data: base64Data,
+            },
+          };
         }),
       );
 
@@ -466,36 +428,37 @@ Example of chart usage:
 
 Return only the HTML code without any explanation or formatting.`;
 
-      // Generate content with both text and images
-      try {
-        console.log(`Sending ${imageParts.length} images to Gemini API`);
-        const templateResult = await model.generateContent([templatePrompt, ...imageParts]);
-        const templateResponse = await templateResult.response;
-        const template = templateResponse.text();
+      const msg = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20240620',
+        max_tokens: 4096,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              ...imageParts,
+              {
+                type: 'text',
+                text: templatePrompt,
+              },
+            ],
+          },
+        ],
+      });
 
-        // Extract and analyze variables from the template
-        const extractedVars = extractVariablesFromTemplate(template);
-        const suggestedVariables = buildVariableStructure(extractedVars);
-
-        // Return both the template and suggested variables
-        return res.status(200).json({
-          content: template,
-          suggestedVariables,
-        });
-      } catch (error: any) {
-        console.error('Gemini API error:', error);
-        let errorMessage = error.message || 'Unknown error';
-
-        // Check if the error is related to the image format or size
-        if (errorMessage.includes('image') || errorMessage.includes('file')) {
-          errorMessage = `Image processing error: ${errorMessage}. Try using a different image format (JPG or PNG) or a smaller image size.`;
-        }
-
-        return res.status(500).json({
-          error: 'Failed to generate template from images',
-          details: errorMessage,
-        });
+      if (msg.content.length === 0 || msg.content[0].type !== 'text') {
+        throw new Error('Invalid response from AI model');
       }
+      const template = msg.content[0].text;
+
+      // Extract and analyze variables from the template
+      const extractedVars = extractVariablesFromTemplate(template);
+      const suggestedVariables = buildVariableStructure(extractedVars);
+
+      // Return both the template and suggested variables
+      return res.status(200).json({
+        content: template,
+        suggestedVariables,
+      });
     } catch (error: any) {
       return res.status(500).json({
         error: 'Failed to generate template from images',

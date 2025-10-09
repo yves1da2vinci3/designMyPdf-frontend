@@ -45,13 +45,7 @@ function NamespaceItem({
       ref={drop}
       p="xs"
       withBorder={selected}
-      bg={
-        isOver
-          ? 'green.0'
-          : selected
-            ? 'blue.0'
-            : 'transparent'
-      }
+      bg={isOver ? 'green.0' : selected ? 'blue.0' : 'transparent'}
       style={{
         cursor: 'pointer',
         borderRadius: '4px',
@@ -60,10 +54,7 @@ function NamespaceItem({
       onClick={() => setNamespaceId(namespace.ID)}
     >
       <Group>
-        <IconFolderFilled
-          size={18}
-          color={selected ? '#228be6' : '#868e96'}
-        />
+        <IconFolderFilled size={18} color={selected ? '#228be6' : '#868e96'} />
         <Text size="sm">{name}</Text>
       </Group>
     </Paper>

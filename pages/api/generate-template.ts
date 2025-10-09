@@ -1,10 +1,12 @@
 /* eslint-disable max-len */
 import { NextApiRequest, NextApiResponse } from 'next';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Anthropic from '@anthropic-ai/sdk';
 import { faker } from '@faker-js/faker';
 import notificationService from '@/services/NotificationService';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || '',
+});
 
 // Add chart types
 const CHART_TYPES = {
@@ -329,8 +331,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
     const templatePrompt = `Generate only the inner HTML content (without <!DOCTYPE>, <html>, <head>, or <body> tags) for a template with this requirement: ${prompt}
 
 Requirements:
@@ -351,9 +351,16 @@ Example of chart usage:
 
 Return only the HTML code without any explanation or formatting.`;
 
-    const templateResult = await model.generateContent(templatePrompt);
-    const templateResponse = await templateResult.response;
-    const template = templateResponse.text();
+    const msg = await anthropic.messages.create({
+      model: 'claude-3-5-sonnet-20240620',
+      max_tokens: 4096,
+      messages: [{ role: 'user', content: templatePrompt }],
+    });
+
+    if (msg.content.length === 0 || msg.content[0].type !== 'text') {
+      throw new Error('Invalid response from AI model');
+    }
+    const template = msg.content[0].text;
 
     // Extract and analyze variables from the template
     const extractedVars = extractVariablesFromTemplate(template);

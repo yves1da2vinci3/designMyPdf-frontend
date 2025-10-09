@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Text } from '@mantine/core';
 
 interface PreviewProps {
@@ -7,7 +7,6 @@ interface PreviewProps {
   data: any;
   fonts?: string[];
   isLandscape?: boolean;
-  setTemplateContent?: (content: string) => void;
 }
 
 function Preview({
@@ -16,11 +15,9 @@ function Preview({
   data,
   fonts = [],
   isLandscape = false,
-  setTemplateContent,
 }: PreviewProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const chartInstancesRef = useRef<any[]>([]);
   const [pageCount, setPageCount] = useState(1);
+  const [iframeContent, setIframeContent] = useState('');
 
   // Define paper dimensions in mm
   const formatToSize = {
@@ -33,309 +30,199 @@ function Preview({
   };
 
   // Get dimensions for the selected format
-  const getSize = () => {
+  const paperSize = (() => {
     const selectedSize = formatToSize[format as keyof typeof formatToSize] || formatToSize.a4;
-    if (isLandscape) {
-      return { width: selectedSize.height, height: selectedSize.width };
-    }
-    return selectedSize;
-  };
-
-  const paperSize = getSize();
+    return isLandscape ? { width: selectedSize.height, height: selectedSize.width } : selectedSize;
+  })();
 
   useEffect(() => {
-    if (iframeRef.current && iframeRef.current.contentWindow) {
-      const iframeDoc = iframeRef.current.contentWindow.document;
+    const fontLinks = fonts
+      .map(
+        (font) =>
+          `<link href="https://fonts.googleapis.com/css2?family=${font.replace(
+            / /g,
+            '+',
+          )}&display=swap" rel="stylesheet">`,
+      )
+      .join('');
 
-      // Process page breaks to make them visible in the preview
-      const processPageBreaks = () => {
-        // Find all page break elements
-        const pageBreaks = iframeDoc.querySelectorAll('.page-break');
+    // The main script to be executed inside the iframe
+    const mainScript = `
+      document.addEventListener('DOMContentLoaded', function() {
+        // Initialize charts
+        function initCharts() {
+          document.querySelectorAll('canvas[data-chart-type]').forEach(canvas => {
+            const type = canvas.getAttribute('data-chart-type');
+            const dataStr = canvas.getAttribute('data-chart-data');
+            if (type && dataStr) {
+              try {
+                const chartData = JSON.parse(dataStr);
+                new Chart(canvas, {
+                  type,
+                  data: chartData,
+                  options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    animation: false,
+                  }
+                });
+              } catch (e) {
+                console.error('Failed to initialize chart:', e);
+              }
+            }
+          });
+        }
 
-        // Add visual indicators for page breaks
-        pageBreaks.forEach((breakEl) => {
-          // Create a visual indicator
-          const indicator = iframeDoc.createElement('div');
-          indicator.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
-          indicator.style.color = 'white';
-          indicator.style.padding = '4px 8px';
-          indicator.style.fontWeight = 'bold';
-          indicator.style.fontSize = '12px';
-          indicator.style.textAlign = 'center';
-          indicator.style.width = '100%';
-          indicator.style.marginBottom = '5px';
-          indicator.style.borderRadius = '4px';
-          indicator.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-          indicator.textContent = 'PAGE BREAK';
+        // Process content into pages based on page-break markers
+        function processPageBreaks() {
+          const container = document.getElementById('page-container');
+          if (!container) return;
 
-          // Insert the indicator before the page break
-          breakEl.parentNode?.insertBefore(indicator, breakEl);
-        });
-      };
+          const originalContent = container.innerHTML;
+          const parts = originalContent.split(/<div class="page-break"[^>]*>\\s*<\\/div>|<hr class="page-break"[^>]*>/i);
 
-      // Initialize charts if any
-      const initCharts = () => {
-        const chartElements = iframeDoc.querySelectorAll('canvas[data-chart-type]');
-        if (chartElements.length > 0) {
-          // Load Chart.js if needed
-          const script = iframeDoc.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
-          script.onload = () => {
-            chartElements.forEach((canvas: any) => {
-              const type = canvas.getAttribute('data-chart-type');
-              const dataStr = canvas.getAttribute('data-chart-data');
-              if (type && dataStr) {
-                try {
-                  const chartData = JSON.parse(dataStr);
-                  (window as any).Chart.register(...(window as any).Chart.register);
-                  // Store the chart instance in a variable
-                  const chartInstance = new (window as any).Chart(canvas, {
-                    type,
-                    data: chartData,
-                    options: {
-                      responsive: true,
-                      maintainAspectRatio: true,
-                      animation: false,
-                    },
-                  });
-                  // Store in ref for potential cleanup later
-                  chartInstancesRef.current.push(chartInstance);
-                } catch (error) {
-                  // Silently handle chart initialization errors
-                  // We don't want to break the preview if charts fail to load
-                }
+          if (parts.length > 1) {
+            container.innerHTML = ''; // Clear container
+
+            parts.forEach((part, index) => {
+              const page = document.createElement('div');
+              page.className = 'page';
+
+              const pageContent = document.createElement('div');
+              pageContent.className = 'page-content';
+              pageContent.innerHTML = part;
+              page.appendChild(pageContent);
+
+              const pageNumber = document.createElement('div');
+              pageNumber.className = 'page-number';
+              pageNumber.textContent = 'Page ' + (index + 1);
+              page.appendChild(pageNumber);
+
+              container.appendChild(page);
+
+              if (index < parts.length - 1) {
+                const indicator = document.createElement('div');
+                indicator.className = 'page-break-indicator';
+
+                const label = document.createElement('div');
+                label.className = 'page-break-label';
+                label.textContent = 'PAGE BREAK';
+                indicator.appendChild(label);
+
+                container.appendChild(indicator);
               }
             });
-          };
-          iframeDoc.head.appendChild(script);
-        }
-      };
 
-      // Apply both functions
-      processPageBreaks();
-      initCharts();
-    }
-  }, [htmlContent, data]);
+            window.parent.postMessage({ type: 'pageCount', count: parts.length }, '*');
+          } else {
+            container.innerHTML = '';
+            const page = document.createElement('div');
+            page.className = 'page';
+
+            const pageContent = document.createElement('div');
+            pageContent.className = 'page-content';
+            pageContent.innerHTML = originalContent;
+            page.appendChild(pageContent);
+
+            const pageNumber = document.createElement('div');
+            pageNumber.className = 'page-number';
+            pageNumber.textContent = 'Page 1';
+            page.appendChild(pageNumber);
+
+            container.appendChild(page);
+
+            window.parent.postMessage({ type: 'pageCount', count: 1 }, '*');
+          }
+        }
+
+        processPageBreaks();
+        initCharts();
+      });
+    `;
+
+    const content = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          ${fontLinks}
+          <script src="https://cdn.tailwindcss.com"></script>
+          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+          <style>
+            @page {
+              size: ${format} ${isLandscape ? 'landscape' : 'portrait'};
+              margin: 0;
+            }
+            body {
+              margin: 0;
+              font-family: ${fonts[0] || 'system-ui'}, sans-serif;
+              background-color: #f0f0f0;
+              padding: 20px;
+            }
+            .page {
+              width: ${paperSize.width}mm;
+              min-height: ${paperSize.height}mm;
+              margin: 10px auto;
+              background-color: white;
+              box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+              position: relative;
+              display: flex;
+              flex-direction: column;
+              box-sizing: border-box;
+              page-break-after: always;
+            }
+            .page-content {
+              padding: 10mm;
+              flex: 1;
+            }
+            .page-number {
+              position: absolute;
+              bottom: 5mm;
+              right: 5mm;
+              font-size: 8pt;
+              color: #888;
+              z-index: 1000;
+            }
+            .page-break {
+              display: none;
+            }
+            .page-break-indicator {
+              width: 100%;
+              height: 4px;
+              background-color: #FF0000;
+              margin: 10px 0;
+              position: relative;
+            }
+            .page-break-label {
+              position: absolute;
+              top: -10px;
+              right: 0;
+              background-color: #FF0000;
+              color: white;
+              padding: 2px 6px;
+              font-size: 8px;
+              border-radius: 2px;
+            }
+            .page-container {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="page-container" id="page-container">
+            ${htmlContent}
+          </div>
+          <script>${mainScript}</script>
+        </body>
+      </html>
+    `;
+    setIframeContent(content);
+  }, [htmlContent, data, fonts, format, isLandscape, paperSize.width, paperSize.height]);
 
   useEffect(() => {
-    if (iframeRef.current) {
-      const iframe = iframeRef.current;
-      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-
-      if (iframeDoc) {
-        // Load fonts
-        const fontLinks = fonts
-          .map(
-            (font) =>
-              `<link href="https://fonts.googleapis.com/css2?family=${font.replace(
-                / /g,
-                '+',
-              )}&display=swap" rel="stylesheet">`,
-          )
-          .join('');
-
-        // Inject content with fonts and Tailwind CSS
-        iframeDoc.open();
-        iframeDoc.write(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              ${fontLinks}
-              <script src="https://cdn.tailwindcss.com"></script>
-              <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-              <style>
-                @page {
-                  size: ${format} ${isLandscape ? 'landscape' : 'portrait'};
-                  margin: 0;
-                }
-                body {
-                  margin: 0;
-                  font-family: ${fonts[0] || 'system-ui'}, sans-serif;
-                  background-color: #f0f0f0;
-                  padding: 20px;
-                }
-                .page {
-                  width: ${paperSize.width}mm;
-                  min-height: ${paperSize.height}mm;
-                  margin: 10px auto;
-                  background-color: white;
-                  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-                  position: relative;
-                  display: flex;
-                  flex-direction: column;
-                  box-sizing: border-box;
-                  page-break-after: always;
-                }
-                .page-content {
-                  padding: 10mm;
-                  flex: 1;
-                }
-                .page-number {
-                  position: absolute;
-                  bottom: 5mm;
-                  right: 5mm;
-                  font-size: 8pt;
-                  color: #888;
-                  z-index: 1000;
-                }
-                .page-break {
-                  height: 20px;
-                  margin: 20px 0;
-                  border: none;
-                  position: relative;
-                  border-top: 3px dashed #FF0000;
-                  background-color: rgba(255, 0, 0, 0.1);
-                  text-align: center;
-                }
-                .page-break::before {
-                  content: "PAGE BREAK";
-                  position: absolute;
-                  top: 0;
-                  left: 50%;
-                  transform: translateX(-50%);
-                  background-color: #FF0000;
-                  color: white;
-                  padding: 2px 8px;
-                  font-size: 10px;
-                  font-weight: bold;
-                  border-radius: 4px;
-                }
-                .page-break-indicator {
-                  width: 100%;
-                  height: 4px;
-                  background-color: #FF0000;
-                  margin: 10px 0;
-                  position: relative;
-                }
-                .page-break-label {
-                  position: absolute;
-                  top: -10px;
-                  right: 0;
-                  background-color: #FF0000;
-                  color: white;
-                  padding: 2px 6px;
-                  font-size: 8px;
-                  border-radius: 2px;
-                }
-                .page-container {
-                  display: flex;
-                  flex-direction: column;
-                  align-items: center;
-                }
-              </style>
-            </head>
-            <body>
-              <div class="page-container" id="page-container">
-                ${htmlContent}
-              </div>
-              <script>
-                // Initialize charts if any
-                document.querySelectorAll('canvas[data-chart-type]').forEach(canvas => {
-                  const type = canvas.getAttribute('data-chart-type');
-                  const data = JSON.parse(canvas.getAttribute('data-chart-data'));
-                  new Chart(canvas, {
-                    type,
-                    data,
-                    options: {
-                      responsive: true,
-                      maintainAspectRatio: true,
-                    }
-                  });
-                });
-
-                // Process page breaks and create pages
-                function processPageBreaks() {
-                  const container = document.getElementById('page-container');
-                  const content = container.innerHTML;
-                  
-                  // Split content at page breaks
-                  const parts = content.split('<div class="page-break"></div>');
-                  
-                  if (parts.length > 1) {
-                    // Clear container
-                    container.innerHTML = '';
-                    
-                    // Create pages for each part
-                    parts.forEach((part, index) => {
-                      // Create page
-                      const page = document.createElement('div');
-                      page.className = 'page';
-                      
-                      // Add content
-                      const pageContent = document.createElement('div');
-                      pageContent.className = 'page-content';
-                      pageContent.innerHTML = part;
-                      page.appendChild(pageContent);
-                      
-                      // Add page number
-                      const pageNumber = document.createElement('div');
-                      pageNumber.className = 'page-number';
-                      pageNumber.textContent = 'Page ' + (index + 1);
-                      page.appendChild(pageNumber);
-                      
-                      // Add to container
-                      container.appendChild(page);
-                      
-                      // Add page break indicator after each page (except the last)
-                      if (index < parts.length - 1) {
-                        const indicator = document.createElement('div');
-                        indicator.className = 'page-break-indicator';
-                        
-                        const label = document.createElement('div');
-                        label.className = 'page-break-label';
-                        label.textContent = 'PAGE BREAK';
-                        indicator.appendChild(label);
-                        
-                        container.appendChild(indicator);
-                      }
-                    });
-                    
-                    // Send page count to parent
-                    window.parent.postMessage({ type: 'pageCount', count: parts.length }, '*');
-                  } else {
-                    // No page breaks, create a single page
-                    const page = document.createElement('div');
-                    page.className = 'page';
-                    
-                    const pageContent = document.createElement('div');
-                    pageContent.className = 'page-content';
-                    pageContent.innerHTML = content;
-                    page.appendChild(pageContent);
-                    
-                    const pageNumber = document.createElement('div');
-                    pageNumber.className = 'page-number';
-                    pageNumber.textContent = 'Page 1';
-                    page.appendChild(pageNumber);
-                    
-                    // Clear and add the single page
-                    container.innerHTML = '';
-                    container.appendChild(page);
-                    
-                    // Send page count to parent
-                    window.parent.postMessage({ type: 'pageCount', count: 1 }, '*');
-                  }
-                }
-                
-                // Run after all resources are loaded
-                window.addEventListener('load', function() {
-                  setTimeout(processPageBreaks, 100);
-                });
-              </script>
-            </body>
-          </html>
-        `);
-        iframeDoc.close();
-
-        // Store the generated content if needed
-        if (setTemplateContent) {
-          setTemplateContent(htmlContent);
-        }
-      }
-    }
-
-    // Listen for page count message from iframe
     const handleMessage = (event: MessageEvent) => {
       if (event.data && event.data.type === 'pageCount') {
         setPageCount(event.data.count);
@@ -346,22 +233,13 @@ function Preview({
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, [
-    htmlContent,
-    data,
-    fonts,
-    format,
-    isLandscape,
-    setTemplateContent,
-    paperSize.width,
-    paperSize.height,
-  ]);
+  }, []);
 
   return (
     <>
       <Box
         component="iframe"
-        ref={iframeRef}
+        srcDoc={iframeContent}
         style={{
           width: '100%',
           height: '100%',
@@ -369,6 +247,7 @@ function Preview({
           backgroundColor: '#f0f0f0',
         }}
         title="Template Preview"
+        sandbox="allow-scripts allow-same-origin"
       />
       {pageCount > 1 && (
         <Text

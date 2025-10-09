@@ -148,12 +148,8 @@ function TemplatesPage() {
   useEffect(() => {
     // Only start the tour after the templates have loaded
     if (fetchTemplatesRequestStatus === RequestStatus.Succeeded) {
-      console.log('Templates loaded, preparing to start tour');
-      console.log('Has seen tour:', hasSeenTour);
-
       // Use setTimeout to ensure the DOM is fully rendered
       const tourTimeout = setTimeout(() => {
-        console.log('Starting tour now');
         // Check if tour target elements exist
         const elements = [
           '#templates-header',
@@ -167,29 +163,22 @@ function TemplatesPage() {
         // Verify all elements exist
         const allElementsExist = elements.every((selector) => {
           const el = document.querySelector(selector);
-          console.log(`Element ${selector} exists:`, !!el);
           return !!el;
         });
 
         if (!allElementsExist) {
-          console.error('Some tour elements are missing from the DOM');
           return;
         }
 
         try {
           // Only show the tour if the user hasn't seen it before
           if (!hasSeenTour) {
-            console.log('User has not seen tour, starting tour');
-            const driverInstance = manuallyStartTour(() => {
-              console.log('Tour completed, updating hasSeenTour');
+            manuallyStartTour(() => {
               setHasSeenTour(true);
             }, 'dashboard');
-            console.log('Tour driver instance:', driverInstance);
-          } else {
-            console.log('User has already seen tour, not showing automatically');
           }
         } catch (error) {
-          console.error('Error starting tour:', error);
+          // Silently handle tour errors
         }
 
         setShowTourButton(true);

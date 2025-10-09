@@ -99,7 +99,7 @@ function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
                 // Store chart instance for cleanup
                 element.chart = chartInstance;
               } catch (error) {
-                console.error('Error initializing chart:', error);
+                // Silently handle chart initialization errors
               }
             });
           }
@@ -173,7 +173,6 @@ function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
           </body>
         </html>
       `);
-      console.error('Error rendering mini preview:', error);
     }
   }, [htmlContent, data, fontImport, fontStyle]);
 
