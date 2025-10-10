@@ -152,59 +152,61 @@ function extractVariablesFromTemplate(
   string,
   { type: 'array' | 'object' | 'value'; path: string[]; arrayItemStructure?: Record<string, any> }
 > {
-  const variableRegex = /{{([^}]+)}}/g;
   const variables = new Map<
     string,
     { type: 'array' | 'object' | 'value'; path: string[]; arrayItemStructure?: Record<string, any> }
   >();
+
+  const eachBlockRegex = /{{#each\s+(\w+)}}([\s\S]*?){{\/each}}/g;
+  let eachMatch;
+
+  while ((eachMatch = eachBlockRegex.exec(template)) !== null) {
+    const arrayName = eachMatch[1];
+    const blockContent = eachMatch[2];
+    const itemProps = new Set<string>();
+
+    const thisRegex = /{{this\.(\w+)}}/g;
+    let propMatch;
+
+    while ((propMatch = thisRegex.exec(blockContent)) !== null) {
+      itemProps.add(propMatch[1]);
+    }
+
+    const arrayItemStructure = Array.from(itemProps).reduce(
+      (obj, prop) => {
+        obj[prop] = getExampleValue(prop);
+        return obj;
+      },
+      {} as Record<string, any>,
+    );
+
+    variables.set(arrayName, {
+      type: 'array',
+      path: [arrayName],
+      arrayItemStructure,
+    });
+  }
+
+  const variableRegex = /{{(?!#|\/)([\w.]+)(?:\s|}})/g;
   let match;
 
   while ((match = variableRegex.exec(template)) !== null) {
-    const [rawVariable] = match[1]
-      .trim()
-      .replace(/^#|^\/|else/g, '')
-      .split(' ');
-    if (rawVariable && !rawVariable.includes('this.')) {
+    const rawVariable = match[1].trim();
+
+    if (rawVariable && !rawVariable.includes('this.') && !rawVariable.startsWith('if ') && !rawVariable.startsWith('unless ')) {
       const varPath = rawVariable.split('.');
       const rootVar = varPath[0];
 
-      // Check if it's inside an #each block
-      const eachBlockRegex = new RegExp(`{{#each\\s+${rootVar}}}([\\s\\S]*?){{/each}}`, 'g');
-      const eachMatch = eachBlockRegex.exec(template);
-
-      if (eachMatch) {
-        // Extract array item structure
-        const blockContent = eachMatch[1];
-        const itemProps = new Set<string>();
-        const thisRegex = /{{this\.(\w+)}}/g;
-        let propMatch;
-
-        while ((propMatch = thisRegex.exec(blockContent)) !== null) {
-          itemProps.add(propMatch[1]);
-        }
-
-        // Create array item structure
-        const arrayItemStructure = Array.from(itemProps).reduce(
-          (obj, prop) => {
-            obj[prop] = getExampleValue(prop);
-            return obj;
-          },
-          {} as Record<string, any>,
-        );
-
-        variables.set(rootVar, {
-          type: 'array',
-          path: [rootVar],
-          arrayItemStructure,
-        });
-      } else if (varPath.length > 1) {
-        // Handle nested object
-        if (!variables.has(rootVar)) {
+      if (!variables.has(rootVar)) {
+        if (varPath.length > 1) {
           variables.set(rootVar, { type: 'object', path: [rootVar] });
+        } else {
+          variables.set(rootVar, { type: 'value', path: [rootVar] });
         }
+      }
+
+      if (varPath.length > 1 && !variables.has(rawVariable)) {
         variables.set(rawVariable, { type: 'value', path: varPath });
-      } else {
-        variables.set(rawVariable, { type: 'value', path: [rawVariable] });
       }
     }
   }
@@ -217,6 +219,7 @@ function buildVariableStructure(
     string,
     { type: 'array' | 'object' | 'value'; path: string[]; arrayItemStructure?: Record<string, any> }
   >,
+  template?: string,
 ): Record<string, any> {
   const structure: Record<string, any> = {};
 
@@ -261,65 +264,120 @@ function buildVariableStructure(
     }
   }
 
-  // Add chart data if template contains chart placeholders
-  const chartTypes = Object.keys(CHART_TYPES) as Array<keyof typeof CHART_TYPES>;
-  chartTypes.forEach((type) => {
-    if (structure.charts?.[type] || structure[`${type}Chart`]) {
-      structure.charts = structure.charts || {};
-      structure.charts[type] = generateChartData(type);
+  if (template) {
+    const chartRegex = /data-chart-type=["'](\w+)["']\s+data-chart-data=["']{{charts\.(\w+)}}["']/g;
+    let chartMatch;
+    const detectedCharts = new Map<string, string>();
+
+    while ((chartMatch = chartRegex.exec(template)) !== null) {
+      const chartType = chartMatch[1];
+      const chartName = chartMatch[2];
+      detectedCharts.set(chartName, chartType);
     }
-  });
+
+    if (detectedCharts.size > 0 || variables.has('charts')) {
+      structure.charts = structure.charts || {};
+
+      Array.from(detectedCharts.entries()).forEach(([chartName, chartType]) => {
+        if (chartType && CHART_TYPES[chartType as keyof typeof CHART_TYPES]) {
+          structure.charts[chartName] = generateChartData(chartType as keyof typeof CHART_TYPES);
+        }
+      });
+
+      if (Object.keys(structure.charts).length === 0 && variables.has('charts')) {
+        structure.charts.salesChart = generateChartData('bar');
+        structure.charts.statsChart = generateChartData('pie');
+      }
+    }
+  }
 
   return structure;
 }
 
 function getExampleValue(prop: string): any {
-  const propLower = prop.toLowerCase();
+  const propLower = prop.toLowerCase().replace(/[_\s-]/g, '');
 
-  // Person related fields
-  if (propLower.includes('name') || propLower.includes('author')) {
+  if (propLower.includes('firstname') || propLower.includes('fname')) {
+    return faker.person.firstName();
+  }
+  if (propLower.includes('lastname') || propLower.includes('lname') || propLower.includes('surname')) {
+    return faker.person.lastName();
+  }
+  if (propLower.includes('fullname') || propLower.includes('name') || propLower.includes('author') || propLower.includes('client')) {
     return faker.person.fullName();
   }
-  if (propLower.includes('firstname')) return faker.person.firstName();
-  if (propLower.includes('lastname')) return faker.person.lastName();
-  if (propLower.includes('jobtitle')) return faker.person.jobTitle();
-  if (propLower.includes('gender')) return faker.person.gender();
+  if (propLower.includes('jobtitle') || propLower.includes('position') || propLower.includes('role')) {
+    return faker.person.jobTitle();
+  }
+  if (propLower.includes('gender') || propLower.includes('sex')) {
+    return faker.person.gender();
+  }
 
-  // Contact/Address related fields
-  if (propLower.includes('email')) return faker.internet.email();
-  if (propLower.includes('phone')) return faker.phone.number();
+  if (propLower.includes('email') || propLower.includes('mail')) {
+    return faker.internet.email();
+  }
+  if (propLower.includes('phone') || propLower.includes('tel') || propLower.includes('mobile') || propLower.includes('contact')) {
+    return faker.phone.number();
+  }
   if (propLower.includes('address')) return faker.location.streetAddress();
-  if (propLower.includes('street')) return faker.location.street();
-  if (propLower.includes('city')) return faker.location.city();
-  if (propLower.includes('country')) return faker.location.country();
-  if (propLower.includes('zipcode') || propLower.includes('zip')) return faker.location.zipCode();
+  if (propLower.includes('street') || propLower.includes('road') || propLower.includes('avenue')) {
+    return faker.location.street();
+  }
+  if (propLower.includes('city') || propLower.includes('town')) {
+    return faker.location.city();
+  }
+  if (propLower.includes('country') || propLower.includes('nation')) {
+    return faker.location.country();
+  }
+  if (propLower.includes('state') || propLower.includes('province') || propLower.includes('region')) {
+    return faker.location.state();
+  }
+  if (propLower.includes('zipcode') || propLower.includes('zip') || propLower.includes('postal')) {
+    return faker.location.zipCode();
+  }
 
-  // Company related fields
-  if (propLower.includes('company')) return faker.company.name();
-  if (propLower.includes('department')) return faker.commerce.department();
-  if (propLower.includes('position')) return faker.person.jobTitle();
+  if (propLower.includes('company') || propLower.includes('organization') || propLower.includes('business')) {
+    return faker.company.name();
+  }
+  if (propLower.includes('department') || propLower.includes('division')) {
+    return faker.commerce.department();
+  }
 
-  // Commerce related fields
-  if (propLower.includes('price') || propLower.includes('amount')) {
+  if (propLower.includes('price') || propLower.includes('unitprice') || propLower.includes('cost')) {
     return Number(faker.commerce.price());
   }
-  if (propLower.includes('product')) {
+  if (propLower.includes('amount') && !propLower.includes('qty') && !propLower.includes('quantity')) {
+    return Number(faker.commerce.price());
+  }
+  if (propLower.includes('product') || propLower.includes('item') || propLower.includes('service')) {
     return faker.commerce.productName();
   }
-  if (propLower.includes('description')) {
+  if (propLower.includes('description') || propLower.includes('details') || propLower.includes('notes')) {
     return faker.commerce.productDescription();
   }
-  if (propLower.includes('quantity') || propLower.includes('count')) {
+  if (propLower.includes('quantity') || propLower.includes('qty') || propLower.includes('count') || propLower.includes('units')) {
     return faker.number.int({ min: 1, max: 100 });
   }
-  if (propLower.includes('total')) {
+  if (propLower.includes('total') || propLower.includes('subtotal') || propLower.includes('grandtotal') || propLower.includes('sum')) {
     return Number(faker.commerce.price({ min: 100, max: 1000 }));
   }
-  if (propLower.includes('currency')) {
+  if (propLower.includes('tax') || propLower.includes('vat') || propLower.includes('gst')) {
+    return Number(faker.commerce.price({ min: 0, max: 100 }));
+  }
+  if (propLower.includes('discount') || propLower.includes('rebate') || propLower.includes('reduction')) {
+    return Number(faker.commerce.price({ min: 0, max: 50 }));
+  }
+  if (propLower.includes('currency') || propLower.includes('currencycode')) {
     return faker.finance.currencyCode();
   }
 
   // Date related fields
+  if (propLower.includes('issuedate') || propLower.includes('createdate') || propLower.includes('startdate')) {
+    return faker.date.recent({ days: 30 }).toISOString().split('T')[0];
+  }
+  if (propLower.includes('duedate') || propLower.includes('enddate') || propLower.includes('expirydate')) {
+    return faker.date.soon({ days: 30 }).toISOString().split('T')[0];
+  }
   if (propLower.includes('date')) {
     return faker.date.recent().toISOString().split('T')[0];
   }
@@ -329,25 +387,52 @@ function getExampleValue(prop: string): any {
   if (propLower.includes('month')) return faker.date.month();
 
   // ID/Reference fields
+  if (propLower.includes('invoicenumber') || propLower.includes('invoice_number')) {
+    return `INV-${faker.number.int({ min: 10000, max: 99999 })}`;
+  }
+  if (propLower.includes('ordernumber') || propLower.includes('order_number')) {
+    return `ORD-${faker.number.int({ min: 10000, max: 99999 })}`;
+  }
   if (propLower.includes('id')) return faker.string.alphanumeric(8).toUpperCase();
   if (propLower.includes('reference')) return faker.string.alphanumeric(10).toUpperCase();
   if (propLower.includes('number')) return faker.number.int({ min: 1000, max: 9999 });
 
-  // Content related fields
-  if (propLower.includes('title')) return faker.lorem.sentence();
-  if (propLower.includes('subtitle')) return faker.lorem.sentence();
-  if (propLower.includes('summary')) return faker.lorem.paragraph();
-  if (propLower.includes('content') || propLower.includes('body')) return faker.lorem.paragraphs();
-  if (propLower.includes('image')) return faker.image.url();
-  if (propLower.includes('url') || propLower.includes('link')) return faker.internet.url();
-
-  // Status fields
-  if (propLower.startsWith('is') || propLower.startsWith('has')) return faker.datatype.boolean();
-  if (propLower.includes('status')) {
-    return faker.helpers.arrayElement(['Active', 'Pending', 'Completed', 'Cancelled']);
+  if (propLower.includes('title') || propLower.includes('heading') || propLower.includes('header')) {
+    return faker.lorem.sentence();
+  }
+  if (propLower.includes('subtitle') || propLower.includes('subheading')) {
+    return faker.lorem.sentence();
+  }
+  if (propLower.includes('summary') || propLower.includes('abstract') || propLower.includes('overview')) {
+    return faker.lorem.paragraph();
+  }
+  if (propLower.includes('content') || propLower.includes('body') || propLower.includes('text')) {
+    return faker.lorem.paragraphs();
+  }
+  if (propLower.includes('image') || propLower.includes('picture') || propLower.includes('photo') || propLower.includes('avatar')) {
+    return faker.image.url();
+  }
+  if (propLower.includes('url') || propLower.includes('link') || propLower.includes('website')) {
+    return faker.internet.url();
   }
 
-  // Default to lorem word if no specific match
+  if (propLower.startsWith('is') || propLower.startsWith('has') || propLower.startsWith('show') || propLower.includes('enabled') || propLower.includes('visible')) {
+    return faker.datatype.boolean();
+  }
+  if (propLower.includes('status') || propLower.includes('state')) {
+    return faker.helpers.arrayElement(['Active', 'Pending', 'Completed', 'Cancelled']);
+  }
+  if (propLower.includes('type') || propLower.includes('category') || propLower.includes('kind')) {
+    return faker.helpers.arrayElement(['Type A', 'Type B', 'Type C']);
+  }
+  if (propLower.includes('color') || propLower.includes('colour')) {
+    return faker.color.human();
+  }
+
+  if (propLower.includes('comment') || propLower.includes('message') || propLower.includes('feedback')) {
+    return faker.lorem.sentence();
+  }
+
   return faker.lorem.word();
 }
 
@@ -406,27 +491,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }),
       );
 
-      // Create a prompt that includes both text and images
-      const templatePrompt = `Generate only the inner HTML content (without <!DOCTYPE>, <html>, <head>, or <body> tags) for a template based on the provided images and this requirement: ${prompt}
+      const templatePrompt = `Analyze the provided images carefully and generate inner HTML content that faithfully reproduces the design. User requirement: ${prompt}
 
-Requirements:
-1. Use Handlebars syntax for variables: {{variable}}
-2. For arrays, use {{#each arrayName}} and {{this.property}}
-3. For nested objects, use dot notation: {{object.property}}
-4. Use semantic HTML elements
-5. Use Tailwind CSS classes for styling
-6. Add comments for major sections
-7. Make it responsive with Tailwind classes
-8. Include Chart.js canvas elements where appropriate (e.g., for statistics, data visualization)
-9. Use chart data from the 'charts' object (e.g., {{charts.pie}} for pie chart data)
-10. Do not include any <html>, <head>, <body> tags or scripts
-11. Only return the inner HTML that would go inside the content div
-12. The design should be inspired by the provided images
+CRITICAL IMAGE ANALYSIS:
+1. Study the layout, spacing, alignment, and visual hierarchy from the images
+2. Observe exact color schemes, font sizes, and styling patterns
+3. Identify all sections: headers, content blocks, tables, lists, footers
+4. Detect any charts, graphs, or data visualizations (bar charts, pie charts, line graphs, statistics cards, etc.)
+5. Notice borders, shadows, rounded corners, backgrounds, and decorative elements
+6. Pay attention to spacing between elements (margins, padding, gaps)
 
-Example of chart usage:
-<canvas id="myChart" data-chart-type="pie" data-chart-data='{{charts.pie}}'></canvas>
+HANDLEBARS VARIABLES:
+- Use {{variable}} for simple values
+- For arrays: {{#each arrayName}}{{this.property}}{{/each}}
+- For nested objects: {{object.property}}
+- For conditionals: {{#if condition}}...{{/if}}
 
-Return only the HTML code without any explanation or formatting.`;
+CHARTS & STATISTICS:
+When you see charts, graphs, or statistics in the images:
+- Use Chart.js canvas elements: <canvas id="uniqueId" data-chart-type="bar|pie|line|doughnut|radar" data-chart-data='{{charts.chartName}}'></canvas>
+- Supported types: bar, pie, line, doughnut, radar, polarArea, bubble, scatter
+- Store chart data in charts object: {{charts.salesChart}}, {{charts.performancePie}}, etc.
+- For stats cards with numbers, use appropriate Handlebars variables
+
+DESIGN FIDELITY:
+- Match exact colors from images using Tailwind classes (bg-blue-500, text-gray-700, etc.)
+- Reproduce spacing: p-4, p-6, p-8, m-2, m-4, gap-4, space-y-6, etc.
+- Match borders and shadows: border, border-gray-300, shadow-md, shadow-lg, rounded-lg, etc.
+- Preserve layout structure: grid, flex, columns, use same number of columns
+- Match typography: text-sm, text-lg, text-2xl, font-bold, font-semibold, etc.
+
+STYLING WITH TAILWIND:
+- Use modern, professional Tailwind classes
+- Ensure responsive design: sm:, md:, lg: prefixes
+- Add hover states where appropriate
+- Use semantic HTML5 tags
+
+OUTPUT RULES:
+- Return ONLY inner HTML (no <!DOCTYPE>, <html>, <head>, <body> tags)
+- No scripts, no explanations, just pure HTML
+- Add brief comments for major sections only
+
+Return the HTML code now:`;
 
       const msg = await anthropic.messages.create({
         model: 'claude-3-haiku-20240307',
@@ -450,11 +556,9 @@ Return only the HTML code without any explanation or formatting.`;
       }
       const template = msg.content[0].text;
 
-      // Extract and analyze variables from the template
       const extractedVars = extractVariablesFromTemplate(template);
-      const suggestedVariables = buildVariableStructure(extractedVars);
+      const suggestedVariables = buildVariableStructure(extractedVars, template);
 
-      // Return both the template and suggested variables
       return res.status(200).json({
         content: template,
         suggestedVariables,

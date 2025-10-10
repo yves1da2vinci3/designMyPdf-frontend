@@ -11,24 +11,24 @@ function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
   const [renderedContent, setRenderedContent] = useState('');
   const [fontImport, setFontImport] = useState('');
   const [fontStyle, setFontStyle] = useState('');
+  const [iframeKey, setIframeKey] = useState(0);
 
   // Local utility functions
   function createFontImport(fontList: string[]): string {
-    if (fontList.length === 0) return '';
+    if (!fontList || fontList.length === 0) return '';
     try {
       const encodedFont = encodeURIComponent(fontList[0]);
       const fontUrl = `https://fonts.googleapis.com/css2?family=${encodedFont}:wght@100;200;300;400;500;600;700;800;900${fontList
         .slice(1)
-        .map((font) => `&display=swap&family=${encodeURIComponent(font)}`)
-        .join('')}`;
+        .map((font) => `&display=swap&family=${encodeURIComponent(font)}`).join('')}`;
       return `<link rel="stylesheet" href="${fontUrl}" />`;
-    } catch {
+    } catch (error) {
       return '';
     }
   }
 
   function createFontStyle(fontList: string[]): string {
-    if (fontList.length === 0) return '';
+    if (!fontList || fontList.length === 0) return '';
     return `
       body {
         font-family: '${fontList[0]}', sans-serif;
@@ -37,15 +37,25 @@ function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
   }
 
   useEffect(() => {
-    setFontImport(createFontImport(fonts));
-    setFontStyle(createFontStyle(fonts));
+    if (fonts && fonts.length > 0) {
+      setFontImport(createFontImport(fonts));
+      setFontStyle(createFontStyle(fonts));
+    }
   }, [fonts]);
 
   useEffect(() => {
     try {
-      // Compile the Handlebars template with provided data
+      if (!htmlContent || htmlContent.trim() === '') {
+        setRenderedContent('<html><body style="padding: 1rem; color: #999;">No content</body></html>');
+        return;
+      }
+
+      const templateData = Array.isArray(data) ? {} : (data || {});
+
       const template = Handlebars.compile(htmlContent);
-      const rendered = template(data);
+      const rendered = template(templateData);
+
+      setIframeKey(prev => prev + 1);
 
       // Chart initialization script
       const chartScript = `
@@ -124,52 +134,53 @@ function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
       `;
 
       const fullContent = `<!doctype html>
-        <html>
-        <head>
-          <title>Mini Preview</title>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <script src="https://cdn.tailwindcss.com"></script>
-          <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-          ${fontImport}
-          <style>
-            ${fontStyle}
-            body {
-              margin: 0;
-              padding: 0;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              height: 100vh;
-              width: 100%;
-              background-color: white;
-            }
-            .content {
-              width: 100%;
-              align-self: flex-start;
-              height: 100%;
-              padding: 1rem;
-            }
-            canvas {
-              max-width: 100%;
-              margin: 0 auto;
-            }
-          </style>
-        </head>
-        <body class="overflow-x-hidden overflow-y-auto">
-          <div class="content">${rendered}</div>
-          <script>
-            ${chartScript}
-          </script>
-        </body>
-        </html>`;
+<html>
+  <head>
+    <title>Mini Preview</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    ${fontImport}
+    <style>
+      ${fontStyle}
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        width: 100%;
+        background: white;
+        position: relative;
+      }
+      .content {
+        width: 100%;
+        height: auto;
+        min-height: 100vh;
+        padding: 2rem;
+        position: relative;
+      }
+      canvas {
+        max-width: 100%;
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="content">
+      ${rendered}
+    </div>
+    <script>
+      ${chartScript}
+    </script>
+  </body>
+</html>`;
       setRenderedContent(fullContent);
     } catch (error: any) {
-      // Provide error feedback in the preview
       setRenderedContent(`
         <html>
-          <body style="color: red; padding: 1rem; font-family: sans-serif; font-size: 12px;">
-            Error rendering template: ${error.message || 'Unknown error'}
+          <body style="color: red; padding: 1rem; font-family: sans-serif; font-size: 10px;">
+            <strong>Error rendering template:</strong><br/>
+            ${error.message || 'Unknown error'}
           </body>
         </html>
       `);
@@ -185,9 +196,11 @@ function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
         position: 'relative',
         borderRadius: '4px',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        backgroundColor: 'white',
       }}
     >
       <iframe
+        key={iframeKey}
         title="mini-Preview"
         srcDoc={renderedContent}
         style={{

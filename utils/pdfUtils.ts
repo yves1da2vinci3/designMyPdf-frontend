@@ -30,16 +30,16 @@ export async function exportPdfDocument({
       `Exporting document as ${format.toUpperCase()}...`,
     );
 
-    // Create a hidden iframe to render the template
     const iframe = document.createElement('iframe');
-    iframe.style.width = '100%';
-    iframe.style.height = '1000px';
+    iframe.style.width = `${pageWidth * 3.779527559}px`;
+    iframe.style.height = `${pageHeight * 3.779527559}px`;
     iframe.style.position = 'absolute';
     iframe.style.top = '-9999px';
     iframe.style.left = '-9999px';
+    iframe.style.border = 'none';
+    iframe.style.overflow = 'hidden';
     document.body.appendChild(iframe);
 
-    // Prepare the HTML content with proper CSS for pagination
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -56,7 +56,7 @@ export async function exportPdfDocument({
             )
             .join('')}
           <script src="https://cdn.tailwindcss.com"></script>
-          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+          <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
           <style>
             @page {
               size: ${format} ${isLandScape ? 'landscape' : 'portrait'};
@@ -65,24 +65,34 @@ export async function exportPdfDocument({
             html, body {
               margin: 0;
               padding: 0;
-              font-family: ${fontsSelected[0] || 'system-ui'}, sans-serif;
+              font-family: '${fontsSelected[0] || 'system-ui'}', sans-serif;
               background-color: white;
+              min-height: 100vh;
+              width: 100%;
             }
             #content-container {
-              width: ${pageWidth}mm;
+              width: 100%;
+              min-height: 100vh;
               background-color: white;
-              margin: 0 auto;
-              padding: 10mm;
+              padding: 2rem;
               box-sizing: border-box;
+              position: relative;
             }
-            /* Any page break elements will still work as manual breaks */
             .page-break {
               page-break-after: always;
               break-after: page;
             }
-            /* Hide preview-only elements during PDF export */
             .preview-only {
               display: none !important;
+            }
+            @media print {
+              .preview-only {
+                display: none !important;
+              }
+            }
+            canvas {
+              max-width: 100%;
+              margin: 0 auto;
             }
           </style>
         </head>
@@ -91,40 +101,97 @@ export async function exportPdfDocument({
             ${renderedContent}
           </div>
           <script>
-            // Initialize charts if any
-            document.querySelectorAll('canvas[data-chart-type]').forEach(canvas => {
-              const type = canvas.getAttribute('data-chart-type');
-              const chartDataAttr = canvas.getAttribute('data-chart-data');
-              
-              // Skip if no chart data is available
-              if (!type || !chartDataAttr) return;
-              
-              let chartData;
-              try {
-                // Try to parse as JSON first
-                chartData = JSON.parse(chartDataAttr);
-              } catch (e) {
-                console.error('Error parsing chart data:', e);
-                // Use empty data as fallback
-                chartData = { labels: [], datasets: [] };
-              }
-              
-              try {
-                new Chart(canvas, {
-                  type,
-                  data: chartData,
-                  options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    animation: false // Disable animations for PDF export
+            function waitForTailwind() {
+              return new Promise((resolve) => {
+                const checkTailwind = () => {
+                  const testDiv = document.createElement('div');
+                  testDiv.className = 'bg-blue-500';
+                  document.body.appendChild(testDiv);
+                  const hasStyles = window.getComputedStyle(testDiv).backgroundColor !== 'rgba(0, 0, 0, 0)';
+                  document.body.removeChild(testDiv);
+                  
+                  if (hasStyles) {
+                    resolve(true);
+                  } else {
+                    setTimeout(checkTailwind, 100);
                   }
-                });
-              } catch (error) {
-                console.error('Error initializing chart:', error);
+                };
+                checkTailwind();
+              });
+            }
+            
+            async function initCharts() {
+              await waitForTailwind();
+              
+              if (!window.Chart) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                if (!window.Chart) {
+                  window.parent.postMessage('contentLoaded', '*');
+                  return;
+                }
               }
-            });
-            // Signal that content is loaded
-            window.parent.postMessage('contentLoaded', '*');
+              
+              document.querySelectorAll('canvas[data-chart-type]').forEach(canvas => {
+                const type = canvas.getAttribute('data-chart-type');
+                const chartDataAttr = canvas.getAttribute('data-chart-data');
+                
+                if (!type || !chartDataAttr) return;
+                
+                let chartData;
+                try {
+                  chartData = JSON.parse(chartDataAttr);
+                } catch (e) {
+                  chartData = { labels: [], datasets: [] };
+                }
+                
+                try {
+                  new Chart(canvas, {
+                    type,
+                    data: chartData,
+                    options: {
+                      responsive: true,
+                      maintainAspectRatio: true,
+                      animation: false,
+                      plugins: {
+                        legend: {
+                          position: 'top',
+                          labels: {
+                            padding: 20,
+                            font: {
+                              size: 12,
+                              family: "'${fontsSelected[0] || 'system-ui'}', sans-serif"
+                            }
+                          }
+                        },
+                        tooltip: {
+                          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                          padding: 12,
+                          titleFont: {
+                            size: 14,
+                            family: "'${fontsSelected[0] || 'system-ui'}', sans-serif"
+                          },
+                          bodyFont: {
+                            size: 12,
+                            family: "'${fontsSelected[0] || 'system-ui'}', sans-serif"
+                          }
+                        }
+                      }
+                    }
+                  });
+                } catch (error) {
+                  console.error('Error initializing chart:', error);
+                }
+              });
+              
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              window.parent.postMessage('contentLoaded', '*');
+            }
+            
+            if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', initCharts);
+            } else {
+              initCharts();
+            }
           </script>
         </body>
       </html>
@@ -143,15 +210,25 @@ export async function exportPdfDocument({
     // Pass variables to the iframe for chart data access
     (iframe.contentWindow as any).templateVariables = variables;
 
-    // Wait for content to be fully loaded and charts to render
     await new Promise<void>((resolve) => {
-      window.addEventListener('message', function handler(event) {
-        if (event.data === 'contentLoaded') {
+      let contentLoaded = false;
+      
+      const handler = (event: MessageEvent) => {
+        if (event.data === 'contentLoaded' && !contentLoaded) {
+          contentLoaded = true;
           window.removeEventListener('message', handler);
-          // Give charts and fonts more time to render
-          setTimeout(resolve, 3000); // Increased timeout for chart rendering
+          setTimeout(resolve, 5000);
         }
-      });
+      };
+      
+      window.addEventListener('message', handler);
+      
+      setTimeout(() => {
+        if (!contentLoaded) {
+          window.removeEventListener('message', handler);
+          resolve();
+        }
+      }, 10000);
     });
 
     // Import required libraries
@@ -166,63 +243,86 @@ export async function exportPdfDocument({
       format,
     });
 
-    // Get the content container
     const contentContainer = iframeDoc.getElementById('content-container');
     if (!contentContainer) {
       throw new Error('Content container not found');
     }
 
-    // Calculate the scale factor to convert pixels to mm
-    const PIXELS_PER_MM = 3.779527559; // Approximately 96 DPI / 25.4 mm per inch
+    const PIXELS_PER_MM = 3.779527559;
+    
+    const fullCanvas = await html2canvas(contentContainer, {
+      scale: 3,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: 'white',
+      logging: false,
+      imageTimeout: 0,
+      removeContainer: false,
+      foreignObjectRendering: true,
+      windowHeight: contentContainer.scrollHeight,
+      height: contentContainer.scrollHeight,
+    });
 
-    // Get the total height of the content in pixels
-    const contentHeightPx = contentContainer.scrollHeight;
+    const imgWidth = pageWidth - 20;
+    const imgHeight = (fullCanvas.height * imgWidth) / fullCanvas.width;
+    
+    const pageHeightMm = pageHeight - 20;
+    const pageHeightPx = pageHeightMm * PIXELS_PER_MM * 3;
+    
+    let heightLeft = fullCanvas.height;
+    let position = 0;
+    let pageNum = 0;
 
-    // Convert to mm
-    const contentHeightMm = contentHeightPx / PIXELS_PER_MM;
-
-    // Calculate available height per page (accounting for margins)
-    const availableHeightMm = pageHeight - 20; // 10mm margin top and bottom
-
-    // Calculate how many pages we need
-    const totalPages = Math.ceil(contentHeightMm / availableHeightMm);
-
-    // For each page, render a portion of the content
-    for (let pageNum = 0; pageNum < totalPages; pageNum += 1) {
-      // If not the first page, add a new page
+    while (heightLeft > 0) {
       if (pageNum > 0) {
         pdf.addPage();
       }
 
-      // Calculate the portion of the content to render for this page
-      const startY = pageNum * availableHeightMm * PIXELS_PER_MM;
-      const heightToRender = Math.min(availableHeightMm * PIXELS_PER_MM, contentHeightPx - startY);
+      const sourceY = position;
+      const sourceHeight = Math.min(pageHeightPx, heightLeft);
+      
+      const pageCanvas = document.createElement('canvas');
+      pageCanvas.width = fullCanvas.width;
+      pageCanvas.height = sourceHeight;
+      
+      const ctx = pageCanvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+        
+        ctx.drawImage(
+          fullCanvas,
+          0,
+          sourceY,
+          fullCanvas.width,
+          sourceHeight,
+          0,
+          0,
+          fullCanvas.width,
+          sourceHeight,
+        );
+      }
 
-      // Create a canvas for this portion
-      const canvas = await html2canvas(contentContainer, {
-        scale: 2, // Higher scale for better quality
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: 'white',
-        windowHeight: contentHeightPx,
-        y: startY,
-        height: heightToRender,
-        logging: false, // Disable logging
-      });
-
-      // Add the canvas to the PDF
-      const imgData = canvas.toDataURL('image/png');
+      const pageImgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+      const pageImgHeight = (sourceHeight * imgWidth) / fullCanvas.width;
+      
       pdf.addImage(
-        imgData,
-        'PNG',
-        10, // X position (10mm margin)
-        10, // Y position (10mm margin)
-        pageWidth - 20, // Width (accounting for margins)
-        heightToRender / PIXELS_PER_MM, // Height in mm
-        '', // Alias
-        'FAST', // Compression
+        pageImgData,
+        'JPEG',
+        10,
+        10,
+        imgWidth,
+        pageImgHeight,
+        undefined,
+        'SLOW',
       );
+
+      heightLeft -= sourceHeight;
+      position += sourceHeight;
+      pageNum += 1;
     }
+    
+    const totalPages = pageNum;
 
     // Clean up
     document.body.removeChild(iframe);
