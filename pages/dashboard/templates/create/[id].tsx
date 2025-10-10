@@ -782,6 +782,7 @@ const CreateTemplate: React.FC = () => {
             description="Be specific about the layout, sections, and design elements you want"
             placeholder="Create a modern invoice template with a clean header, company details section, itemized table with calculations, and a professional footer..."
             minRows={4}
+            autosize
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             styles={{

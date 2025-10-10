@@ -429,7 +429,7 @@ Example of chart usage:
 Return only the HTML code without any explanation or formatting.`;
 
       const msg = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20240620',
+        model: 'claude-3-haiku-20240307',
         max_tokens: 4096,
         messages: [
           {
