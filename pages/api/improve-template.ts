@@ -1,19 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Anthropic from '@anthropic-ai/sdk';
 
-// Initialize the Google Generative AI client with proper error handling
-let genAI: GoogleGenerativeAI;
-try {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is not defined in environment variables');
-  }
-  genAI = new GoogleGenerativeAI(apiKey);
-} catch (error) {
-  // Log initialization error but don't crash the server
-  // We'll handle this in the API route
-  genAI = null as any;
-}
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || '',
+});
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -21,21 +11,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Check if Gemini API is properly initialized
-    if (!genAI) {
-      return res.status(500).json({
-        error:
-          'Google Generative AI client not initialized. Please check your GEMINI_API_KEY environment variable.',
-      });
-    }
-
     const { template, variables } = req.body;
 
     if (!template) {
       return res.status(400).json({ error: 'Template is required' });
     }
-
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const improvePrompt = `Improve this HTML template by making it more visually appealing and modern. The template uses Handlebars variables and Tailwind CSS.
 
@@ -62,9 +42,16 @@ Requirements:
 
 Return only the HTML code without any explanation or formatting.`;
 
-    const result = await model.generateContent(improvePrompt);
-    const response = await result.response;
-    const improvedTemplate = response.text();
+    const msg = await anthropic.messages.create({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 4096,
+      messages: [{ role: 'user', content: improvePrompt }],
+    });
+
+    if (msg.content.length === 0 || msg.content[0].type !== 'text') {
+      throw new Error('Invalid response from AI model');
+    }
+    const improvedTemplate = msg.content[0].text;
 
     return res.status(200).json({
       content: improvedTemplate,

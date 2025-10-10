@@ -155,7 +155,7 @@ const CreateTemplate: React.FC = () => {
       const parsedVariables = JSON.parse(jsonContent);
       setVariables(parsedVariables);
     } catch (error) {
-      console.error('Error parsing JSON content:', error);
+      // Silently handle JSON parsing errors
     }
   }, [jsonContent]);
 
@@ -295,7 +295,6 @@ const CreateTemplate: React.FC = () => {
       }
     } catch (error: any) {
       notificationService.showErrorNotification(error?.message || 'Error uploading images');
-      console.error('Error uploading images:', error);
     } finally {
       setIsUploading(false);
     }
@@ -455,7 +454,6 @@ const CreateTemplate: React.FC = () => {
         }
       }
     } catch (error: any) {
-      console.error('Error generating template:', error);
       notificationService.showErrorNotification(error?.message || 'Error generating template');
     } finally {
       setIsGenerating(false);
@@ -542,7 +540,6 @@ const CreateTemplate: React.FC = () => {
         renderedContent,
       });
     } catch (error) {
-      console.error('Error preparing PDF export:', error);
       notificationService.showErrorNotification(
         'Failed to prepare document for export. Please try again.',
       );
@@ -553,12 +550,8 @@ const CreateTemplate: React.FC = () => {
   useEffect(() => {
     // Only start the tour after the template has loaded
     if (isLoading === RequestStatus.Succeeded) {
-      console.log('Template loaded, preparing to start tour');
-      console.log('Has seen tour:', hasSeenTour);
-
       // Use setTimeout to ensure the DOM is fully rendered
       const tourTimeout = setTimeout(() => {
-        console.log('Starting tour now');
         // Check if tour target elements exist
         const elements = [
           '#editor-container',
@@ -576,29 +569,22 @@ const CreateTemplate: React.FC = () => {
         // Verify all elements exist
         const allElementsExist = elements.every((selector) => {
           const el = document.querySelector(selector);
-          console.log(`Element ${selector} exists:`, !!el);
           return !!el;
         });
 
         if (!allElementsExist) {
-          console.error('Some tour elements are missing from the DOM');
           return;
         }
 
         try {
           // Only show the tour if the user hasn't seen it before
           if (!hasSeenTour) {
-            console.log('User has not seen tour, starting tour');
-            const driverInstance = manuallyStartTour(() => {
-              console.log('Tour completed, updating hasSeenTour');
+            manuallyStartTour(() => {
               setHasSeenTour(true);
             });
-            console.log('Tour driver instance:', driverInstance);
-          } else {
-            console.log('User has already seen tour, not showing automatically');
           }
         } catch (error) {
-          console.error('Error starting tour:', error);
+          // Silently handle tour errors
         }
 
         setShowTourButton(true);
@@ -796,6 +782,7 @@ const CreateTemplate: React.FC = () => {
             description="Be specific about the layout, sections, and design elements you want"
             placeholder="Create a modern invoice template with a clean header, company details section, itemized table with calculations, and a professional footer..."
             minRows={4}
+            autosize
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             styles={{

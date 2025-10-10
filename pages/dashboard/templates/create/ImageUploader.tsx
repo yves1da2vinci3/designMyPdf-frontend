@@ -113,7 +113,6 @@ function ImageUploader({ onGenerate, onClose }: ImageUploaderProps) {
         throw new Error('Failed to generate template');
       }
     } catch (error: any) {
-      console.error('Error generating template:', error);
       notificationService.showErrorNotification(error?.message || 'Error generating template');
     } finally {
       setIsGenerating(false);

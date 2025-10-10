@@ -39,7 +39,7 @@ export default function TemplateItem({
       await templateApi.deleteTemplate(id);
       DeleteTemplateFromClient(id);
     } catch (error) {
-      console.error('Error deleting template:', error);
+      // Silently handle delete errors
     }
   };
 

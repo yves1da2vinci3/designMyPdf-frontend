@@ -126,7 +126,8 @@ export const templatesDashboardTourSteps: DriveStep[] = [
     element: '#create-folder-button',
     popover: {
       title: 'Create New Folder',
-      description: 'Organize your templates by creating folders to group related templates together.',
+      description:
+        'Organize your templates by creating folders to group related templates together.',
       side: 'bottom' as const,
       align: 'center' as const,
     },
@@ -135,7 +136,8 @@ export const templatesDashboardTourSteps: DriveStep[] = [
     element: '#folders-section',
     popover: {
       title: 'Folders',
-      description: 'Navigate between different folders to organize your templates. You can also drag and drop templates to move them between folders.',
+      description:
+        'Navigate between different folders to organize your templates. You can also drag and drop templates to move them between folders.',
       side: 'right' as const,
       align: 'start' as const,
     },
@@ -153,7 +155,8 @@ export const templatesDashboardTourSteps: DriveStep[] = [
     element: '#templates-grid',
     popover: {
       title: 'Templates',
-      description: 'Your templates are displayed here. Click on a template to edit it, or use the menu to perform other actions.',
+      description:
+        'Your templates are displayed here. Click on a template to edit it, or use the menu to perform other actions.',
       side: 'top' as const,
       align: 'center' as const,
     },
@@ -162,7 +165,8 @@ export const templatesDashboardTourSteps: DriveStep[] = [
     element: '#template-actions',
     popover: {
       title: 'Template Actions',
-      description: 'Each template has a menu with actions like edit, duplicate, download, or delete.',
+      description:
+        'Each template has a menu with actions like edit, duplicate, download, or delete.',
       side: 'left' as const,
       align: 'center' as const,
     },
@@ -270,12 +274,15 @@ export function startTemplatesDashboardTour(
 }
 
 // Function to manually start the tour (for a button or help menu)
-export function manuallyStartTour(onComplete?: () => void, tourType: 'editor' | 'dashboard' = 'editor'): Driver | undefined {
+export function manuallyStartTour(
+  onComplete?: () => void,
+  tourType: 'editor' | 'dashboard' = 'editor',
+): Driver | undefined {
   console.log('manuallyStartTour called for', tourType);
 
   try {
     console.log('Creating driver instance for manual tour');
-    
+
     const steps = tourType === 'editor' ? templateEditorTourSteps : templatesDashboardTourSteps;
 
     const driverObj = driver({
@@ -315,7 +322,8 @@ export function manuallyStartTour(onComplete?: () => void, tourType: 'editor' | 
 export function resetTour(tourType: 'editor' | 'dashboard' = 'editor'): void {
   console.log('Resetting tour state for', tourType);
   if (typeof window !== 'undefined') {
-    const key = tourType === 'editor' ? 'hasSeenTemplateEditorTour' : 'hasSeenTemplatesDashboardTour';
+    const key =
+      tourType === 'editor' ? 'hasSeenTemplateEditorTour' : 'hasSeenTemplatesDashboardTour';
     localStorage.removeItem(key);
     console.log('Tour state reset successfully');
   } else {
