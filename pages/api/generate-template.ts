@@ -155,26 +155,30 @@ function extractVariablesFromTemplate(
     });
   }
 
-  const variableRegex = /{{(?!#|\/)([\w.]+)(?:\s|}})/g;
+  const variableRegex = /\{\{(?!#|\/|else)([^}]+)\}\}/g;
   let match;
 
   while ((match = variableRegex.exec(template)) !== null) {
-    const rawVariable = match[1].trim();
+    const content = match[1].trim();
 
-    if (rawVariable && !rawVariable.includes('this.') && !rawVariable.startsWith('if ') && !rawVariable.startsWith('unless ')) {
-      const varPath = rawVariable.split('.');
-      const rootVar = varPath[0];
+    if (!(content.startsWith('if ') || content.startsWith('unless ') || content.includes('this.'))) {
+      const rawVariable = content.split(/\s/)[0];
 
-      if (!variables.has(rootVar)) {
-        if (varPath.length > 1) {
-          variables.set(rootVar, { type: 'object', path: [rootVar] });
-        } else {
-          variables.set(rootVar, { type: 'value', path: [rootVar] });
+      if (rawVariable) {
+        const varPath = rawVariable.split('.');
+        const rootVar = varPath[0];
+
+        if (!variables.has(rootVar)) {
+          if (varPath.length > 1) {
+            variables.set(rootVar, { type: 'object', path: [rootVar] });
+          } else {
+            variables.set(rootVar, { type: 'value', path: [rootVar] });
+          }
         }
-      }
 
-      if (varPath.length > 1 && !variables.has(rawVariable)) {
-        variables.set(rawVariable, { type: 'value', path: varPath });
+        if (varPath.length > 1 && !variables.has(rawVariable)) {
+          variables.set(rawVariable, { type: 'value', path: varPath });
+        }
       }
     }
   }
@@ -416,52 +420,110 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    const templatePrompt = `Generate inner HTML content for a professional, modern template based on: ${prompt}
+    const templatePrompt = `You are an EXPERT UI/UX designer. Create a STUNNING, PROFESSIONAL, MODERN template for: ${prompt}
 
-HANDLEBARS VARIABLES:
-- Simple values: {{variable}}
-- Arrays: {{#each arrayName}}{{this.property}}{{/each}}
-- Nested objects: {{object.property}}
-- Conditionals: {{#if condition}}...{{/if}}
+🎨 DESIGN EXCELLENCE:
 
-CHARTS & STATISTICS:
-For any data visualization, statistics, graphs, or metrics:
-- Use Chart.js canvas: <canvas id="uniqueId" data-chart-type="bar|pie|line|doughnut|radar|polarArea" data-chart-data='{{charts.chartName}}'></canvas>
-- Chart types: bar, pie, line, doughnut, radar, polarArea, bubble, scatter
-- Examples: {{charts.salesChart}}, {{charts.revenueGraph}}, {{charts.performancePie}}
-- For simple stat cards with numbers, use variables like {{totalSales}}, {{activeUsers}}, etc.
+1. **Color Palette** (Professional & Modern):
+   - Primary: bg-blue-600, bg-indigo-600, bg-purple-600
+   - Neutral: bg-gray-50, bg-gray-100, bg-slate-100, text-gray-900, text-gray-700
+   - Accents: bg-emerald-500, bg-rose-500, bg-amber-500
+   - Gradients: bg-gradient-to-r from-blue-500 to-purple-600
+   - Opacity: bg-blue-500/10, text-gray-700/80
 
-DESIGN REQUIREMENTS:
-- Use modern, professional Tailwind CSS classes
-- Professional color schemes: bg-blue-500, bg-gray-100, text-gray-700, etc.
-- Proper spacing: p-4, p-6, p-8, m-4, gap-4, space-y-6
-- Shadows and borders: shadow-md, shadow-lg, border, border-gray-300, rounded-lg
-- Typography: text-sm, text-lg, text-2xl, font-bold, font-semibold
-- Responsive: use sm:, md:, lg: breakpoints
-- Clean visual hierarchy and alignment
+2. **Typography Hierarchy**:
+   - Headers: font-extrabold text-4xl, font-bold text-3xl tracking-tight
+   - Subheaders: font-semibold text-xl, font-medium text-lg
+   - Body: text-base leading-relaxed, text-sm
+   - Labels: text-xs font-medium uppercase tracking-wide text-gray-500
+   - Line height: leading-tight for headers, leading-relaxed for body
 
-STRUCTURE:
-- Use semantic HTML5 tags (header, main, section, article, aside, footer)
-- Organize content logically
-- Add brief comments for major sections
+3. **Spacing & Layout** (CRITICAL):
+   - Generous whitespace: p-8, p-12, py-16
+   - Section spacing: space-y-8, space-y-12, space-y-16
+   - Grid/Flex gaps: gap-6, gap-8, gap-12
+   - Container: max-w-7xl mx-auto px-6
+
+4. **Visual Depth**:
+   - Cards: bg-white rounded-xl shadow-lg p-8
+   - Shadows: shadow-sm, shadow-md, shadow-lg, shadow-xl
+   - Borders: border border-gray-200
+   - Rounded: rounded-lg, rounded-xl, rounded-2xl
+   - Transitions: transition-all duration-300 ease-in-out
+   - Hover: hover:shadow-2xl hover:scale-105 hover:-translate-y-1
+
+5. **Modern Elements**:
+   - Cards with depth and hover effects
+   - Gradient backgrounds for sections
+   - Accent colors for CTAs: bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg
+   - Stat cards: bg-white rounded-xl p-6 shadow-md with large numbers text-4xl font-bold
+
+📊 CHARTS & VISUALIZATIONS:
+- Canvas: <canvas id="uniqueId" data-chart-type="[type]" data-chart-data='{{charts.chartName}}'></canvas>
+- Types: bar, pie, line, doughnut, radar, polarArea, bubble, scatter
+- Examples: {{charts.salesChart}}, {{charts.monthlyRevenue}}, {{charts.userGrowth}}
+- Stat cards: {{totalSales}}, {{activeUsers}}, {{conversionRate}}
+
+🔧 HANDLEBARS TEMPLATES (MANDATORY):
+You MUST use Handlebars variables for ALL dynamic content:
+- Simple values: {{variable}} - for any text, numbers, dates
+- Object properties: {{user.name}}, {{company.address}}, {{invoice.number}}
+- Arrays/Lists: {{#each items}}{{this.name}} {{this.price}}{{/each}}
+- Conditionals: {{#if showSection}}...{{/if}}
+
+IMPORTANT: Do NOT use hardcoded values. Use variables for:
+- Names, addresses, dates, numbers, prices, quantities
+- All text content that should be dynamic
+- Product/item lists, company info, user data
+- Statistics, metrics, totals
+
+Examples:
+- Company name: {{companyName}} NOT "Acme Corp"
+- Date: {{invoiceDate}} NOT "2024-01-01"
+- Items list: {{#each products}}{{this.name}} - {{this.price}}{{/each}}
+
+📐 LAYOUT:
+- Grid: grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8
+- Flex: flex items-center justify-between
+- Responsive: Base styles, then md:, lg:, xl:
+
+✨ PROFESSIONAL TOUCHES:
+- Spacing in multiples of 4: 8, 12, 16, 20, 24
+- Clear visual hierarchy
+- Subtle dividers: border-b border-gray-200
+- Balanced composition
+
+🎯 QUALITY STANDARDS:
+✓ Professional color scheme
+✓ Generous spacing
+✓ Clear hierarchy
+✓ Modern layout
+✓ Smooth interactions
 
 OUTPUT:
-- Return ONLY inner HTML (no <!DOCTYPE>, <html>, <head>, <body> tags)
-- No scripts, no explanations
-- Clean, production-ready code
+- ONLY inner HTML (no DOCTYPE, html, head, body)
+- NO scripts, NO explanations
+- Semantic HTML5
+- Professional Tailwind CSS
 
-Return the HTML code now:`;
+CREATE SOMETHING BEAUTIFUL. Return HTML now:`;
 
     const msg = await anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 4096,
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 8192,
       messages: [{ role: 'user', content: templatePrompt }],
     });
 
     if (msg.content.length === 0 || msg.content[0].type !== 'text') {
       throw new Error('Invalid response from AI model');
     }
-    const template = msg.content[0].text;
+    let template = msg.content[0].text.trim();
+
+    if (template.startsWith('```html')) {
+      template = template.replace(/^```html\n?/g, '').replace(/```\s*$/g, '').trim();
+    } else if (template.startsWith('```')) {
+      template = template.replace(/^```\n?/g, '').replace(/```\s*$/g, '').trim();
+    }
 
     const extractedVars = extractVariablesFromTemplate(template);
     const suggestedVariables = buildVariableStructure(extractedVars, template);

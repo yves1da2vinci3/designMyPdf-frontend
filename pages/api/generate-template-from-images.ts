@@ -187,26 +187,30 @@ function extractVariablesFromTemplate(
     });
   }
 
-  const variableRegex = /{{(?!#|\/)([\w.]+)(?:\s|}})/g;
+  const variableRegex = /\{\{(?!#|\/|else)([^}]+)\}\}/g;
   let match;
 
   while ((match = variableRegex.exec(template)) !== null) {
-    const rawVariable = match[1].trim();
+    const content = match[1].trim();
 
-    if (rawVariable && !rawVariable.includes('this.') && !rawVariable.startsWith('if ') && !rawVariable.startsWith('unless ')) {
-      const varPath = rawVariable.split('.');
-      const rootVar = varPath[0];
+    if (!(content.startsWith('if ') || content.startsWith('unless ') || content.includes('this.'))) {
+      const rawVariable = content.split(/\s/)[0];
 
-      if (!variables.has(rootVar)) {
-        if (varPath.length > 1) {
-          variables.set(rootVar, { type: 'object', path: [rootVar] });
-        } else {
-          variables.set(rootVar, { type: 'value', path: [rootVar] });
+      if (rawVariable) {
+        const varPath = rawVariable.split('.');
+        const rootVar = varPath[0];
+
+        if (!variables.has(rootVar)) {
+          if (varPath.length > 1) {
+            variables.set(rootVar, { type: 'object', path: [rootVar] });
+          } else {
+            variables.set(rootVar, { type: 'value', path: [rootVar] });
+          }
         }
-      }
 
-      if (varPath.length > 1 && !variables.has(rawVariable)) {
-        variables.set(rawVariable, { type: 'value', path: varPath });
+        if (varPath.length > 1 && !variables.has(rawVariable)) {
+          variables.set(rawVariable, { type: 'value', path: varPath });
+        }
       }
     }
   }
@@ -491,52 +495,108 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }),
       );
 
-      const templatePrompt = `Analyze the provided images carefully and generate inner HTML content that faithfully reproduces the design. User requirement: ${prompt}
+      const templatePrompt = `You are an EXPERT UI/UX designer with a keen eye for detail. Analyze the provided images with EXTREME precision and create a PIXEL-PERFECT, STUNNING reproduction.
 
-CRITICAL IMAGE ANALYSIS:
-1. Study the layout, spacing, alignment, and visual hierarchy from the images
-2. Observe exact color schemes, font sizes, and styling patterns
-3. Identify all sections: headers, content blocks, tables, lists, footers
-4. Detect any charts, graphs, or data visualizations (bar charts, pie charts, line graphs, statistics cards, etc.)
-5. Notice borders, shadows, rounded corners, backgrounds, and decorative elements
-6. Pay attention to spacing between elements (margins, padding, gaps)
+User requirement: ${prompt}
 
-HANDLEBARS VARIABLES:
-- Use {{variable}} for simple values
-- For arrays: {{#each arrayName}}{{this.property}}{{/each}}
-- For nested objects: {{object.property}}
-- For conditionals: {{#if condition}}...{{/if}}
+🎨 DESIGN ANALYSIS - Study EVERY detail:
 
-CHARTS & STATISTICS:
-When you see charts, graphs, or statistics in the images:
-- Use Chart.js canvas elements: <canvas id="uniqueId" data-chart-type="bar|pie|line|doughnut|radar" data-chart-data='{{charts.chartName}}'></canvas>
-- Supported types: bar, pie, line, doughnut, radar, polarArea, bubble, scatter
-- Store chart data in charts object: {{charts.salesChart}}, {{charts.performancePie}}, etc.
-- For stats cards with numbers, use appropriate Handlebars variables
+1. **Colors** (Extract EXACT values):
+   - Primary colors, accent colors, text colors
+   - Background gradients or solid colors
+   - Hover states, active states
+   - Use precise Tailwind: bg-blue-600, bg-slate-50, bg-gray-900
+   - Gradients: bg-gradient-to-r from-blue-500 to-purple-600
+   - Opacity: bg-blue-500/10, text-gray-700/80
 
-DESIGN FIDELITY:
-- Match exact colors from images using Tailwind classes (bg-blue-500, text-gray-700, etc.)
-- Reproduce spacing: p-4, p-6, p-8, m-2, m-4, gap-4, space-y-6, etc.
-- Match borders and shadows: border, border-gray-300, shadow-md, shadow-lg, rounded-lg, etc.
-- Preserve layout structure: grid, flex, columns, use same number of columns
-- Match typography: text-sm, text-lg, text-2xl, font-bold, font-semibold, etc.
+2. **Typography Hierarchy**:
+   - Headers: font-extrabold text-4xl, font-bold text-3xl
+   - Subheaders: font-semibold text-xl, font-medium text-lg
+   - Body: text-base, text-sm font-normal
+   - Labels: text-xs font-medium uppercase tracking-wide
+   - Letter spacing: tracking-tight, tracking-normal, tracking-wide
+   - Line height: leading-tight, leading-relaxed, leading-loose
 
-STYLING WITH TAILWIND:
-- Use modern, professional Tailwind classes
-- Ensure responsive design: sm:, md:, lg: prefixes
-- Add hover states where appropriate
-- Use semantic HTML5 tags
+3. **Spacing & Layout** (CRITICAL for beauty):
+   - Generous whitespace: p-8, p-12, py-16, px-20
+   - Section spacing: space-y-8, space-y-12, space-y-16
+   - Grid/Flex gaps: gap-6, gap-8, gap-12
+   - Margins: mb-8, mt-12, mx-auto
+   - Container width: max-w-7xl, max-w-6xl mx-auto
 
-OUTPUT RULES:
-- Return ONLY inner HTML (no <!DOCTYPE>, <html>, <head>, <body> tags)
-- No scripts, no explanations, just pure HTML
-- Add brief comments for major sections only
+4. **Visual Depth & Polish**:
+   - Shadows: shadow-sm, shadow, shadow-md, shadow-lg, shadow-xl, shadow-2xl
+   - Borders: border border-gray-200, border-2 border-blue-500
+   - Rounded corners: rounded-lg, rounded-xl, rounded-2xl, rounded-full
+   - Transitions: transition-all duration-300 ease-in-out
+   - Hover effects: hover:shadow-2xl hover:scale-105 hover:-translate-y-1 hover:bg-blue-700
 
-Return the HTML code now:`;
+5. **Layout Structure**:
+   - Grid systems: grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8
+   - Flex containers: flex items-center justify-between gap-4
+   - Cards: bg-white rounded-xl shadow-lg p-8
+   - Sections: bg-gradient-to-br from-gray-50 to-blue-50
+
+📊 CHARTS & DATA VISUALIZATION:
+When you see charts, graphs, statistics, metrics:
+- Canvas syntax: <canvas id="uniqueId" data-chart-type="[type]" data-chart-data='{{charts.chartName}}'></canvas>
+- Types: bar, pie, line, doughnut, radar, polarArea, bubble, scatter
+- Examples: {{charts.salesChart}}, {{charts.revenueByMonth}}, {{charts.userGrowth}}
+- Stat cards: Use {{totalSales}}, {{activeUsers}}, {{conversionRate}} with large text-4xl font-bold
+
+🔧 HANDLEBARS TEMPLATES (MANDATORY):
+You MUST use Handlebars variables for ALL dynamic content:
+- Simple values: {{variable}} - for any text, numbers, dates
+- Object properties: {{user.name}}, {{company.address}}, {{invoice.number}}
+- Arrays/Lists: {{#each items}}{{this.name}} {{this.price}}{{/each}}
+- Conditionals: {{#if showSection}}...{{/if}}
+
+IMPORTANT: Do NOT use hardcoded values. Use variables for:
+- Names, addresses, dates, numbers, prices, quantities
+- All text content that should be dynamic
+- Product/item lists, company info, user data
+- Statistics, metrics, totals
+
+Examples:
+- Company name: {{companyName}} NOT "Acme Corp"
+- Date: {{invoiceDate}} NOT "2024-01-01"
+- Items list: {{#each products}}{{this.name}} - {{this.price}}{{/each}}
+
+📐 RESPONSIVE DESIGN:
+- Mobile-first: Base styles, then md:, lg:, xl:
+- Hide/show: hidden md:block, block md:hidden
+- Responsive grid: grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
+- Responsive text: text-2xl md:text-3xl lg:text-4xl
+- Responsive spacing: p-4 md:p-8 lg:p-12
+
+✨ PROFESSIONAL TOUCHES:
+- Consistent spacing (multiples of 4: 8, 12, 16, 20, 24, 32)
+- Visual hierarchy with size, weight, and color
+- Subtle dividers: border-b border-gray-200
+- Accent colors for CTAs: bg-blue-600 hover:bg-blue-700 text-white
+- Icon placement: inline-flex items-center gap-2
+
+🎯 QUALITY REQUIREMENTS:
+✓ Match image colors EXACTLY (analyze RGB values)
+✓ Spacing must be generous and balanced
+✓ Typography creates clear hierarchy
+✓ Shadows add depth without being excessive
+✓ Layout is perfectly aligned and structured
+✓ Hover states are smooth and professional
+✓ Design feels modern and polished
+
+OUTPUT FORMAT:
+- ONLY inner HTML (no DOCTYPE, html, head, body)
+- NO JavaScript, NO explanations
+- Clean semantic HTML5
+- Professional Tailwind CSS classes
+- Brief section comments ONLY
+
+DELIVER A STUNNING, PROFESSIONAL, PIXEL-PERFECT DESIGN. Return HTML now:`;
 
       const msg = await anthropic.messages.create({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 4096,
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 8192,
         messages: [
           {
             role: 'user',
@@ -554,7 +614,13 @@ Return the HTML code now:`;
       if (msg.content.length === 0 || msg.content[0].type !== 'text') {
         throw new Error('Invalid response from AI model');
       }
-      const template = msg.content[0].text;
+      let template = msg.content[0].text.trim();
+
+      if (template.startsWith('```html')) {
+        template = template.replace(/^```html\n?/g, '').replace(/```\s*$/g, '').trim();
+      } else if (template.startsWith('```')) {
+        template = template.replace(/^```\n?/g, '').replace(/```\s*$/g, '').trim();
+      }
 
       const extractedVars = extractVariablesFromTemplate(template);
       const suggestedVariables = buildVariableStructure(extractedVars, template);
