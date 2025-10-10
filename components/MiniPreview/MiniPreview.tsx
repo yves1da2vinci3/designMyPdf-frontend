@@ -51,16 +51,10 @@ function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
       }
 
       const templateData = Array.isArray(data) ? {} : (data || {});
-      
-      console.log('MiniPreview - htmlContent length:', htmlContent?.length);
-      console.log('MiniPreview - data:', templateData);
-      console.log('MiniPreview - fonts:', fonts);
-      
+
       const template = Handlebars.compile(htmlContent);
       const rendered = template(templateData);
-      
-      console.log('MiniPreview - rendered length:', rendered?.length);
-      
+
       setIframeKey(prev => prev + 1);
 
       // Chart initialization script
@@ -182,13 +176,11 @@ function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
 </html>`;
       setRenderedContent(fullContent);
     } catch (error: any) {
-      console.error('MiniPreview render error:', error);
       setRenderedContent(`
         <html>
           <body style="color: red; padding: 1rem; font-family: sans-serif; font-size: 10px;">
             <strong>Error rendering template:</strong><br/>
-            ${error.message || 'Unknown error'}<br/><br/>
-            <small>Check console for details</small>
+            ${error.message || 'Unknown error'}
           </body>
         </html>
       `);

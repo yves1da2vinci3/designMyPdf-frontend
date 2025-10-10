@@ -127,19 +127,19 @@ function extractVariablesFromTemplate(
 
   const eachBlockRegex = /{{#each\s+(\w+)}}([\s\S]*?){{\/each}}/g;
   let eachMatch;
-  
+
   while ((eachMatch = eachBlockRegex.exec(template)) !== null) {
     const arrayName = eachMatch[1];
     const blockContent = eachMatch[2];
     const itemProps = new Set<string>();
-    
+
     const thisRegex = /{{this\.(\w+)}}/g;
     let propMatch;
-    
+
     while ((propMatch = thisRegex.exec(blockContent)) !== null) {
       itemProps.add(propMatch[1]);
     }
-    
+
     const arrayItemStructure = Array.from(itemProps).reduce(
       (obj, prop) => {
         obj[prop] = getExampleValue(prop);
@@ -147,7 +147,7 @@ function extractVariablesFromTemplate(
       },
       {} as Record<string, any>,
     );
-    
+
     variables.set(arrayName, {
       type: 'array',
       path: [arrayName],
@@ -160,21 +160,21 @@ function extractVariablesFromTemplate(
 
   while ((match = variableRegex.exec(template)) !== null) {
     const rawVariable = match[1].trim();
-    
+
     if (rawVariable && !rawVariable.includes('this.') && !rawVariable.startsWith('if ') && !rawVariable.startsWith('unless ')) {
-      const path = rawVariable.split('.');
-      const rootVar = path[0];
+      const varPath = rawVariable.split('.');
+      const rootVar = varPath[0];
 
       if (!variables.has(rootVar)) {
-        if (path.length > 1) {
+        if (varPath.length > 1) {
           variables.set(rootVar, { type: 'object', path: [rootVar] });
         } else {
           variables.set(rootVar, { type: 'value', path: [rootVar] });
         }
       }
-      
-      if (path.length > 1 && !variables.has(rawVariable)) {
-        variables.set(rawVariable, { type: 'value', path });
+
+      if (varPath.length > 1 && !variables.has(rawVariable)) {
+        variables.set(rawVariable, { type: 'value', path: varPath });
       }
     }
   }
@@ -187,6 +187,7 @@ function buildVariableStructure(
     string,
     { type: 'array' | 'object' | 'value'; path: string[]; arrayItemStructure?: Record<string, any> }
   >,
+  template?: string,
 ): Record<string, any> {
   const structure: Record<string, any> = {};
 
@@ -231,14 +232,32 @@ function buildVariableStructure(
     }
   }
 
-  // Add chart data if template contains chart placeholders
-  const chartTypes = Object.keys(CHART_TYPES) as Array<keyof typeof CHART_TYPES>;
-  chartTypes.forEach((type) => {
-    if (structure.charts?.[type] || structure[`${type}Chart`]) {
-      structure.charts = structure.charts || {};
-      structure.charts[type] = generateChartData(type);
+  if (template) {
+    const chartRegex = /data-chart-type=["'](\w+)["']\s+data-chart-data=["']{{charts\.(\w+)}}["']/g;
+    let chartMatch;
+    const detectedCharts = new Map<string, string>();
+
+    while ((chartMatch = chartRegex.exec(template)) !== null) {
+      const chartType = chartMatch[1];
+      const chartName = chartMatch[2];
+      detectedCharts.set(chartName, chartType);
     }
-  });
+
+    if (detectedCharts.size > 0 || variables.has('charts')) {
+      structure.charts = structure.charts || {};
+
+      Array.from(detectedCharts.entries()).forEach(([chartName, chartType]) => {
+        if (chartType && CHART_TYPES[chartType as keyof typeof CHART_TYPES]) {
+          structure.charts[chartName] = generateChartData(chartType as keyof typeof CHART_TYPES);
+        }
+      });
+
+      if (Object.keys(structure.charts).length === 0 && variables.has('charts')) {
+        structure.charts.salesChart = generateChartData('bar');
+        structure.charts.statsChart = generateChartData('pie');
+      }
+    }
+  }
 
   return structure;
 }
@@ -397,25 +416,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    const templatePrompt = `Generate only the inner HTML content (without <!DOCTYPE>, <html>, <head>, or <body> tags) for a template with this requirement: ${prompt}
+    const templatePrompt = `Generate inner HTML content for a professional, modern template based on: ${prompt}
 
-Requirements:
-1. Use Handlebars syntax for variables: {{variable}}
-2. For arrays, use {{#each arrayName}} and {{this.property}}
-3. For nested objects, use dot notation: {{object.property}}
-4. Use semantic HTML elements
-5. Use Tailwind CSS classes for styling
-6. Add comments for major sections
-7. Make it responsive with Tailwind classes
-8. Include Chart.js canvas elements where appropriate (e.g., for statistics, data visualization)
-9. Use chart data from the 'charts' object (e.g., {{charts.pie}} for pie chart data)
-10. Do not include any <html>, <head>, <body> tags or scripts
-11. Only return the inner HTML that would go inside the content div
+HANDLEBARS VARIABLES:
+- Simple values: {{variable}}
+- Arrays: {{#each arrayName}}{{this.property}}{{/each}}
+- Nested objects: {{object.property}}
+- Conditionals: {{#if condition}}...{{/if}}
 
-Example of chart usage:
-<canvas id="myChart" data-chart-type="pie" data-chart-data='{{charts.pie}}'></canvas>
+CHARTS & STATISTICS:
+For any data visualization, statistics, graphs, or metrics:
+- Use Chart.js canvas: <canvas id="uniqueId" data-chart-type="bar|pie|line|doughnut|radar|polarArea" data-chart-data='{{charts.chartName}}'></canvas>
+- Chart types: bar, pie, line, doughnut, radar, polarArea, bubble, scatter
+- Examples: {{charts.salesChart}}, {{charts.revenueGraph}}, {{charts.performancePie}}
+- For simple stat cards with numbers, use variables like {{totalSales}}, {{activeUsers}}, etc.
 
-Return only the HTML code without any explanation or formatting.`;
+DESIGN REQUIREMENTS:
+- Use modern, professional Tailwind CSS classes
+- Professional color schemes: bg-blue-500, bg-gray-100, text-gray-700, etc.
+- Proper spacing: p-4, p-6, p-8, m-4, gap-4, space-y-6
+- Shadows and borders: shadow-md, shadow-lg, border, border-gray-300, rounded-lg
+- Typography: text-sm, text-lg, text-2xl, font-bold, font-semibold
+- Responsive: use sm:, md:, lg: breakpoints
+- Clean visual hierarchy and alignment
+
+STRUCTURE:
+- Use semantic HTML5 tags (header, main, section, article, aside, footer)
+- Organize content logically
+- Add brief comments for major sections
+
+OUTPUT:
+- Return ONLY inner HTML (no <!DOCTYPE>, <html>, <head>, <body> tags)
+- No scripts, no explanations
+- Clean, production-ready code
+
+Return the HTML code now:`;
 
     const msg = await anthropic.messages.create({
       model: 'claude-3-haiku-20240307',
@@ -428,11 +463,9 @@ Return only the HTML code without any explanation or formatting.`;
     }
     const template = msg.content[0].text;
 
-    // Extract and analyze variables from the template
     const extractedVars = extractVariablesFromTemplate(template);
-    const suggestedVariables = buildVariableStructure(extractedVars);
+    const suggestedVariables = buildVariableStructure(extractedVars, template);
 
-    // Return both the template and suggested variables
     return res.status(200).json({
       content: template,
       suggestedVariables,
