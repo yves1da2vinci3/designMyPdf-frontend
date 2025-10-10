@@ -161,26 +161,24 @@ function extractVariablesFromTemplate(
   while ((match = variableRegex.exec(template)) !== null) {
     const content = match[1].trim();
 
-    if (content.startsWith('if ') || content.startsWith('unless ') || content.includes('this.')) {
-      continue;
-    }
+    if (!(content.startsWith('if ') || content.startsWith('unless ') || content.includes('this.'))) {
+      const rawVariable = content.split(/\s/)[0];
 
-    const rawVariable = content.split(/\s/)[0];
+      if (rawVariable) {
+        const varPath = rawVariable.split('.');
+        const rootVar = varPath[0];
 
-    if (rawVariable) {
-      const varPath = rawVariable.split('.');
-      const rootVar = varPath[0];
-
-      if (!variables.has(rootVar)) {
-        if (varPath.length > 1) {
-          variables.set(rootVar, { type: 'object', path: [rootVar] });
-        } else {
-          variables.set(rootVar, { type: 'value', path: [rootVar] });
+        if (!variables.has(rootVar)) {
+          if (varPath.length > 1) {
+            variables.set(rootVar, { type: 'object', path: [rootVar] });
+          } else {
+            variables.set(rootVar, { type: 'value', path: [rootVar] });
+          }
         }
-      }
 
-      if (varPath.length > 1 && !variables.has(rawVariable)) {
-        variables.set(rawVariable, { type: 'value', path: varPath });
+        if (varPath.length > 1 && !variables.has(rawVariable)) {
+          variables.set(rawVariable, { type: 'value', path: varPath });
+        }
       }
     }
   }
