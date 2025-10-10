@@ -110,7 +110,7 @@ export default function TemplateItem({
           background: '#f9f9f9',
         }}
       >
-        <MiniPreview htmlContent={content || ''} data={variables || []} fonts={fonts || []} />
+        <MiniPreview htmlContent={content || ''} data={variables || {}} fonts={fonts || []} />
       </Box>
 
       <Group justify="space-between" mt="auto">
