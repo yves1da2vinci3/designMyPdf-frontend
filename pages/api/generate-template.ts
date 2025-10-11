@@ -161,7 +161,9 @@ function extractVariablesFromTemplate(
   while ((match = variableRegex.exec(template)) !== null) {
     const content = match[1].trim();
 
-    if (!(content.startsWith('if ') || content.startsWith('unless ') || content.includes('this.'))) {
+    if (
+      !(content.startsWith('if ') || content.startsWith('unless ') || content.includes('this.'))
+    ) {
       const rawVariable = content.split(/\s/)[0];
 
       if (rawVariable) {
@@ -272,13 +274,26 @@ function getExampleValue(prop: string): any {
   if (propLower.includes('firstname') || propLower.includes('fname')) {
     return faker.person.firstName();
   }
-  if (propLower.includes('lastname') || propLower.includes('lname') || propLower.includes('surname')) {
+  if (
+    propLower.includes('lastname') ||
+    propLower.includes('lname') ||
+    propLower.includes('surname')
+  ) {
     return faker.person.lastName();
   }
-  if (propLower.includes('fullname') || propLower.includes('name') || propLower.includes('author') || propLower.includes('client')) {
+  if (
+    propLower.includes('fullname') ||
+    propLower.includes('name') ||
+    propLower.includes('author') ||
+    propLower.includes('client')
+  ) {
     return faker.person.fullName();
   }
-  if (propLower.includes('jobtitle') || propLower.includes('position') || propLower.includes('role')) {
+  if (
+    propLower.includes('jobtitle') ||
+    propLower.includes('position') ||
+    propLower.includes('role')
+  ) {
     return faker.person.jobTitle();
   }
   if (propLower.includes('gender') || propLower.includes('sex')) {
@@ -288,7 +303,12 @@ function getExampleValue(prop: string): any {
   if (propLower.includes('email') || propLower.includes('mail')) {
     return faker.internet.email();
   }
-  if (propLower.includes('phone') || propLower.includes('tel') || propLower.includes('mobile') || propLower.includes('contact')) {
+  if (
+    propLower.includes('phone') ||
+    propLower.includes('tel') ||
+    propLower.includes('mobile') ||
+    propLower.includes('contact')
+  ) {
     return faker.phone.number();
   }
   if (propLower.includes('address')) return faker.location.streetAddress();
@@ -301,42 +321,80 @@ function getExampleValue(prop: string): any {
   if (propLower.includes('country') || propLower.includes('nation')) {
     return faker.location.country();
   }
-  if (propLower.includes('state') || propLower.includes('province') || propLower.includes('region')) {
+  if (
+    propLower.includes('state') ||
+    propLower.includes('province') ||
+    propLower.includes('region')
+  ) {
     return faker.location.state();
   }
   if (propLower.includes('zipcode') || propLower.includes('zip') || propLower.includes('postal')) {
     return faker.location.zipCode();
   }
 
-  if (propLower.includes('company') || propLower.includes('organization') || propLower.includes('business')) {
+  if (
+    propLower.includes('company') ||
+    propLower.includes('organization') ||
+    propLower.includes('business')
+  ) {
     return faker.company.name();
   }
   if (propLower.includes('department') || propLower.includes('division')) {
     return faker.commerce.department();
   }
 
-  if (propLower.includes('price') || propLower.includes('unitprice') || propLower.includes('cost')) {
+  if (
+    propLower.includes('price') ||
+    propLower.includes('unitprice') ||
+    propLower.includes('cost')
+  ) {
     return Number(faker.commerce.price());
   }
-  if (propLower.includes('amount') && !propLower.includes('qty') && !propLower.includes('quantity')) {
+  if (
+    propLower.includes('amount') &&
+    !propLower.includes('qty') &&
+    !propLower.includes('quantity')
+  ) {
     return Number(faker.commerce.price());
   }
-  if (propLower.includes('product') || propLower.includes('item') || propLower.includes('service')) {
+  if (
+    propLower.includes('product') ||
+    propLower.includes('item') ||
+    propLower.includes('service')
+  ) {
     return faker.commerce.productName();
   }
-  if (propLower.includes('description') || propLower.includes('details') || propLower.includes('notes')) {
+  if (
+    propLower.includes('description') ||
+    propLower.includes('details') ||
+    propLower.includes('notes')
+  ) {
     return faker.commerce.productDescription();
   }
-  if (propLower.includes('quantity') || propLower.includes('qty') || propLower.includes('count') || propLower.includes('units')) {
+  if (
+    propLower.includes('quantity') ||
+    propLower.includes('qty') ||
+    propLower.includes('count') ||
+    propLower.includes('units')
+  ) {
     return faker.number.int({ min: 1, max: 100 });
   }
-  if (propLower.includes('total') || propLower.includes('subtotal') || propLower.includes('grandtotal') || propLower.includes('sum')) {
+  if (
+    propLower.includes('total') ||
+    propLower.includes('subtotal') ||
+    propLower.includes('grandtotal') ||
+    propLower.includes('sum')
+  ) {
     return Number(faker.commerce.price({ min: 100, max: 1000 }));
   }
   if (propLower.includes('tax') || propLower.includes('vat') || propLower.includes('gst')) {
     return Number(faker.commerce.price({ min: 0, max: 100 }));
   }
-  if (propLower.includes('discount') || propLower.includes('rebate') || propLower.includes('reduction')) {
+  if (
+    propLower.includes('discount') ||
+    propLower.includes('rebate') ||
+    propLower.includes('reduction')
+  ) {
     return Number(faker.commerce.price({ min: 0, max: 50 }));
   }
   if (propLower.includes('currency') || propLower.includes('currencycode')) {
@@ -344,10 +402,18 @@ function getExampleValue(prop: string): any {
   }
 
   // Date related fields
-  if (propLower.includes('issuedate') || propLower.includes('createdate') || propLower.includes('startdate')) {
+  if (
+    propLower.includes('issuedate') ||
+    propLower.includes('createdate') ||
+    propLower.includes('startdate')
+  ) {
     return faker.date.recent({ days: 30 }).toISOString().split('T')[0];
   }
-  if (propLower.includes('duedate') || propLower.includes('enddate') || propLower.includes('expirydate')) {
+  if (
+    propLower.includes('duedate') ||
+    propLower.includes('enddate') ||
+    propLower.includes('expirydate')
+  ) {
     return faker.date.soon({ days: 30 }).toISOString().split('T')[0];
   }
   if (propLower.includes('date')) {
@@ -369,26 +435,45 @@ function getExampleValue(prop: string): any {
   if (propLower.includes('reference')) return faker.string.alphanumeric(10).toUpperCase();
   if (propLower.includes('number')) return faker.number.int({ min: 1000, max: 9999 });
 
-  if (propLower.includes('title') || propLower.includes('heading') || propLower.includes('header')) {
+  if (
+    propLower.includes('title') ||
+    propLower.includes('heading') ||
+    propLower.includes('header')
+  ) {
     return faker.lorem.sentence();
   }
   if (propLower.includes('subtitle') || propLower.includes('subheading')) {
     return faker.lorem.sentence();
   }
-  if (propLower.includes('summary') || propLower.includes('abstract') || propLower.includes('overview')) {
+  if (
+    propLower.includes('summary') ||
+    propLower.includes('abstract') ||
+    propLower.includes('overview')
+  ) {
     return faker.lorem.paragraph();
   }
   if (propLower.includes('content') || propLower.includes('body') || propLower.includes('text')) {
     return faker.lorem.paragraphs();
   }
-  if (propLower.includes('image') || propLower.includes('picture') || propLower.includes('photo') || propLower.includes('avatar')) {
+  if (
+    propLower.includes('image') ||
+    propLower.includes('picture') ||
+    propLower.includes('photo') ||
+    propLower.includes('avatar')
+  ) {
     return faker.image.url();
   }
   if (propLower.includes('url') || propLower.includes('link') || propLower.includes('website')) {
     return faker.internet.url();
   }
 
-  if (propLower.startsWith('is') || propLower.startsWith('has') || propLower.startsWith('show') || propLower.includes('enabled') || propLower.includes('visible')) {
+  if (
+    propLower.startsWith('is') ||
+    propLower.startsWith('has') ||
+    propLower.startsWith('show') ||
+    propLower.includes('enabled') ||
+    propLower.includes('visible')
+  ) {
     return faker.datatype.boolean();
   }
   if (propLower.includes('status') || propLower.includes('state')) {
@@ -401,7 +486,11 @@ function getExampleValue(prop: string): any {
     return faker.color.human();
   }
 
-  if (propLower.includes('comment') || propLower.includes('message') || propLower.includes('feedback')) {
+  if (
+    propLower.includes('comment') ||
+    propLower.includes('message') ||
+    propLower.includes('feedback')
+  ) {
     return faker.lorem.sentence();
   }
 
@@ -520,9 +609,15 @@ CREATE SOMETHING BEAUTIFUL. Return HTML now:`;
     let template = msg.content[0].text.trim();
 
     if (template.startsWith('```html')) {
-      template = template.replace(/^```html\n?/g, '').replace(/```\s*$/g, '').trim();
+      template = template
+        .replace(/^```html\n?/g, '')
+        .replace(/```\s*$/g, '')
+        .trim();
     } else if (template.startsWith('```')) {
-      template = template.replace(/^```\n?/g, '').replace(/```\s*$/g, '').trim();
+      template = template
+        .replace(/^```\n?/g, '')
+        .replace(/```\s*$/g, '')
+        .trim();
     }
 
     const extractedVars = extractVariablesFromTemplate(template);

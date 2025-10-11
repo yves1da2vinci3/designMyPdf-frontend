@@ -212,7 +212,7 @@ export async function exportPdfDocument({
 
     await new Promise<void>((resolve) => {
       let contentLoaded = false;
-      
+
       const handler = (event: MessageEvent) => {
         if (event.data === 'contentLoaded' && !contentLoaded) {
           contentLoaded = true;
@@ -220,9 +220,9 @@ export async function exportPdfDocument({
           setTimeout(resolve, 5000);
         }
       };
-      
+
       window.addEventListener('message', handler);
-      
+
       setTimeout(() => {
         if (!contentLoaded) {
           window.removeEventListener('message', handler);
@@ -249,7 +249,7 @@ export async function exportPdfDocument({
     }
 
     const PIXELS_PER_MM = 3.779527559;
-    
+
     const fullCanvas = await html2canvas(contentContainer, {
       scale: 3,
       useCORS: true,
@@ -265,10 +265,10 @@ export async function exportPdfDocument({
 
     const imgWidth = pageWidth - 20;
     const imgHeight = (fullCanvas.height * imgWidth) / fullCanvas.width;
-    
+
     const pageHeightMm = pageHeight - 20;
     const pageHeightPx = pageHeightMm * PIXELS_PER_MM * 3;
-    
+
     let heightLeft = fullCanvas.height;
     let position = 0;
     let pageNum = 0;
@@ -280,16 +280,16 @@ export async function exportPdfDocument({
 
       const sourceY = position;
       const sourceHeight = Math.min(pageHeightPx, heightLeft);
-      
+
       const pageCanvas = document.createElement('canvas');
       pageCanvas.width = fullCanvas.width;
       pageCanvas.height = sourceHeight;
-      
+
       const ctx = pageCanvas.getContext('2d');
       if (ctx) {
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-        
+
         ctx.drawImage(
           fullCanvas,
           0,
@@ -305,23 +305,14 @@ export async function exportPdfDocument({
 
       const pageImgData = pageCanvas.toDataURL('image/jpeg', 0.95);
       const pageImgHeight = (sourceHeight * imgWidth) / fullCanvas.width;
-      
-      pdf.addImage(
-        pageImgData,
-        'JPEG',
-        10,
-        10,
-        imgWidth,
-        pageImgHeight,
-        undefined,
-        'SLOW',
-      );
+
+      pdf.addImage(pageImgData, 'JPEG', 10, 10, imgWidth, pageImgHeight, undefined, 'SLOW');
 
       heightLeft -= sourceHeight;
       position += sourceHeight;
       pageNum += 1;
     }
-    
+
     const totalPages = pageNum;
 
     // Clean up

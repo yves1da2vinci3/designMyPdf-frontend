@@ -20,7 +20,8 @@ function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
       const encodedFont = encodeURIComponent(fontList[0]);
       const fontUrl = `https://fonts.googleapis.com/css2?family=${encodedFont}:wght@100;200;300;400;500;600;700;800;900${fontList
         .slice(1)
-        .map((font) => `&display=swap&family=${encodeURIComponent(font)}`).join('')}`;
+        .map((font) => `&display=swap&family=${encodeURIComponent(font)}`)
+        .join('')}`;
       return `<link rel="stylesheet" href="${fontUrl}" />`;
     } catch (error) {
       return '';
@@ -46,16 +47,18 @@ function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
   useEffect(() => {
     try {
       if (!htmlContent || htmlContent.trim() === '') {
-        setRenderedContent('<html><body style="padding: 1rem; color: #999;">No content</body></html>');
+        setRenderedContent(
+          '<html><body style="padding: 1rem; color: #999;">No content</body></html>',
+        );
         return;
       }
 
-      const templateData = Array.isArray(data) ? {} : (data || {});
+      const templateData = Array.isArray(data) ? {} : data || {};
 
       const template = Handlebars.compile(htmlContent);
       const rendered = template(templateData);
 
-      setIframeKey(prev => prev + 1);
+      setIframeKey((prev) => prev + 1);
 
       // Chart initialization script
       const chartScript = `
