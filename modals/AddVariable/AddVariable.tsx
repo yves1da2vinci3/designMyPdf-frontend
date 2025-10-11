@@ -1,6 +1,6 @@
 import { Button, Modal, ModalProps, Stack, Title, rem } from '@mantine/core';
 import { Editor } from '@monaco-editor/react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface AddVariableModalProps extends ModalProps {
   jsonContent: string;
@@ -14,6 +14,13 @@ const AddVariable: React.FC<AddVariableModalProps> = ({
   ...modalProps
 }) => {
   const [modifiedContent, setModifiedContent] = useState(jsonContent);
+
+  useEffect(() => {
+    if (modalProps.opened) {
+      setModifiedContent(jsonContent);
+    }
+  }, [modalProps.opened, jsonContent]);
+
   const handleEditorChange = (value: string | undefined) => {
     if (value) {
       setModifiedContent(value);
@@ -39,7 +46,7 @@ const AddVariable: React.FC<AddVariableModalProps> = ({
         <Editor
           height="400px"
           defaultLanguage="json"
-          value={jsonContent}
+          value={modifiedContent}
           onChange={handleEditorChange}
           options={{
             minimap: { enabled: false },
