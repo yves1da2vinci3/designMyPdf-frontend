@@ -18,7 +18,7 @@ export const uploadFile = async (file: Buffer, fileName: string) => {
     const { data } = await b2.uploadFile({
       uploadUrl,
       uploadAuthToken: authorizationToken,
-      fileName: `${uuidv4()}-${fileName}`,
+      fileName: `imagesInspiration/${uuidv4()}-${fileName}`,
       data: file,
     });
 
