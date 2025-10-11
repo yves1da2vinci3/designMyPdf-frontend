@@ -125,6 +125,9 @@ const CreateTemplate: React.FC = () => {
   const [isPublishing, setIsPublishing] = useState(false);
   const [files, setFiles] = useState<FileWithPath[]>([]);
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<
+    Array<{ url: string; fileName: string; fileId: string }>
+  >([]);
   const [isUploading, setIsUploading] = useState(false);
   const openRef = useRef<() => void>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -286,8 +289,13 @@ const CreateTemplate: React.FC = () => {
       });
 
       const uploadData = await response.json();
-      if (uploadData.urls && Array.isArray(uploadData.urls)) {
+      if (uploadData.urls && Array.isArray(uploadData.urls) && uploadData.files) {
         setUploadedUrls(uploadData.urls);
+        setUploadedFiles(uploadData.files.map((file: any) => ({
+          url: file.url,
+          fileName: file.fileName,
+          fileId: file.public_id,
+        })));
         setFiles([]);
         notificationService.showSuccessNotification('Images uploaded successfully');
       } else {
@@ -301,75 +309,61 @@ const CreateTemplate: React.FC = () => {
   };
 
   const removeUploadedImage = (index: number) => {
-    const imageToRemove = uploadedUrls[index];
+    const fileToRemove = uploadedFiles[index];
 
-    // Extract the public ID from the Cloudinary URL
-    if (typeof imageToRemove === 'string' && imageToRemove.includes('cloudinary.com')) {
-      try {
-        // The URL format is typically: https://res.cloudinary.com/cloud-name/image/upload/v1234567890/folder/public_id.ext
-        const urlParts = imageToRemove.split('/');
-        const fileNameWithExt = urlParts[urlParts.length - 1];
-        const publicIdWithFolder = `${urlParts[urlParts.length - 2]}/${fileNameWithExt.split('.')[0]}`;
+    if (fileToRemove && fileToRemove.fileName && fileToRemove.fileId) {
+      fetch('/api/delete-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileName: fileToRemove.fileName,
+          fileId: fileToRemove.fileId,
+        }),
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (!result.success) {
+            notificationService.showErrorNotification('Failed to delete image from Backblaze');
+          }
+        })
+        .catch(() => {
+          notificationService.showErrorNotification('Error deleting image from Backblaze');
+        });
+    }
 
-        // Call the API to delete the image from Cloudinary
+    setUploadedUrls((prev) => prev.filter((_, i) => i !== index));
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const clearImages = () => {
+    uploadedFiles.forEach((file) => {
+      if (file && file.fileName && file.fileId) {
         fetch('/api/delete-image', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ publicId: publicIdWithFolder }),
+          body: JSON.stringify({
+            fileName: file.fileName,
+            fileId: file.fileId,
+          }),
         })
           .then((response) => response.json())
           .then((result) => {
             if (!result.success) {
-              notificationService.showErrorNotification('Failed to delete image from Cloudinary');
+              notificationService.showErrorNotification('Failed to delete image from Backblaze');
             }
           })
           .catch(() => {
-            notificationService.showErrorNotification('Error deleting image from Cloudinary');
+            notificationService.showErrorNotification('Error deleting image from Backblaze');
           });
-      } catch {
-        notificationService.showErrorNotification('Error parsing Cloudinary URL');
-      }
-    }
-
-    // Remove from UI regardless of deletion success
-    setUploadedUrls((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const clearImages = () => {
-    // Delete all images from Cloudinary
-    uploadedUrls.forEach((url) => {
-      if (typeof url === 'string' && url.includes('cloudinary.com')) {
-        try {
-          const urlParts = url.split('/');
-          const fileNameWithExt = urlParts[urlParts.length - 1];
-          const publicIdWithFolder = `${urlParts[urlParts.length - 2]}/${fileNameWithExt.split('.')[0]}`;
-
-          fetch('/api/delete-image', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ publicId: publicIdWithFolder }),
-          })
-            .then((response) => response.json())
-            .then((result) => {
-              if (!result.success) {
-                notificationService.showErrorNotification('Failed to delete image from Cloudinary');
-              }
-            })
-            .catch(() => {
-              notificationService.showErrorNotification('Error deleting image from Cloudinary');
-            });
-        } catch (error) {
-          notificationService.showErrorNotification('Error parsing Cloudinary URL');
-        }
       }
     });
 
-    // Clear the UI
     setUploadedUrls([]);
+    setUploadedFiles([]);
   };
 
   const generateTemplateFromPrompt = async (): Promise<void> => {

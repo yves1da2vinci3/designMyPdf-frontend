@@ -24,6 +24,9 @@ interface ImageUploaderProps {
 function ImageUploader({ onGenerate, onClose }: ImageUploaderProps) {
   const [files, setFiles] = useState<FileWithPath[]>([]);
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<
+    Array<{ url: string; fileName: string; fileId: string }>
+  >([]);
   const [prompt, setPrompt] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -55,8 +58,13 @@ function ImageUploader({ onGenerate, onClose }: ImageUploaderProps) {
       });
 
       const data = await response.json();
-      if (data.urls && Array.isArray(data.urls)) {
+      if (data.urls && Array.isArray(data.urls) && data.files) {
         setUploadedUrls(data.urls);
+        setUploadedFiles(data.files.map((file: any) => ({
+          url: file.url,
+          fileName: file.fileName,
+          fileId: file.public_id,
+        })));
         setFiles([]);
         notificationService.showSuccessNotification('Images uploaded successfully');
       } else {
@@ -120,9 +128,63 @@ function ImageUploader({ onGenerate, onClose }: ImageUploaderProps) {
   };
 
   const clearAll = () => {
+    uploadedFiles.forEach((file) => {
+      if (file && file.fileName && file.fileId) {
+        fetch('/api/delete-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fileName: file.fileName,
+            fileId: file.fileId,
+          }),
+        })
+          .then((response) => response.json())
+          .then((result) => {
+            if (!result.success) {
+              notificationService.showErrorNotification('Failed to delete image from Backblaze');
+            }
+          })
+          .catch(() => {
+            notificationService.showErrorNotification('Error deleting image from Backblaze');
+          });
+      }
+    });
+
     setFiles([]);
     setUploadedUrls([]);
+    setUploadedFiles([]);
     setPrompt('');
+  };
+
+  const removeUploadedImage = (index: number) => {
+    const fileToRemove = uploadedFiles[index];
+
+    if (fileToRemove && fileToRemove.fileName && fileToRemove.fileId) {
+      fetch('/api/delete-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileName: fileToRemove.fileName,
+          fileId: fileToRemove.fileId,
+        }),
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (!result.success) {
+            notificationService.showErrorNotification('Failed to delete image from Backblaze');
+          }
+        })
+        .catch(() => {
+          notificationService.showErrorNotification('Error deleting image from Backblaze');
+        });
+    }
+
+    setUploadedUrls((prev) => prev.filter((_, i) => i !== index));
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -144,7 +206,7 @@ function ImageUploader({ onGenerate, onClose }: ImageUploaderProps) {
                 color="red"
                 size="xs"
                 leftSection={<IconTrash size={14} />}
-                onClick={() => setUploadedUrls([])}
+                onClick={clearAll}
               >
                 Clear All
               </Button>
@@ -158,7 +220,7 @@ function ImageUploader({ onGenerate, onClose }: ImageUploaderProps) {
                     radius="xl"
                     size="sm"
                     style={{ position: 'absolute', top: 5, right: 5, zIndex: 10 }}
-                    onClick={() => setUploadedUrls((prev) => prev.filter((_, i) => i !== index))}
+                    onClick={() => removeUploadedImage(index)}
                   >
                     <IconX size={14} />
                   </ActionIcon>
