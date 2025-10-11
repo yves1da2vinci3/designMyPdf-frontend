@@ -1,5 +1,6 @@
 import { TemplateDTO } from '@/api/templateApi';
 import notificationService from '@/services/NotificationService';
+import { notifications } from '@mantine/notifications';
 import { FormatType } from './types';
 
 /**
@@ -24,11 +25,16 @@ export async function exportPdfDocument({
   variables: Record<string, any>;
   renderedContent: string;
 }): Promise<void> {
+  const exportNotificationId = `export-pdf-${Date.now()}`;
   try {
-    // Show loading notification
-    notificationService.showInformationNotification(
-      `Exporting document as ${format.toUpperCase()}...`,
-    );
+    notifications.show({
+      id: exportNotificationId,
+      title: 'Exporting PDF',
+      message: `Preparing document as ${format.toUpperCase()}...`,
+      color: 'blue',
+      loading: true,
+      autoClose: false,
+    });
 
     const iframe = document.createElement('iframe');
     iframe.style.width = `${pageWidth * 3.779527559}px`;
@@ -183,7 +189,7 @@ export async function exportPdfDocument({
                 }
               });
               
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              await new Promise(resolve => setTimeout(resolve, 2000));
               window.parent.postMessage('contentLoaded', '*');
             }
             
@@ -217,7 +223,7 @@ export async function exportPdfDocument({
         if (event.data === 'contentLoaded' && !contentLoaded) {
           contentLoaded = true;
           window.removeEventListener('message', handler);
-          setTimeout(resolve, 5000);
+          setTimeout(resolve, 3000);
         }
       };
 
@@ -228,10 +234,18 @@ export async function exportPdfDocument({
           window.removeEventListener('message', handler);
           resolve();
         }
-      }, 10000);
+      }, 15000);
     });
 
-    // Import required libraries
+    notifications.update({
+      id: exportNotificationId,
+      title: 'Exporting PDF',
+      message: 'Rendering charts and content...',
+      color: 'blue',
+      loading: true,
+      autoClose: false,
+    });
+
     const { default: jsPDF } = await import('jspdf');
     const { default: html2canvas } = await import('html2canvas');
 
@@ -250,28 +264,59 @@ export async function exportPdfDocument({
 
     const PIXELS_PER_MM = 3.779527559;
 
+    notifications.update({
+      id: exportNotificationId,
+      title: 'Exporting PDF',
+      message: 'Capturing document content...',
+      color: 'blue',
+      loading: true,
+      autoClose: false,
+    });
+
     const fullCanvas = await html2canvas(contentContainer, {
-      scale: 3,
+      scale: 2,
       useCORS: true,
       allowTaint: true,
       backgroundColor: 'white',
       logging: false,
       imageTimeout: 0,
       removeContainer: false,
-      foreignObjectRendering: true,
+      foreignObjectRendering: false,
       windowHeight: contentContainer.scrollHeight,
       height: contentContainer.scrollHeight,
+      onclone: (clonedDoc) => {
+        const canvases = clonedDoc.querySelectorAll('canvas');
+        const originalCanvases = contentContainer.querySelectorAll('canvas');
+        canvases.forEach((canvas, index) => {
+          const originalCanvas = originalCanvases[index] as HTMLCanvasElement;
+          if (originalCanvas) {
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(originalCanvas, 0, 0);
+            }
+          }
+        });
+      },
     });
 
     const imgWidth = pageWidth - 20;
     const imgHeight = (fullCanvas.height * imgWidth) / fullCanvas.width;
 
     const pageHeightMm = pageHeight - 20;
-    const pageHeightPx = pageHeightMm * PIXELS_PER_MM * 3;
+    const pageHeightPx = pageHeightMm * PIXELS_PER_MM * 2;
 
     let heightLeft = fullCanvas.height;
     let position = 0;
     let pageNum = 0;
+
+    notifications.update({
+      id: exportNotificationId,
+      title: 'Exporting PDF',
+      message: 'Generating PDF pages...',
+      color: 'blue',
+      loading: true,
+      autoClose: false,
+    });
 
     while (heightLeft > 0) {
       if (pageNum > 0) {
@@ -315,20 +360,38 @@ export async function exportPdfDocument({
 
     const totalPages = pageNum;
 
-    // Clean up
     document.body.removeChild(iframe);
 
-    // Save the PDF with the template name and paper size
+    notifications.update({
+      id: exportNotificationId,
+      title: 'Exporting PDF',
+      message: 'Saving document...',
+      color: 'blue',
+      loading: true,
+      autoClose: false,
+    });
+
     pdf.save(`${template?.name || 'template'}_${format.toUpperCase()}.pdf`);
 
-    // Show success notification
-    notificationService.showSuccessNotification(
-      `Document exported as ${format.toUpperCase()} PDF with ${totalPages} page${
+    notifications.update({
+      id: exportNotificationId,
+      title: 'Export Complete',
+      message: `Document exported as ${format.toUpperCase()} PDF with ${totalPages} page${
         totalPages > 1 ? 's' : ''
       }!`,
-    );
+      color: 'green',
+      loading: false,
+      autoClose: 3000,
+    });
   } catch (error) {
     console.error('Error exporting PDF:', error);
-    notificationService.showErrorNotification('Failed to export document. Please try again.');
+    notifications.update({
+      id: exportNotificationId,
+      title: 'Export Failed',
+      message: 'Failed to export document. Please try again.',
+      color: 'red',
+      loading: false,
+      autoClose: 5000,
+    });
   }
 }
