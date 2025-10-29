@@ -100,6 +100,15 @@ export const templateEditorTourSteps: DriveStep[] = [
       align: 'center' as const,
     },
   },
+  {
+    element: '#visual-editor-button',
+    popover: {
+      title: 'Visual Editor',
+      description: 'Switch to a visual, drag-and-drop editor for a more intuitive experience.',
+      side: 'bottom' as const,
+      align: 'center' as const,
+    },
+  },
 ];
 
 // Define tour steps for the templates dashboard

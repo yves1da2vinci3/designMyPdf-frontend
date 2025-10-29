@@ -60,11 +60,13 @@ function ImageUploader({ onGenerate, onClose }: ImageUploaderProps) {
       const data = await response.json();
       if (data.urls && Array.isArray(data.urls) && data.files) {
         setUploadedUrls(data.urls);
-        setUploadedFiles(data.files.map((file: any) => ({
-          url: file.url,
-          fileName: file.fileName,
-          fileId: file.public_id,
-        })));
+        setUploadedFiles(
+          data.files.map((file: any) => ({
+            url: file.url,
+            fileName: file.fileName,
+            fileId: file.public_id,
+          })),
+        );
         setFiles([]);
         notificationService.showSuccessNotification('Images uploaded successfully');
       } else {

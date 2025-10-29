@@ -157,7 +157,7 @@ function extractVariablesFromTemplate(
     { type: 'array' | 'object' | 'value'; path: string[]; arrayItemStructure?: Record<string, any> }
   >();
 
-  const eachBlockRegex = /{{#each\s+(\w+)}}([\s\S]*?){{\/each}}/g;
+  const eachBlockRegex = /{{#each\s+([\w.]+)}}([\s\S]*?){{\/each}}/g;
   let eachMatch;
 
   while ((eachMatch = eachBlockRegex.exec(template)) !== null) {
@@ -165,7 +165,7 @@ function extractVariablesFromTemplate(
     const blockContent = eachMatch[2];
     const itemProps = new Set<string>();
 
-    const thisRegex = /{{this\.(\w+)}}/g;
+    const thisRegex = /{{this\.([\w.]+)}}/g;
     let propMatch;
 
     while ((propMatch = thisRegex.exec(blockContent)) !== null) {
@@ -174,7 +174,13 @@ function extractVariablesFromTemplate(
 
     const arrayItemStructure = Array.from(itemProps).reduce(
       (obj, prop) => {
-        obj[prop] = getExampleValue(prop);
+        const propPath = prop.split('.');
+        let current = obj;
+        for (let i = 0; i < propPath.length - 1; i += 1) {
+          current[propPath[i]] = current[propPath[i]] || {};
+          current = current[propPath[i]];
+        }
+        current[propPath[propPath.length - 1]] = getExampleValue(prop);
         return obj;
       },
       {} as Record<string, any>,
@@ -182,7 +188,7 @@ function extractVariablesFromTemplate(
 
     variables.set(arrayName, {
       type: 'array',
-      path: [arrayName],
+      path: arrayName.split('.'),
       arrayItemStructure,
     });
   }
@@ -229,46 +235,31 @@ function buildVariableStructure(
 ): Record<string, any> {
   const structure: Record<string, any> = {};
 
-  // First pass: Create base structure
-  for (const [key, value] of Array.from(variables.entries())) {
-    if (value.path.length === 1) {
-      if (value.type === 'array') {
-        // Generate 2-4 items for the array using the extracted structure
-        const itemCount = faker.number.int({ min: 2, max: 4 });
-        structure[key] = Array.from({ length: itemCount }, () => {
-          const baseItem = value.arrayItemStructure || {};
-          // Add some variation to each item
-          return Object.entries(baseItem).reduce(
-            (obj, [prop]) => {
-              obj[prop] = getExampleValue(prop);
-              return obj;
-            },
-            {} as Record<string, any>,
-          );
-        });
-      } else if (value.type === 'object') {
-        structure[key] = {};
-      } else {
-        structure[key] = getExampleValue(key);
-      }
-    }
-  }
-
-  // Second pass: Fill in nested values
-  for (const [, value] of Array.from(variables.entries())) {
-    if (value.path.length > 1) {
-      let current = structure;
-      for (const segment of value.path.slice(0, -1)) {
-        if (!current[segment]) {
-          current[segment] = {};
+  variables.forEach((value, key) => {
+    let current = structure;
+    value.path.forEach((segment, index) => {
+      if (index === value.path.length - 1) {
+        if (value.type === 'array') {
+          const itemCount = faker.number.int({ min: 2, max: 4 });
+          current[segment] = Array.from({ length: itemCount }, () => {
+            const baseItem = value.arrayItemStructure || {};
+            return Object.entries(baseItem).reduce(
+              (obj, [prop]) => {
+                obj[prop] = getExampleValue(prop);
+                return obj;
+              },
+              {} as Record<string, any>,
+            );
+          });
+        } else {
+          current[segment] = getExampleValue(key);
         }
+      } else {
+        current[segment] = current[segment] || {};
         current = current[segment];
       }
-      current[value.path[value.path.length - 1]] = getExampleValue(
-        value.path[value.path.length - 1],
-      );
-    }
-  }
+    });
+  });
 
   if (template) {
     const chartRegex = /data-chart-type=["'](\w+)["']\s+data-chart-data=["']{{charts\.(\w+)}}["']/g;
@@ -684,8 +675,8 @@ OUTPUT FORMAT:
 DELIVER A STUNNING, PROFESSIONAL, PIXEL-PERFECT DESIGN. Return HTML now:`;
 
       const msg = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 8192,
+        model: 'claude-3-5-sonnet-20240620',
+        max_tokens: 4096,
         messages: [
           {
             role: 'user',

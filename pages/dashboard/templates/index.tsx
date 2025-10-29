@@ -28,10 +28,12 @@ import {
   IconFileText,
   IconFolderPlus,
   IconHelp,
+  IconUpload,
 } from '@tabler/icons-react';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import TemplateItem from '@/components/TemplateItem/TemplateItem';
 import AddTemplate from '@/modals/AddTemplate/AddTemplate';
+import { ExcelUploader } from '@/components/ExcelUploader/ExcelUploader';
 import NamespaceItem from '@/components/NamespaceItem/NamespaceItem';
 import AddNamespace from '@/modals/AddNamespace/AddNamespace';
 import { CreateTemplateDto, TemplateDTO, templateApi } from '@/api/templateApi';
@@ -56,6 +58,28 @@ function TemplatesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showTourButton, setShowTourButton] = useState(false);
   const [hasSeenTour, setHasSeenTour] = useLocalStorage('hasSeenTemplatesDashboardTour', false);
+  const [excelUploaderOpened, { open: openExcelUploader, close: closeExcelUploader }] =
+    useDisclosure(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateDTO | null>(null);
+
+  const handleExcelUpload = async (data: any[]) => {
+    if (selectedTemplate) {
+      try {
+        await fetch('/api/mass-print', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            templateContent: selectedTemplate.content,
+            data,
+          }),
+        });
+      } catch (error) {
+        // Handle error
+      }
+    }
+  };
 
   const fetchTemplatesAndNamespaces = async () => {
     setFetchTemplatesRequestStatus(RequestStatus.InProgress);
@@ -204,6 +228,13 @@ function TemplatesPage() {
           addTemplateHandler={AddTemplateHandler}
           addTemplateRequestatus={addTemplateRequestStatus}
         />
+        <ExcelUploader
+          opened={excelUploaderOpened}
+          onClose={closeExcelUploader}
+          onUpload={handleExcelUpload}
+          templates={templates}
+          setSelectedTemplate={setSelectedTemplate}
+        />
         <AddNamespace
           opened={addNamespaceOpened}
           onClose={closeAddNamespace}
@@ -253,6 +284,13 @@ function TemplatesPage() {
               variant="outline"
             >
               New folder
+            </Button>
+            <Button
+              leftSection={<IconUpload size={16} />}
+              onClick={openExcelUploader}
+              variant="light"
+            >
+              Mass Print
             </Button>
             <Menu shadow="md" width={200} position="bottom-end">
               <Menu.Target>

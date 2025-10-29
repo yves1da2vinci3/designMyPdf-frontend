@@ -47,6 +47,7 @@ import {
 
 import { useMonaco } from '@monaco-editor/react';
 import IDE from './CodeEditor';
+import { VisualEditor } from './VisualEditor';
 import Preview from './Preview';
 import AddVariable from '@/modals/AddVariable/AddVariable';
 import VariableBadge from '@/components/VariableBadge/VariableBadge';
@@ -133,6 +134,7 @@ const CreateTemplate: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showTourButton, setShowTourButton] = useState(false);
   const [hasSeenTour, setHasSeenTour] = useLocalStorage('hasSeenTemplateEditorTour', false);
+  const [editorView, setEditorView] = useState<'code' | 'visual'>('code');
 
   const fetchTemplate = async () => {
     try {
@@ -291,11 +293,13 @@ const CreateTemplate: React.FC = () => {
       const uploadData = await response.json();
       if (uploadData.urls && Array.isArray(uploadData.urls) && uploadData.files) {
         setUploadedUrls(uploadData.urls);
-        setUploadedFiles(uploadData.files.map((file: any) => ({
-          url: file.url,
-          fileName: file.fileName,
-          fileId: file.public_id,
-        })));
+        setUploadedFiles(
+          uploadData.files.map((file: any) => ({
+            url: file.url,
+            fileName: file.fileName,
+            fileId: file.public_id,
+          })),
+        );
         setFiles([]);
         notificationService.showSuccessNotification('Images uploaded successfully');
       } else {
@@ -558,6 +562,7 @@ const CreateTemplate: React.FC = () => {
           '#ai-generate-button',
           '#action-icon',
           '#save-button',
+          '#visual-editor-button',
         ];
 
         // Verify all elements exist
@@ -955,6 +960,15 @@ const CreateTemplate: React.FC = () => {
               AI Generate
             </Button>
           </Tooltip>
+
+          <Button
+            id="visual-editor-button"
+            onClick={() => setEditorView(editorView === 'code' ? 'visual' : 'code')}
+            variant="light"
+            color="violet"
+          >
+            {editorView === 'code' ? 'Visual Editor' : 'Code Editor'}
+          </Button>
 
           {/* Actions Menu */}
           <Box id="action-icon">
@@ -1423,18 +1437,22 @@ const CreateTemplate: React.FC = () => {
             }}
             ref={drop}
           >
-            <DndProvider backend={HTML5Backend}>
-              <IDE
-                onChange={(newCode) => {
-                  setCode(newCode);
-                  setTemplateContent(newCode);
-                }}
-                defaultValue={code}
-                editorDidMount={(editor) => {
-                  editorRef.current = editor;
-                }}
-              />
-            </DndProvider>
+            {editorView === 'code' ? (
+              <DndProvider backend={HTML5Backend}>
+                <IDE
+                  onChange={(newCode) => {
+                    setCode(newCode);
+                    setTemplateContent(newCode);
+                  }}
+                  defaultValue={code}
+                  editorDidMount={(editor) => {
+                    editorRef.current = editor;
+                  }}
+                />
+              </DndProvider>
+            ) : (
+              <VisualEditor code={code} setCode={setCode} />
+            )}
           </Box>
 
           {/* Preview */}
