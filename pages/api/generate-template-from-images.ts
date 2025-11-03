@@ -11,9 +11,6 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
 });
 
-
-
-
 // --- HELPER FUNCTIONS ---
 
 /**
@@ -47,8 +44,6 @@ async function fetchImageAsBase64(url: string): Promise<{ data: string; mimeType
     const base64Data = Buffer.from(response.data).toString('base64');
     return { data: base64Data, mimeType: contentType };
   } catch (error: any) {
-    // Re-throw specific error messages for better debugging
-    console.error(`Error fetching image from ${url}:`, error.message);
     throw new Error(`Failed to fetch image from ${url}: ${error.message}`);
   }
 }
@@ -185,7 +180,7 @@ function extractVariablesFromTemplate(
   >();
 
   // Regex to capture {{#each someArray}} blocks
-  const eachBlockRegex = /{{#each\s+([\w\.]+)}}\s*([\s\S]*?)\s*{{\/each}}/g;
+  const eachBlockRegex = /{{#each\s+([\w.]+)}}\s*([\s\S]*?)\s*{{\/each}}/g;
   let eachMatch;
 
   while ((eachMatch = eachBlockRegex.exec(template)) !== null) {
@@ -194,8 +189,7 @@ function extractVariablesFromTemplate(
     const itemProps = new Set<string>();
 
     // Detect properties accessed via 'this.prop' or 'prop' within the each block
-    // Also captures variables used in helpers like {{#if_eq @index ../this.level 'lt'}}
-    const thisPropRegex = /{{(?:this\.)?([\w\.]+)(?:\s|$|}})/g; // Captures 'this.prop' or 'prop' up to a space or closing braces
+    const thisPropRegex = /{{(?:this\.)?([\w.]+)(?:\s|$|}})/g;
     let propMatch;
 
     while ((propMatch = thisPropRegex.exec(blockContent)) !== null) {
@@ -245,13 +239,12 @@ function extractVariablesFromTemplate(
       // For nested properties like user.name or company.address.city
       if (varPath.length > 1) {
         let currentPath = '';
-        for (let i = 0; i < varPath.length - 1; i++) {
+        for (let i = 0; i < varPath.length - 1; i += 1) {
           currentPath += (currentPath ? '.' : '') + varPath[i];
           if (!variables.has(currentPath)) {
             variables.set(currentPath, { type: 'object', path: currentPath.split('.') });
           }
         }
-        // Add the leaf variable
         if (!variables.has(rawVariable)) {
           variables.set(rawVariable, { type: 'value', path: varPath });
         }
@@ -277,17 +270,16 @@ function buildVariableStructure(
 ): Record<string, any> {
   const structure: Record<string, any> = {};
 
-  // Helper to safely set nested properties
-  const setNestedProperty = (obj: Record<string, any>, path: string[], value: any) => {
+  const setNestedProperty = (obj: Record<string, any>, varPath: string[], value: any) => {
     let current = obj;
-    for (let i = 0; i < path.length - 1; i++) {
-      const segment = path[i];
+    for (let i = 0; i < varPath.length - 1; i += 1) {
+      const segment = varPath[i];
       if (!current[segment] || typeof current[segment] !== 'object' || Array.isArray(current[segment])) {
-        current[segment] = {}; // Initialize as object if not already
+        current[segment] = {};
       }
       current = current[segment];
     }
-    current[path[path.length - 1]] = value;
+    current[varPath[varPath.length - 1]] = value;
   };
 
   // First pass: Initialize root level objects and arrays and direct values
@@ -319,13 +311,13 @@ function buildVariableStructure(
     }
   }
 
-  // Second pass: Fill in all nested values for objects, for both direct access and array items
-  for (const [varKey, varInfo] of Array.from(variables.entries())) {
+  for (const [, varInfo] of Array.from(variables.entries())) {
     if (varInfo.path.length > 1) {
       if (varInfo.type === 'value') {
-        setNestedProperty(structure, varInfo.path, getExampleValue(varInfo.path[varInfo.path.length - 1]));
+        const lastSegment = varInfo.path[varInfo.path.length - 1];
+        setNestedProperty(structure, varInfo.path, getExampleValue(lastSegment));
       } else if (varInfo.type === 'object') {
-        setNestedProperty(structure, varInfo.path, {}); // Just ensure the object path exists
+        setNestedProperty(structure, varInfo.path, {});
       }
     }
   }
@@ -363,7 +355,6 @@ function buildVariableStructure(
   return structure;
 }
 
-
 /**
  * Generates a mock value based on the property name using faker-js.
  * Prioritizes more specific CV-related properties.
@@ -382,15 +373,14 @@ function getExampleValue(prop: string): any {
   if (propLower.includes('email')) return faker.internet.email();
   if (propLower.includes('presentation') || propLower.includes('summary')) return faker.lorem.paragraph(3);
   if (propLower.includes('company') || propLower.includes('institution')) return faker.company.name();
-  if (propLower.includes('duration') || propLower.includes('years')) return `${faker.date.past({years: 5}).getFullYear()} – ${faker.date.future({years: 1}).getFullYear()}`;
+  if (propLower.includes('duration') || propLower.includes('years')) return `${faker.date.past({ years: 5 }).getFullYear()} – ${faker.date.future({ years: 1 }).getFullYear()}`;
   if (propLower.includes('degree') || propLower.includes('qualification')) return faker.helpers.arrayElement(['Bachelor of Science', 'Master of Business Administration', 'Doctor of Philosophy', 'Bachelor of Arts']);
   if (propLower.includes('description') || propLower.includes('details')) return faker.lorem.paragraphs(2);
-  if (propLower === 'level' || propLower.includes('rating')) return faker.number.int({ min: 1, max: 6 }); // For skill/language levels
+  if (propLower === 'level' || propLower.includes('rating')) return faker.number.int({ min: 1, max: 6 });
   if (propLower.includes('url') || propLower.includes('link')) return faker.internet.url();
   if (propLower.includes('interest') || propLower.includes('hobby')) return faker.lorem.word(); // For array items in interests
-  if (propLower.includes('skill') || propLower.includes('language')) return faker.lorem.word(); // For array items in skills/languages
+  if (propLower.includes('skill') || propLower.includes('language')) return faker.lorem.word();
   // --- END CV SPECIFIC MAPPING ---
-
 
   // --- GENERAL FAKER MAPPING ---
   // Person/Contact
@@ -479,7 +469,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             // Local file path handling (e.g., from public folder in Next.js)
             const filePath = path.join(process.cwd(), 'public', url);
             if (!fs.existsSync(filePath)) {
-              console.error(`File not found at local path: ${filePath} for URL: ${url}`);
               throw new Error(`Local file not found: ${url}`);
             }
             const fileData = fs.readFileSync(filePath);
@@ -566,7 +555,6 @@ OUTPUT FORMAT:
 **DELIVER A STUNNING, PROFESSIONAL, PIXEL-PERFECT DESIGN. Your job depends on it. Return HTML now:**`;
       // --- FIN PROMPT OPTIMISÉ ---
 
-
       const msg = await anthropic.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 8192,
@@ -611,14 +599,12 @@ OUTPUT FORMAT:
         suggestedVariables,
       });
     } catch (error: any) {
-      console.error('Error generating template from images:', error);
       return res.status(500).json({
         error: 'Failed to generate template from images',
         details: error?.message || 'Unknown error',
       });
     }
   } catch (error: any) {
-    console.error('API error:', error);
     return res.status(500).json({
       error: 'Failed to process request',
       details: error?.message || 'Unknown error',
