@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Handlebars from 'handlebars';
+import '../../utils/handlebarsHelpers';
 
 interface MiniPreviewProps {
   htmlContent: string;

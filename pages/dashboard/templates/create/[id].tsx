@@ -510,6 +510,7 @@ const CreateTemplate: React.FC = () => {
 
       // Use Handlebars to render the template with variables
       const { default: Handlebars } = await import('handlebars');
+      await import('../../../../utils/handlebarsHelpers');
 
       // Process the template to handle chart data
       const processedCode = processChartData(code);
