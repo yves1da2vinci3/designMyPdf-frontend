@@ -195,7 +195,21 @@ function extractVariablesFromTemplate(
     while ((propMatch = thisPropRegex.exec(blockContent)) !== null) {
       // Exclude Handlebars keywords and common helpers, and internal Handlebars variables
       const propName = propMatch[1].split('.')[0]; // Only take the root property name for now
-      if (!['if', 'unless', 'else', 'each', 'this', 'times', 'if_eq', '@index', '@key', '@first', '@last'].includes(propName)) {
+      if (
+        ![
+          'if',
+          'unless',
+          'else',
+          'each',
+          'this',
+          'times',
+          'if_eq',
+          '@index',
+          '@key',
+          '@first',
+          '@last',
+        ].includes(propName)
+      ) {
         itemProps.add(propName);
       }
     }
@@ -274,7 +288,11 @@ function buildVariableStructure(
     let current = obj;
     for (let i = 0; i < varPath.length - 1; i += 1) {
       const segment = varPath[i];
-      if (!current[segment] || typeof current[segment] !== 'object' || Array.isArray(current[segment])) {
+      if (
+        !current[segment] ||
+        typeof current[segment] !== 'object' ||
+        Array.isArray(current[segment])
+      ) {
         current[segment] = {};
       }
       current = current[segment];
@@ -284,7 +302,8 @@ function buildVariableStructure(
 
   // First pass: Initialize root level objects and arrays and direct values
   for (const [varKey, varInfo] of Array.from(variables.entries())) {
-    if (varInfo.path.length === 1) { // Only process root-level variables initially
+    if (varInfo.path.length === 1) {
+      // Only process root-level variables initially
       if (varInfo.type === 'array') {
         const itemCount = faker.number.int({ min: 2, max: 4 });
         const items = Array.from({ length: itemCount }, () => {
@@ -292,10 +311,17 @@ function buildVariableStructure(
           return Object.entries(baseItem).reduce(
             (obj, [prop]) => {
               // Only generate value if it's not a nested object that will be filled later
-              if (varInfo.arrayItemStructure && typeof varInfo.arrayItemStructure[prop] !== 'object') {
-                 obj[prop] = getExampleValue(prop);
-              } else if (varInfo.arrayItemStructure && typeof varInfo.arrayItemStructure[prop] === 'object' && varInfo.arrayItemStructure[prop] !== null) {
-                 obj[prop] = {}; // Initialize nested object
+              if (
+                varInfo.arrayItemStructure &&
+                typeof varInfo.arrayItemStructure[prop] !== 'object'
+              ) {
+                obj[prop] = getExampleValue(prop);
+              } else if (
+                varInfo.arrayItemStructure &&
+                typeof varInfo.arrayItemStructure[prop] === 'object' &&
+                varInfo.arrayItemStructure[prop] !== null
+              ) {
+                obj[prop] = {}; // Initialize nested object
               }
               return obj;
             },
@@ -305,7 +331,8 @@ function buildVariableStructure(
         structure[varKey] = items;
       } else if (varInfo.type === 'object') {
         structure[varKey] = {};
-      } else { // type === 'value' for root-level simple values
+      } else {
+        // type === 'value' for root-level simple values
         structure[varKey] = getExampleValue(varKey);
       }
     }
@@ -371,12 +398,23 @@ function getExampleValue(prop: string): any {
   if (propLower.includes('location') || propLower.includes('city')) return faker.location.city();
   if (propLower.includes('phone') || propLower.includes('contact')) return faker.phone.number();
   if (propLower.includes('email')) return faker.internet.email();
-  if (propLower.includes('presentation') || propLower.includes('summary')) return faker.lorem.paragraph(3);
-  if (propLower.includes('company') || propLower.includes('institution')) return faker.company.name();
-  if (propLower.includes('duration') || propLower.includes('years')) return `${faker.date.past({ years: 5 }).getFullYear()} – ${faker.date.future({ years: 1 }).getFullYear()}`;
-  if (propLower.includes('degree') || propLower.includes('qualification')) return faker.helpers.arrayElement(['Bachelor of Science', 'Master of Business Administration', 'Doctor of Philosophy', 'Bachelor of Arts']);
-  if (propLower.includes('description') || propLower.includes('details')) return faker.lorem.paragraphs(2);
-  if (propLower === 'level' || propLower.includes('rating')) return faker.number.int({ min: 1, max: 6 });
+  if (propLower.includes('presentation') || propLower.includes('summary'))
+    return faker.lorem.paragraph(3);
+  if (propLower.includes('company') || propLower.includes('institution'))
+    return faker.company.name();
+  if (propLower.includes('duration') || propLower.includes('years'))
+    return `${faker.date.past({ years: 5 }).getFullYear()} – ${faker.date.future({ years: 1 }).getFullYear()}`;
+  if (propLower.includes('degree') || propLower.includes('qualification'))
+    return faker.helpers.arrayElement([
+      'Bachelor of Science',
+      'Master of Business Administration',
+      'Doctor of Philosophy',
+      'Bachelor of Arts',
+    ]);
+  if (propLower.includes('description') || propLower.includes('details'))
+    return faker.lorem.paragraphs(2);
+  if (propLower === 'level' || propLower.includes('rating'))
+    return faker.number.int({ min: 1, max: 6 });
   if (propLower.includes('url') || propLower.includes('link')) return faker.internet.url();
   if (propLower.includes('interest') || propLower.includes('hobby')) return faker.lorem.word(); // For array items in interests
   if (propLower.includes('skill') || propLower.includes('language')) return faker.lorem.word();
@@ -384,49 +422,99 @@ function getExampleValue(prop: string): any {
 
   // --- GENERAL FAKER MAPPING ---
   // Person/Contact
-  if (propLower.includes('firstname') || propLower.includes('fname')) return faker.person.firstName();
-  if (propLower.includes('lastname') || propLower.includes('lname') || propLower.includes('surname')) return faker.person.lastName();
+  if (propLower.includes('firstname') || propLower.includes('fname'))
+    return faker.person.firstName();
+  if (
+    propLower.includes('lastname') ||
+    propLower.includes('lname') ||
+    propLower.includes('surname')
+  )
+    return faker.person.lastName();
   if (propLower.includes('gender') || propLower.includes('sex')) return faker.person.gender();
 
   // Internet/Address
-  if (propLower.includes('address') || propLower.includes('street')) return faker.location.streetAddress();
-  if (propLower.includes('country') || propLower.includes('nation')) return faker.location.country();
-  if (propLower.includes('zipcode') || propLower.includes('zip') || propLower.includes('postal')) return faker.location.zipCode();
+  if (propLower.includes('address') || propLower.includes('street'))
+    return faker.location.streetAddress();
+  if (propLower.includes('country') || propLower.includes('nation'))
+    return faker.location.country();
+  if (propLower.includes('zipcode') || propLower.includes('zip') || propLower.includes('postal'))
+    return faker.location.zipCode();
 
   // Company/Business
-  if (propLower.includes('organization') || propLower.includes('business')) return faker.company.name();
-  if (propLower.includes('department') || propLower.includes('division')) return faker.commerce.department();
+  if (propLower.includes('organization') || propLower.includes('business'))
+    return faker.company.name();
+  if (propLower.includes('department') || propLower.includes('division'))
+    return faker.commerce.department();
 
   // Finance/Commerce
-  if (propLower.includes('price') || propLower.includes('unitprice') || propLower.includes('cost') || propLower.includes('amount')) return Number(faker.commerce.price());
-  if (propLower.includes('product') || propLower.includes('item') || propLower.includes('service')) return faker.commerce.productName();
-  if (propLower.includes('quantity') || propLower.includes('qty') || propLower.includes('count') || propLower.includes('units')) return faker.number.int({ min: 1, max: 100 });
-  if (propLower.includes('total') || propLower.includes('subtotal') || propLower.includes('grandtotal') || propLower.includes('sum')) return Number(faker.commerce.price({ min: 100, max: 1000 }));
-  if (propLower.includes('tax') || propLower.includes('vat') || propLower.includes('gst')) return Number(faker.commerce.price({ min: 0, max: 100 }));
-  if (propLower.includes('currency') || propLower.includes('currencycode')) return faker.finance.currencyCode();
+  if (
+    propLower.includes('price') ||
+    propLower.includes('unitprice') ||
+    propLower.includes('cost') ||
+    propLower.includes('amount')
+  )
+    return Number(faker.commerce.price());
+  if (propLower.includes('product') || propLower.includes('item') || propLower.includes('service'))
+    return faker.commerce.productName();
+  if (
+    propLower.includes('quantity') ||
+    propLower.includes('qty') ||
+    propLower.includes('count') ||
+    propLower.includes('units')
+  )
+    return faker.number.int({ min: 1, max: 100 });
+  if (
+    propLower.includes('total') ||
+    propLower.includes('subtotal') ||
+    propLower.includes('grandtotal') ||
+    propLower.includes('sum')
+  )
+    return Number(faker.commerce.price({ min: 100, max: 1000 }));
+  if (propLower.includes('tax') || propLower.includes('vat') || propLower.includes('gst'))
+    return Number(faker.commerce.price({ min: 0, max: 100 }));
+  if (propLower.includes('currency') || propLower.includes('currencycode'))
+    return faker.finance.currencyCode();
 
   // Date/Time
-  if (propLower.includes('issuedate') || propLower.includes('createdate')) return faker.date.recent({ days: 30 }).toISOString().split('T')[0];
-  if (propLower.includes('duedate') || propLower.includes('enddate')) return faker.date.soon({ days: 30 }).toISOString().split('T')[0];
+  if (propLower.includes('issuedate') || propLower.includes('createdate'))
+    return faker.date.recent({ days: 30 }).toISOString().split('T')[0];
+  if (propLower.includes('duedate') || propLower.includes('enddate'))
+    return faker.date.soon({ days: 30 }).toISOString().split('T')[0];
   if (propLower.includes('date')) return faker.date.recent().toISOString().split('T')[0];
 
   // ID/Reference
-  if (propLower.includes('invoicenumber') || propLower.includes('invoice_number')) return `INV-${faker.number.int({ min: 10000, max: 99999 })}`;
-  if (propLower.includes('ordernumber') || propLower.includes('order_number')) return `ORD-${faker.number.int({ min: 10000, max: 99999 })}`;
+  if (propLower.includes('invoicenumber') || propLower.includes('invoice_number'))
+    return `INV-${faker.number.int({ min: 10000, max: 99999 })}`;
+  if (propLower.includes('ordernumber') || propLower.includes('order_number'))
+    return `ORD-${faker.number.int({ min: 10000, max: 99999 })}`;
   if (propLower.includes('id')) return faker.string.alphanumeric(8).toUpperCase();
   if (propLower.includes('reference')) return faker.string.alphanumeric(10).toUpperCase();
   if (propLower.includes('number')) return faker.number.int({ min: 1000, max: 9999 });
 
   // Text/Content
-  if (propLower.includes('summary') || propLower.includes('abstract') || propLower.includes('overview')) return faker.lorem.paragraph();
-  if (propLower.includes('content') || propLower.includes('body') || propLower.includes('text')) return faker.lorem.paragraphs();
+  if (
+    propLower.includes('summary') ||
+    propLower.includes('abstract') ||
+    propLower.includes('overview')
+  )
+    return faker.lorem.paragraph();
+  if (propLower.includes('content') || propLower.includes('body') || propLower.includes('text'))
+    return faker.lorem.paragraphs();
 
   // Visual/URL
-  if (propLower.includes('image') || propLower.includes('picture') || propLower.includes('photo') || propLower.includes('avatar')) return faker.image.url();
+  if (
+    propLower.includes('image') ||
+    propLower.includes('picture') ||
+    propLower.includes('photo') ||
+    propLower.includes('avatar')
+  )
+    return faker.image.url();
 
   // Boolean/Status
-  if (propLower.startsWith('is') || propLower.startsWith('has') || propLower.startsWith('show')) return faker.datatype.boolean();
-  if (propLower.includes('status') || propLower.includes('state')) return faker.helpers.arrayElement(['Active', 'Pending', 'Completed', 'Cancelled']);
+  if (propLower.startsWith('is') || propLower.startsWith('has') || propLower.startsWith('show'))
+    return faker.datatype.boolean();
+  if (propLower.includes('status') || propLower.includes('state'))
+    return faker.helpers.arrayElement(['Active', 'Pending', 'Completed', 'Cancelled']);
 
   // Default fallback
   return faker.lorem.word();

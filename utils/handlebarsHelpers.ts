@@ -97,7 +97,7 @@ Handlebars.registerHelper('if_eq', function (this: any, a: any, b: any, c: any, 
   const len = arguments.length;
   let operator = 'eq';
   let options;
-  
+
   if (len >= 5 && typeof arguments[len - 1] === 'object' && arguments[len - 1].fn) {
     options = arguments[len - 1];
     if (typeof arguments[3] === 'string') {
@@ -108,15 +108,15 @@ Handlebars.registerHelper('if_eq', function (this: any, a: any, b: any, c: any, 
   } else {
     return '';
   }
-  
+
   if (!options || typeof options.fn !== 'function') {
     return '';
   }
-  
+
   if (options.hash && options.hash.operator) {
     operator = options.hash.operator;
   }
-  
+
   let result = false;
   switch (operator) {
     case 'eq':
@@ -138,7 +138,7 @@ Handlebars.registerHelper('if_eq', function (this: any, a: any, b: any, c: any, 
       result = a >= b;
       break;
   }
-  
+
   if (result) {
     return options.fn(this);
   }

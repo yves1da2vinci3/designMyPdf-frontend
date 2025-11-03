@@ -291,11 +291,13 @@ const CreateTemplate: React.FC = () => {
       const uploadData = await response.json();
       if (uploadData.urls && Array.isArray(uploadData.urls) && uploadData.files) {
         setUploadedUrls(uploadData.urls);
-        setUploadedFiles(uploadData.files.map((file: any) => ({
-          url: file.url,
-          fileName: file.fileName,
-          fileId: file.public_id,
-        })));
+        setUploadedFiles(
+          uploadData.files.map((file: any) => ({
+            url: file.url,
+            fileName: file.fileName,
+            fileId: file.public_id,
+          })),
+        );
         setFiles([]);
         notificationService.showSuccessNotification('Images uploaded successfully');
       } else {
