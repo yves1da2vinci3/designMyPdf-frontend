@@ -13,5 +13,7 @@ module.exports = {
   rules: {
     'react/react-in-jsx-scope': 'off',
     'import/extensions': 'off',
+    curly: 'off',
+    'nonblock-statement-body-position': 'off',
   },
 };

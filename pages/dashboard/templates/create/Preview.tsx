@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Handlebars from 'handlebars';
+import '../../../../utils/handlebarsHelpers';
 import { Switch, Tooltip } from '@mantine/core';
 
 // Define the FormatType directly in this file
