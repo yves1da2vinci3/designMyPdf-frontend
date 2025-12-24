@@ -1717,6 +1717,714 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
       'verificationUrl',
     ],
   },
+  {
+    id: 'resume-modern',
+    name: 'CV Moderne',
+    type: 'resume',
+    code: `<div class="max-w-5xl mx-auto bg-white">
+  <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-white">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h1 class="text-4xl font-bold mb-2">{{fullName}}</h1>
+        <p class="text-xl text-indigo-100">{{jobTitle}}</p>
+      </div>
+      {{#if profileImage}}
+      <img src="{{profileImage}}" alt="Profile" class="w-24 h-24 rounded-full border-4 border-white">
+      {{/if}}
+    </div>
+    <div class="grid grid-cols-3 gap-4 mt-6 text-sm">
+      <div>
+        <p class="text-indigo-100 mb-1">Email</p>
+        <p class="font-semibold">{{email}}</p>
+      </div>
+      <div>
+        <p class="text-indigo-100 mb-1">Téléphone</p>
+        <p class="font-semibold">{{phone}}</p>
+      </div>
+      <div>
+        <p class="text-indigo-100 mb-1">Localisation</p>
+        <p class="font-semibold">{{location}}</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="p-8">
+    <section class="mb-8">
+      <h2 class="text-2xl font-bold text-indigo-600 mb-4 border-l-4 border-indigo-600 pl-4">Profil Professionnel</h2>
+      <p class="text-gray-700 leading-relaxed">{{summary}}</p>
+    </section>
+    
+    <div class="grid grid-cols-2 gap-8 mb-8">
+      <section>
+        <h2 class="text-2xl font-bold text-indigo-600 mb-4 border-l-4 border-indigo-600 pl-4">Expérience</h2>
+        {{#each experience}}
+        <div class="mb-6 pb-6 border-b border-gray-200">
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">{{this.title}}</h3>
+              <p class="text-sm text-indigo-600 font-medium">{{this.company}}</p>
+            </div>
+            <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">{{this.period}}</span>
+          </div>
+          <p class="text-sm text-gray-600 mb-2">{{this.location}}</p>
+          <ul class="list-disc list-inside text-sm text-gray-700">
+            {{#each this.responsibilities}}
+            <li>{{this}}</li>
+            {{/each}}
+          </ul>
+        </div>
+        {{/each}}
+      </section>
+      
+      <section>
+        <h2 class="text-2xl font-bold text-indigo-600 mb-4 border-l-4 border-indigo-600 pl-4">Formation</h2>
+        {{#each education}}
+        <div class="mb-6 pb-6 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900">{{this.degree}}</h3>
+          <p class="text-sm text-indigo-600 font-medium mb-1">{{this.school}}</p>
+          <p class="text-xs text-gray-500">{{this.year}} | {{this.location}}</p>
+          {{#if this.honors}}
+          <p class="text-xs text-gray-600 mt-1">Distinction: {{this.honors}}</p>
+          {{/if}}
+        </div>
+        {{/each}}
+      </section>
+    </div>
+    
+    <section class="mb-8">
+      <h2 class="text-2xl font-bold text-indigo-600 mb-4 border-l-4 border-indigo-600 pl-4">Compétences</h2>
+      <div class="grid grid-cols-3 gap-6">
+        {{#each skills}}
+        <div>
+          <p class="text-sm font-semibold text-gray-700 mb-2">{{this.category}}</p>
+          <div class="flex flex-wrap">
+            {{#each this.items}}
+            <span class="bg-indigo-50 text-indigo-700 px-3 py-1 rounded mr-2 mb-2 text-xs font-medium">{{this}}</span>
+            {{/each}}
+          </div>
+        </div>
+        {{/each}}
+      </div>
+    </section>
+    
+    {{#if projects}}
+    <section class="mb-8">
+      <h2 class="text-2xl font-bold text-indigo-600 mb-4 border-l-4 border-indigo-600 pl-4">Projets</h2>
+      <div class="grid grid-cols-2 gap-4">
+        {{#each projects}}
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">{{this.name}}</h3>
+          <p class="text-sm text-gray-600 mb-2">{{this.description}}</p>
+          <div class="flex flex-wrap">
+            {{#each this.technologies}}
+            <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded mr-2 mb-2 text-xs">{{this}}</span>
+            {{/each}}
+          </div>
+        </div>
+        {{/each}}
+      </div>
+    </section>
+    {{/if}}
+    
+    {{#if languages}}
+    <section>
+      <h2 class="text-2xl font-bold text-indigo-600 mb-4 border-l-4 border-indigo-600 pl-4">Langues</h2>
+      <div class="flex flex-wrap">
+        {{#each languages}}
+        <div class="bg-gray-50 px-4 py-2 rounded mr-4 mb-2">
+          <span class="font-semibold text-gray-900">{{this.name}}</span>
+          <span class="text-sm text-gray-600 ml-2">- {{this.level}}</span>
+        </div>
+        {{/each}}
+      </div>
+    </section>
+    {{/if}}
+  </div>
+</div>`,
+    metadata: {
+      colors: ['indigo-600', 'purple-600', 'gray-900', 'gray-700'],
+      style: 'modern',
+      complexity: 'complex',
+    },
+    variables: [
+      'fullName',
+      'jobTitle',
+      'email',
+      'phone',
+      'location',
+      'profileImage',
+      'summary',
+      'experience',
+      'education',
+      'skills',
+      'projects',
+      'languages',
+    ],
+  },
+  {
+    id: 'report-analytical',
+    name: 'Rapport Analytique',
+    type: 'report',
+    code: `<div class="max-w-6xl mx-auto bg-white p-8">
+  <header class="mb-8 border-b-4 border-blue-600 pb-6">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">{{reportTitle}}</h1>
+        <p class="text-lg text-gray-600">{{reportSubtitle}}</p>
+      </div>
+      {{#if logoUrl}}
+      <img src="{{logoUrl}}" alt="Logo" class="h-16 w-auto">
+      {{/if}}
+    </div>
+    <div class="grid grid-cols-3 gap-4 mt-4 text-sm">
+      <div>
+        <p class="text-gray-500 mb-1">Période</p>
+        <p class="font-semibold text-gray-900">{{period}}</p>
+      </div>
+      <div>
+        <p class="text-gray-500 mb-1">Date de génération</p>
+        <p class="font-semibold text-gray-900">{{generationDate}}</p>
+      </div>
+      <div>
+        <p class="text-gray-500 mb-1">Auteur</p>
+        <p class="font-semibold text-gray-900">{{author}}</p>
+      </div>
+    </div>
+  </header>
+  
+  <section class="mb-8">
+    <h2 class="text-2xl font-bold text-blue-600 mb-6">Métriques Clés</h2>
+    <div class="grid grid-cols-4 gap-4">
+      {{#each keyMetrics}}
+      <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 text-center">
+        <p class="text-sm text-blue-600 mb-2 font-medium">{{this.label}}</p>
+        <p class="text-3xl font-bold text-blue-900">{{this.value}}</p>
+        {{#if this.change}}
+        <p class="text-xs mt-2 {{#if this.isPositive}}text-green-600{{else}}text-red-600{{/if}}">
+          {{this.change}}% vs période précédente
+        </p>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+  </section>
+  
+  <section class="mb-8">
+    <h2 class="text-2xl font-bold text-blue-600 mb-6">Analyse Détaillée</h2>
+    <div class="space-y-6">
+      {{#each analysisSections}}
+      <div class="border-l-4 border-blue-600 pl-6 mb-6">
+        <h3 class="text-xl font-semibold text-gray-900 mb-3">{{this.title}}</h3>
+        <p class="text-gray-700 mb-4 leading-relaxed">{{this.content}}</p>
+        {{#if this.data}}
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-300">
+                {{#each this.data.headers}}
+                <th class="text-left py-2 font-semibold text-gray-700">{{this}}</th>
+                {{/each}}
+              </tr>
+            </thead>
+            <tbody>
+              {{#each this.data.rows}}
+              <tr class="border-b border-gray-200">
+                {{#each this}}
+                <td class="py-2 text-gray-700">{{this}}</td>
+                {{/each}}
+              </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+  </section>
+  
+  {{#if charts}}
+  <section class="mb-8">
+    <h2 class="text-2xl font-bold text-blue-600 mb-6">Visualisations</h2>
+    <div class="grid grid-cols-2 gap-6">
+      {{#each charts}}
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">{{this.title}}</h3>
+        {{#if this.imageUrl}}
+        <img src="{{this.imageUrl}}" alt="{{this.title}}" class="w-full h-auto">
+        {{else}}
+        <div class="bg-white p-8 text-center text-gray-400 border-2 border-dashed border-gray-300 rounded">
+          [Graphique: {{this.type}}]
+        </div>
+        {{/if}}
+        {{#if this.description}}
+        <p class="text-sm text-gray-600 mt-4">{{this.description}}</p>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+  </section>
+  {{/if}}
+  
+  <section class="mb-8">
+    <h2 class="text-2xl font-bold text-blue-600 mb-6">Conclusions</h2>
+    <div class="bg-blue-50 border-l-4 border-blue-600 p-6 rounded">
+      <ul class="list-disc list-inside space-y-2 text-gray-700">
+        {{#each conclusions}}
+        <li>{{this}}</li>
+        {{/each}}
+      </ul>
+    </div>
+  </section>
+  
+  {{#if recommendations}}
+  <section class="mb-8">
+    <h2 class="text-2xl font-bold text-blue-600 mb-6">Recommandations</h2>
+    <div class="space-y-4">
+      {{#each recommendations}}
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <h3 class="font-semibold text-gray-900 mb-2">{{this.title}}</h3>
+        <p class="text-sm text-gray-700">{{this.description}}</p>
+        {{#if this.priority}}
+        <span class="inline-block mt-2 text-xs px-2 py-1 rounded bg-{{this.priorityColor}}-100 text-{{this.priorityColor}}-700">
+          Priorité: {{this.priority}}
+        </span>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+  </section>
+  {{/if}}
+  
+  <footer class="mt-12 pt-6 border-t border-gray-300 text-center text-sm text-gray-500">
+    <p>{{footerText}}</p>
+    {{#if contactEmail}}
+    <p class="mt-2">Contact: {{contactEmail}}</p>
+    {{/if}}
+  </footer>
+</div>`,
+    metadata: {
+      colors: ['blue-600', 'blue-900', 'gray-900', 'gray-700'],
+      style: 'analytical',
+      complexity: 'complex',
+    },
+    variables: [
+      'reportTitle',
+      'reportSubtitle',
+      'logoUrl',
+      'period',
+      'generationDate',
+      'author',
+      'keyMetrics',
+      'analysisSections',
+      'charts',
+      'conclusions',
+      'recommendations',
+      'footerText',
+      'contactEmail',
+    ],
+  },
+  {
+    id: 'menu-restaurant',
+    name: 'Menu Restaurant',
+    type: 'other',
+    code: `<div class="max-w-4xl mx-auto bg-white">
+  <header class="bg-gradient-to-r from-amber-600 to-orange-600 text-white p-8 text-center">
+    {{#if logoUrl}}
+    <img src="{{logoUrl}}" alt="Logo" class="h-24 w-auto mx-auto mb-4">
+    {{/if}}
+    <h1 class="text-5xl font-bold mb-2">{{restaurantName}}</h1>
+    <p class="text-xl text-amber-100">{{tagline}}</p>
+    <div class="mt-4 text-sm">
+      <p>{{address}}</p>
+      <p>{{phone}} | {{email}}</p>
+    </div>
+  </header>
+  
+  <div class="p-8">
+    {{#each sections}}
+    <section class="mb-12">
+      <div class="text-center mb-6">
+        <h2 class="text-3xl font-bold text-amber-600 mb-2">{{this.title}}</h2>
+        {{#if this.subtitle}}
+        <p class="text-sm text-gray-600 italic">{{this.subtitle}}</p>
+        {{/if}}
+      </div>
+      
+      <div class="space-y-6">
+        {{#each this.items}}
+        <div class="border-b border-gray-200 pb-6 mb-6">
+          <div class="flex items-start justify-between mb-2">
+            <div class="flex-1">
+              <div class="flex items-center mb-2">
+                <h3 class="text-xl font-semibold text-gray-900 mr-3">{{this.name}}</h3>
+                {{#if this.isVegetarian}}
+                <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Végétarien</span>
+                {{/if}}
+                {{#if this.isSpicy}}
+                <span class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded ml-2">Épicé</span>
+                {{/if}}
+              </div>
+              <p class="text-gray-600 text-sm leading-relaxed mb-2">{{this.description}}</p>
+              {{#if this.allergens}}
+              <p class="text-xs text-gray-500 italic">Allergènes: {{this.allergens}}</p>
+              {{/if}}
+            </div>
+            <div class="ml-4 text-right">
+              <p class="text-2xl font-bold text-amber-600">{{this.price}}</p>
+              {{#if this.originalPrice}}
+              <p class="text-sm text-gray-400 line-through">{{this.originalPrice}}</p>
+              {{/if}}
+            </div>
+          </div>
+        </div>
+        {{/each}}
+      </div>
+    </section>
+    {{/each}}
+    
+    {{#if specialNotes}}
+    <div class="bg-amber-50 border-l-4 border-amber-600 p-4 rounded mb-8">
+      <h3 class="font-semibold text-amber-900 mb-2">Notes Spéciales</h3>
+      <ul class="list-disc list-inside text-sm text-amber-800">
+        {{#each specialNotes}}
+        <li>{{this}}</li>
+        {{/each}}
+      </ul>
+    </div>
+    {{/if}}
+    
+    {{#if footerInfo}}
+    <footer class="mt-12 pt-6 border-t border-gray-300 text-center text-sm text-gray-600">
+      <p>{{footerInfo}}</p>
+      {{#if socialMedia}}
+      <div class="mt-4">
+        {{#each socialMedia}}
+        <span class="mx-2">{{this.platform}}: {{this.handle}}</span>
+        {{/each}}
+      </div>
+      {{/if}}
+    </footer>
+    {{/if}}
+  </div>
+</div>`,
+    metadata: {
+      colors: ['amber-600', 'orange-600', 'gray-900', 'gray-600'],
+      style: 'elegant',
+      complexity: 'medium',
+    },
+    variables: [
+      'restaurantName',
+      'tagline',
+      'logoUrl',
+      'address',
+      'phone',
+      'email',
+      'sections',
+      'specialNotes',
+      'footerInfo',
+      'socialMedia',
+    ],
+  },
+  {
+    id: 'newsletter',
+    name: 'Newsletter',
+    type: 'other',
+    code: `<div class="max-w-4xl mx-auto bg-white">
+  <header class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-8 text-center">
+    <h1 class="text-4xl font-bold mb-2">{{newsletterTitle}}</h1>
+    <p class="text-xl text-blue-100 mb-4">{{newsletterSubtitle}}</p>
+    <div class="flex items-center justify-center text-sm">
+      <span>{{issueDate}}</span>
+      {{#if issueNumber}}
+      <span class="mx-2">•</span>
+      <span>Numéro {{issueNumber}}</span>
+      {{/if}}
+    </div>
+  </header>
+  
+  <div class="p-8">
+    {{#if editorNote}}
+    <div class="bg-blue-50 border-l-4 border-blue-600 p-6 mb-8 rounded">
+      <h2 class="text-lg font-semibold text-blue-900 mb-2">Note de la Rédaction</h2>
+      <p class="text-gray-700 leading-relaxed">{{editorNote}}</p>
+    </div>
+    {{/if}}
+    
+    <div class="grid grid-cols-2 gap-8 mb-8">
+      {{#each featuredArticles}}
+      <article class="border border-gray-200 rounded-lg overflow-hidden">
+        {{#if this.imageUrl}}
+        <img src="{{this.imageUrl}}" alt="{{this.title}}" class="w-full h-48 object-cover">
+        {{/if}}
+        <div class="p-6">
+          <div class="flex items-center mb-2">
+            <span class="text-xs font-semibold text-blue-600 uppercase tracking-wide">{{this.category}}</span>
+            <span class="text-xs text-gray-500 ml-auto">{{this.date}}</span>
+          </div>
+          <h2 class="text-xl font-bold text-gray-900 mb-2">{{this.title}}</h2>
+          <p class="text-gray-600 text-sm mb-4 line-clamp-3">{{this.excerpt}}</p>
+          <a href="#" class="text-blue-600 text-sm font-medium hover:underline">Lire la suite →</a>
+        </div>
+      </article>
+      {{/each}}
+    </div>
+    
+    <div class="mb-8">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6 border-b-2 border-gray-300 pb-2">Articles</h2>
+      <div class="space-y-6">
+        {{#each articles}}
+        <article class="flex items-start">
+          {{#if this.imageUrl}}
+          <img src="{{this.imageUrl}}" alt="{{this.title}}" class="w-32 h-32 object-cover rounded mr-4 flex-shrink-0">
+          {{/if}}
+          <div class="flex-1">
+            <div class="flex items-center mb-2">
+              <span class="text-xs font-semibold text-indigo-600 uppercase tracking-wide">{{this.category}}</span>
+              <span class="text-xs text-gray-500 ml-auto">{{this.date}}</span>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">{{this.title}}</h3>
+            <p class="text-gray-600 text-sm mb-3 leading-relaxed">{{this.excerpt}}</p>
+            <a href="#" class="text-indigo-600 text-sm font-medium hover:underline">Lire la suite →</a>
+          </div>
+        </article>
+        {{/each}}
+      </div>
+    </div>
+    
+    {{#if events}}
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-8">
+      <h2 class="text-2xl font-bold text-gray-900 mb-4">Événements à Venir</h2>
+      <div class="space-y-4">
+        {{#each events}}
+        <div class="flex items-start">
+          <div class="bg-indigo-600 text-white text-center p-3 rounded mr-4 flex-shrink-0">
+            <p class="text-sm font-bold">{{this.dateDay}}</p>
+            <p class="text-xs">{{this.dateMonth}}</p>
+          </div>
+          <div class="flex-1">
+            <h3 class="font-semibold text-gray-900 mb-1">{{this.title}}</h3>
+            <p class="text-sm text-gray-600">{{this.location}} • {{this.time}}</p>
+            <p class="text-sm text-gray-700 mt-2">{{this.description}}</p>
+          </div>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+    
+    <footer class="mt-12 pt-6 border-t border-gray-300">
+      <div class="grid grid-cols-3 gap-6 text-sm">
+        <div>
+          <h3 class="font-semibold text-gray-900 mb-2">Contact</h3>
+          <p class="text-gray-600">{{contactEmail}}</p>
+          <p class="text-gray-600">{{contactPhone}}</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-gray-900 mb-2">Suivez-nous</h3>
+          {{#each socialLinks}}
+          <p class="text-gray-600">{{this.platform}}: {{this.handle}}</p>
+          {{/each}}
+        </div>
+        <div>
+          <h3 class="font-semibold text-gray-900 mb-2">Newsletter</h3>
+          <p class="text-gray-600 text-xs">{{unsubscribeText}}</p>
+        </div>
+      </div>
+      <p class="text-center text-xs text-gray-500 mt-6">{{copyrightText}}</p>
+    </footer>
+  </div>
+</div>`,
+    metadata: {
+      colors: ['blue-600', 'indigo-600', 'gray-900', 'gray-600'],
+      style: 'modern',
+      complexity: 'medium',
+    },
+    variables: [
+      'newsletterTitle',
+      'newsletterSubtitle',
+      'issueDate',
+      'issueNumber',
+      'editorNote',
+      'featuredArticles',
+      'articles',
+      'events',
+      'contactEmail',
+      'contactPhone',
+      'socialLinks',
+      'unsubscribeText',
+      'copyrightText',
+    ],
+  },
+  {
+    id: 'product-sheet',
+    name: 'Fiche Produit',
+    type: 'other',
+    code: `<div class="max-w-5xl mx-auto bg-white">
+  <div class="grid grid-cols-2 gap-8 p-8">
+    <div>
+      {{#if mainImage}}
+      <img src="{{mainImage}}" alt="{{productName}}" class="w-full h-auto rounded-lg border border-gray-200 mb-4">
+      {{/if}}
+      {{#if additionalImages}}
+      <div class="grid grid-cols-4 gap-2">
+        {{#each additionalImages}}
+        <img src="{{this}}" alt="Product view" class="w-full h-20 object-cover rounded border border-gray-200">
+        {{/each}}
+      </div>
+      {{/if}}
+    </div>
+    
+    <div>
+      <div class="mb-4">
+        {{#if brand}}
+        <p class="text-sm text-gray-500 mb-1">{{brand}}</p>
+        {{/if}}
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">{{productName}}</h1>
+        {{#if productCode}}
+        <p class="text-sm text-gray-500">Référence: {{productCode}}</p>
+        {{/if}}
+      </div>
+      
+      <div class="mb-6">
+        <div class="flex items-baseline mb-4">
+          <span class="text-4xl font-bold text-indigo-600 mr-3">{{price}}</span>
+          {{#if originalPrice}}
+          <span class="text-xl text-gray-400 line-through">{{originalPrice}}</span>
+          {{/if}}
+          {{#if discount}}
+          <span class="ml-3 bg-red-100 text-red-700 text-sm font-semibold px-2 py-1 rounded">{{discount}}% OFF</span>
+          {{/if}}
+        </div>
+        {{#if availability}}
+        <div class="flex items-center mb-2">
+          <span class="text-sm font-semibold text-gray-700 mr-2">Disponibilité:</span>
+          <span class="text-sm {{#if (eq availability 'En stock')}}text-green-600{{else}}text-red-600{{/if}} font-medium">
+            {{availability}}
+          </span>
+        </div>
+        {{/if}}
+      </div>
+      
+      <div class="mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-3">Description</h2>
+        <p class="text-gray-700 leading-relaxed mb-4">{{description}}</p>
+        {{#if keyFeatures}}
+        <ul class="list-disc list-inside text-gray-700 space-y-1">
+          {{#each keyFeatures}}
+          <li>{{this}}</li>
+          {{/each}}
+        </ul>
+        {{/if}}
+      </div>
+      
+      {{#if specifications}}
+      <div class="mb-6 border-t border-gray-200 pt-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-3">Spécifications</h2>
+        <table class="w-full text-sm">
+          <tbody>
+            {{#each specifications}}
+            <tr class="border-b border-gray-100">
+              <td class="py-2 font-semibold text-gray-700 w-1/3">{{this.name}}</td>
+              <td class="py-2 text-gray-600">{{this.value}}</td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+      {{/if}}
+      
+      {{#if reviews}}
+      <div class="mb-6 border-t border-gray-200 pt-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-900">Avis Clients</h2>
+          <div class="flex items-center">
+            <span class="text-2xl font-bold text-gray-900 mr-2">{{averageRating}}</span>
+            <div class="flex">
+              {{#each (range 1 5)}}
+              <span class="text-yellow-400">{{#if (lte this ../averageRating)}}★{{else}}☆{{/if}}</span>
+              {{/each}}
+            </div>
+            <span class="text-sm text-gray-600 ml-2">({{totalReviews}} avis)</span>
+          </div>
+        </div>
+        <div class="space-y-4 max-h-64 overflow-y-auto">
+          {{#each reviews}}
+          <div class="border-b border-gray-100 pb-4">
+            <div class="flex items-center mb-2">
+              <span class="font-semibold text-gray-900 mr-2">{{this.author}}</span>
+              <div class="flex">
+                {{#each (range 1 5)}}
+                <span class="text-yellow-400 text-xs">{{#if (lte this ../this.rating)}}★{{else}}☆{{/if}}</span>
+                {{/each}}
+              </div>
+            </div>
+            <p class="text-sm text-gray-700">{{this.comment}}</p>
+            <p class="text-xs text-gray-500 mt-1">{{this.date}}</p>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
+      
+      <div class="border-t border-gray-200 pt-6">
+        <div class="flex items-center space-x-4">
+          <button class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 flex-1">
+            Ajouter au Panier
+          </button>
+          <button class="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50">
+            Favoris
+          </button>
+        </div>
+        {{#if shippingInfo}}
+        <p class="text-sm text-gray-600 mt-4 text-center">{{shippingInfo}}</p>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+  
+  {{#if relatedProducts}}
+  <div class="border-t border-gray-200 p-8">
+    <h2 class="text-2xl font-bold text-gray-900 mb-6">Produits Similaires</h2>
+    <div class="grid grid-cols-4 gap-4">
+      {{#each relatedProducts}}
+      <div class="border border-gray-200 rounded-lg p-4">
+        {{#if this.image}}
+        <img src="{{this.image}}" alt="{{this.name}}" class="w-full h-32 object-cover rounded mb-2">
+        {{/if}}
+        <h3 class="font-semibold text-gray-900 text-sm mb-1">{{this.name}}</h3>
+        <p class="text-indigo-600 font-bold">{{this.price}}</p>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+  {{/if}}
+</div>`,
+    metadata: {
+      colors: ['indigo-600', 'gray-900', 'gray-700', 'yellow-400'],
+      style: 'modern',
+      complexity: 'complex',
+    },
+    variables: [
+      'productName',
+      'brand',
+      'productCode',
+      'mainImage',
+      'additionalImages',
+      'price',
+      'originalPrice',
+      'discount',
+      'availability',
+      'description',
+      'keyFeatures',
+      'specifications',
+      'reviews',
+      'averageRating',
+      'totalReviews',
+      'shippingInfo',
+      'relatedProducts',
+    ],
+  },
 ];
 
 /**

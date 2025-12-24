@@ -1542,14 +1542,13 @@ const CreateTemplate: React.FC = () => {
             </Tooltip>
           )}
 
-          <Tooltip label="Improve design with AI">
+          <Tooltip label="Choose a template model">
             <Button
-              id="improve-button"
-              onClick={improveTemplateUI}
-              loading={isImproving}
-              leftSection={<IconSparkles size={16} />}
+              id="models-button"
+              onClick={openTemplateDrawer}
+              leftSection={<IconFileText size={16} />}
               variant="light"
-              color="teal"
+              color="purple"
               styles={{
                 root: {
                   transition: 'all 0.2s ease',
@@ -1557,7 +1556,7 @@ const CreateTemplate: React.FC = () => {
                 },
               }}
             >
-              Improve Design
+              Models
             </Button>
           </Tooltip>
           <Tooltip label="Generate with AI">
