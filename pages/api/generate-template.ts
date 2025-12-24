@@ -503,10 +503,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { prompt } = req.body;
+    const { prompt, useAgent } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    // Si useAgent est activé, utiliser l'agent
+    if (useAgent) {
+      const { generateTemplateWithAgent } = await import('@/services/agent/agentGraph');
+      const result = await generateTemplateWithAgent(prompt);
+      return res.status(200).json({
+        content: result.content,
+        suggestedVariables: result.suggestedVariables,
+        warnings: result.warnings,
+      });
     }
 
     const templatePrompt = `You are an EXPERT UI/UX designer. Create a STUNNING, PROFESSIONAL, MODERN template for: ${prompt}
