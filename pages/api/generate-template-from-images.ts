@@ -528,7 +528,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { prompt, imageUrls } = req.body;
+    const { prompt, imageUrls, useAgent } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
@@ -543,6 +543,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (typeof url !== 'string' || !url.match(/^(https?:\/\/|\/uploads\/)/)) {
         return res.status(400).json({ error: `Invalid image URL format: ${url}` });
       }
+    }
+
+    // Si useAgent est activé, utiliser l'agent
+    if (useAgent) {
+      const { generateTemplateWithAgent } = await import('@/services/agent/agentGraph');
+      const result = await generateTemplateWithAgent(prompt, imageUrls);
+      return res.status(200).json({
+        content: result.content,
+        suggestedVariables: result.suggestedVariables,
+        warnings: result.warnings,
+      });
     }
 
     let template: string;

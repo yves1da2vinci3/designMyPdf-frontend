@@ -22,6 +22,9 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.65.0",
     "@google/generative-ai": "^0.22.0",
+    "@langchain/anthropic": "^0.3.0",
+    "@langchain/core": "^0.3.0",
+    "@langchain/langgraph": "^0.2.0",
     "@mantine/charts": "^7.10.1",
     "@mantine/code-highlight": "^8.0.0",
     "@mantine/core": "7.8.1",
