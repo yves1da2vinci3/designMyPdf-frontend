@@ -20,6 +20,8 @@ import {
   Image,
   Menu,
   Divider,
+  Card,
+  Badge,
 } from '@mantine/core';
 import { useRouter, useParams } from 'next/navigation';
 import { useDisclosure } from '@mantine/hooks';
@@ -43,6 +45,16 @@ import {
   IconFileExport,
   IconDotsVertical,
   IconHelp,
+  IconFileText,
+  IconFileInvoice,
+  IconUser,
+  IconReport,
+  IconBriefcase,
+  IconGavel,
+  IconPresentation,
+  IconReceipt,
+  IconTruck,
+  IconCertificate,
 } from '@tabler/icons-react';
 
 import { useMonaco } from '@monaco-editor/react';
@@ -66,6 +78,9 @@ import { exportPdfDocument } from '../../../../utils/pdfUtils';
 import { DEFAULT_FORMAT, getPageDimensions } from '../../../../utils/paperUtils';
 import { manuallyStartTour } from '../../../../utils/tourUtils';
 import { useLocalStorage } from '../../../../utils/useLocalStorage';
+import { REFERENCE_TEMPLATES } from '@/services/agent/templateLibrary';
+import { extractVariablesFromTemplate, buildVariableStructure } from '@/services/agent/templateUtils';
+import type { ReferenceTemplate } from '@/services/agent/types';
 import 'driver.js/dist/driver.css';
 
 const data = {
@@ -133,6 +148,9 @@ const CreateTemplate: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showTourButton, setShowTourButton] = useState(false);
   const [hasSeenTour, setHasSeenTour] = useLocalStorage('hasSeenTemplateEditorTour', false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [templateDrawerOpened, { open: openTemplateDrawer, close: closeTemplateDrawer }] =
+    useDisclosure(false);
 
   const fetchTemplate = async () => {
     try {
@@ -165,6 +183,26 @@ const CreateTemplate: React.FC = () => {
   const handleVariablesUpdate = (newVariables: any) => {
     setVariables(newVariables);
     setJsonContent(JSON.stringify(newVariables, null, 2));
+  };
+
+  const handleTemplateSelect = (template: ReferenceTemplate) => {
+    // Charger le code HTML du template
+    setCode(template.code);
+
+    // Extraire les variables Handlebars du code
+    const extractedVars = extractVariablesFromTemplate(template.code);
+
+    // Générer les variables par défaut avec des valeurs réalistes
+    const defaultVariables = buildVariableStructure(extractedVars, template.code);
+
+    // Mettre à jour les variables
+    handleVariablesUpdate(defaultVariables);
+    setSelectedTemplateId(template.id);
+    closeTemplateDrawer();
+
+    notificationService.showSuccessNotification(
+      `Template "${template.name}" loaded successfully`,
+    );
   };
 
   const mergeSuggestedVariables = () => {
@@ -864,6 +902,587 @@ const CreateTemplate: React.FC = () => {
         </Stack>
       </Drawer>
 
+      {/* Template Selection Drawer */}
+      <Drawer
+        opened={templateDrawerOpened}
+        onClose={closeTemplateDrawer}
+        title="Choose a Template"
+        position="right"
+        size="lg"
+        styles={{
+          header: {
+            backgroundColor: '#1A1B1E',
+            color: 'white',
+            padding: '1rem',
+            borderBottom: '1px solid #373A40',
+          },
+          content: {
+            backgroundColor: '#1A1B1E',
+            color: 'white',
+          },
+          close: {
+            color: 'white',
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              transform: 'scale(1.1)',
+            },
+          },
+        }}
+      >
+        <ScrollArea h="calc(100vh - 80px)">
+          <Stack gap="xl" p="xl">
+            <Text size="sm" c="dimmed">
+              Select a template to start with. The template code and default variables will be loaded automatically.
+            </Text>
+
+            {/* Helper function to get icon for template type */}
+            {(() => {
+              const getTypeIcon = (type: string) => {
+                switch (type) {
+                  case 'invoice':
+                    return <IconFileInvoice size={20} />;
+                  case 'resume':
+                    return <IconUser size={20} />;
+                  case 'report':
+                    return <IconReport size={20} />;
+                  default:
+                    return <IconFileText size={20} />;
+                }
+              };
+
+              const getTypeColor = (type: string) => {
+                switch (type) {
+                  case 'invoice':
+                    return 'blue';
+                  case 'resume':
+                    return 'green';
+                  case 'report':
+                    return 'purple';
+                  default:
+                    return 'gray';
+                }
+              };
+
+              const getTypeLabel = (type: string) => {
+                switch (type) {
+                  case 'invoice':
+                    return 'Invoices';
+                  case 'resume':
+                    return 'Resumes';
+                  case 'report':
+                    return 'Reports';
+                  default:
+                    return 'Other Documents';
+                }
+              };
+
+              // Group templates by type
+              const templatesByType = {
+                invoice: REFERENCE_TEMPLATES.filter((t) => t.type === 'invoice'),
+                resume: REFERENCE_TEMPLATES.filter((t) => t.type === 'resume'),
+                report: REFERENCE_TEMPLATES.filter((t) => t.type === 'report'),
+                other: REFERENCE_TEMPLATES.filter((t) => t.type === 'other'),
+              };
+
+              // Sub-categorize "other" templates
+              const otherTemplates = {
+                commercial: templatesByType.other.filter((t) =>
+                  ['proposal-business', 'quote-estimate', 'purchase-order'].includes(t.id),
+                ),
+                legal: templatesByType.other.filter((t) =>
+                  ['contract-agreement', 'nda-confidentiality'].includes(t.id),
+                ),
+                presentation: templatesByType.other.filter((t) =>
+                  ['presentation-slide', 'pitch-deck'].includes(t.id),
+                ),
+                administrative: templatesByType.other.filter((t) =>
+                  ['receipt-payment', 'delivery-note'].includes(t.id),
+                ),
+                certificate: templatesByType.other.filter((t) =>
+                  ['certificate-achievement'].includes(t.id),
+                ),
+              };
+
+              return (
+                <>
+                  {/* Invoices */}
+                  {templatesByType.invoice.length > 0 && (
+                    <Box>
+                      <Group mb="md">
+                        {getTypeIcon('invoice')}
+                        <Text size="sm" fw={600} c="white">
+                          {getTypeLabel('invoice')}
+                        </Text>
+                        <Badge size="sm" color={getTypeColor('invoice')}>
+                          {templatesByType.invoice.length}
+                        </Badge>
+                      </Group>
+                      <SimpleGrid cols={2} spacing="md">
+                        {templatesByType.invoice.map((template) => (
+                          <Card
+                            key={template.id}
+                            padding="md"
+                            radius="md"
+                            withBorder
+                            styles={{
+                              root: {
+                                borderColor:
+                                  selectedTemplateId === template.id ? '#3B82F6' : '#373A40',
+                                backgroundColor: '#25262B',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  borderColor: '#3B82F6',
+                                  transform: 'translateY(-2px)',
+                                },
+                              },
+                            }}
+                            onClick={() => handleTemplateSelect(template)}
+                          >
+                            <Stack gap="xs">
+                              <Group justify="space-between">
+                                <Text size="sm" fw={500} c="white" lineClamp={1}>
+                                  {template.name}
+                                </Text>
+                                {selectedTemplateId === template.id && (
+                                  <Badge size="xs" color="blue">
+                                    Selected
+                                  </Badge>
+                                )}
+                              </Group>
+                              <Text size="xs" c="dimmed" lineClamp={2}>
+                                {template.metadata.style} • {template.metadata.complexity}
+                              </Text>
+                              <Group gap="xs" mt="xs">
+                                {template.metadata.colors.slice(0, 3).map((color, idx) => {
+                                  // Map Tailwind colors to hex values
+                                  const colorMap: Record<string, string> = {
+                                    'blue-600': '#2563eb',
+                                    'gray-900': '#111827',
+                                    'gray-600': '#4b5563',
+                                    'blue-50': '#eff6ff',
+                                    'indigo-600': '#4f46e5',
+                                    'purple-600': '#9333ea',
+                                    'green-600': '#16a34a',
+                                    'orange-600': '#ea580c',
+                                    'teal-600': '#0d9488',
+                                    'slate-900': '#0f172a',
+                                    'yellow-400': '#facc15',
+                                    'yellow-600': '#ca8a04',
+                                  };
+                                  const hexColor = colorMap[color] || '#6b7280';
+                                  return (
+                                    <Box
+                                      key={idx}
+                                      style={{
+                                        width: 12,
+                                        height: 12,
+                                        borderRadius: '50%',
+                                        backgroundColor: hexColor,
+                                      }}
+                                    />
+                                  );
+                                })}
+                              </Group>
+                            </Stack>
+                          </Card>
+                        ))}
+                      </SimpleGrid>
+                    </Box>
+                  )}
+
+                  {/* Resumes */}
+                  {templatesByType.resume.length > 0 && (
+                    <Box>
+                      <Group mb="md">
+                        {getTypeIcon('resume')}
+                        <Text size="sm" fw={600} c="white">
+                          {getTypeLabel('resume')}
+                        </Text>
+                        <Badge size="sm" color={getTypeColor('resume')}>
+                          {templatesByType.resume.length}
+                        </Badge>
+                      </Group>
+                      <SimpleGrid cols={2} spacing="md">
+                        {templatesByType.resume.map((template) => (
+                          <Card
+                            key={template.id}
+                            padding="md"
+                            radius="md"
+                            withBorder
+                            styles={{
+                              root: {
+                                borderColor:
+                                  selectedTemplateId === template.id ? '#3B82F6' : '#373A40',
+                                backgroundColor: '#25262B',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  borderColor: '#3B82F6',
+                                  transform: 'translateY(-2px)',
+                                },
+                              },
+                            }}
+                            onClick={() => handleTemplateSelect(template)}
+                          >
+                            <Stack gap="xs">
+                              <Group justify="space-between">
+                                <Text size="sm" fw={500} c="white" lineClamp={1}>
+                                  {template.name}
+                                </Text>
+                                {selectedTemplateId === template.id && (
+                                  <Badge size="xs" color="blue">
+                                    Selected
+                                  </Badge>
+                                )}
+                              </Group>
+                              <Text size="xs" c="dimmed" lineClamp={2}>
+                                {template.metadata.style} • {template.metadata.complexity}
+                              </Text>
+                            </Stack>
+                          </Card>
+                        ))}
+                      </SimpleGrid>
+                    </Box>
+                  )}
+
+                  {/* Reports */}
+                  {templatesByType.report.length > 0 && (
+                    <Box>
+                      <Group mb="md">
+                        {getTypeIcon('report')}
+                        <Text size="sm" fw={600} c="white">
+                          {getTypeLabel('report')}
+                        </Text>
+                        <Badge size="sm" color={getTypeColor('report')}>
+                          {templatesByType.report.length}
+                        </Badge>
+                      </Group>
+                      <SimpleGrid cols={2} spacing="md">
+                        {templatesByType.report.map((template) => (
+                          <Card
+                            key={template.id}
+                            padding="md"
+                            radius="md"
+                            withBorder
+                            styles={{
+                              root: {
+                                borderColor:
+                                  selectedTemplateId === template.id ? '#3B82F6' : '#373A40',
+                                backgroundColor: '#25262B',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  borderColor: '#3B82F6',
+                                  transform: 'translateY(-2px)',
+                                },
+                              },
+                            }}
+                            onClick={() => handleTemplateSelect(template)}
+                          >
+                            <Stack gap="xs">
+                              <Group justify="space-between">
+                                <Text size="sm" fw={500} c="white" lineClamp={1}>
+                                  {template.name}
+                                </Text>
+                                {selectedTemplateId === template.id && (
+                                  <Badge size="xs" color="blue">
+                                    Selected
+                                  </Badge>
+                                )}
+                              </Group>
+                              <Text size="xs" c="dimmed" lineClamp={2}>
+                                {template.metadata.style} • {template.metadata.complexity}
+                              </Text>
+                            </Stack>
+                          </Card>
+                        ))}
+                      </SimpleGrid>
+                    </Box>
+                  )}
+
+                  {/* Commercial Documents */}
+                  {otherTemplates.commercial.length > 0 && (
+                    <Box>
+                      <Group mb="md">
+                        <IconBriefcase size={20} />
+                        <Text size="sm" fw={600} c="white">
+                          Commercial Documents
+                        </Text>
+                        <Badge size="sm" color="teal">
+                          {otherTemplates.commercial.length}
+                        </Badge>
+                      </Group>
+                      <SimpleGrid cols={2} spacing="md">
+                        {otherTemplates.commercial.map((template) => (
+                          <Card
+                            key={template.id}
+                            padding="md"
+                            radius="md"
+                            withBorder
+                            styles={{
+                              root: {
+                                borderColor:
+                                  selectedTemplateId === template.id ? '#3B82F6' : '#373A40',
+                                backgroundColor: '#25262B',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  borderColor: '#3B82F6',
+                                  transform: 'translateY(-2px)',
+                                },
+                              },
+                            }}
+                            onClick={() => handleTemplateSelect(template)}
+                          >
+                            <Stack gap="xs">
+                              <Group justify="space-between">
+                                <Text size="sm" fw={500} c="white" lineClamp={1}>
+                                  {template.name}
+                                </Text>
+                                {selectedTemplateId === template.id && (
+                                  <Badge size="xs" color="blue">
+                                    Selected
+                                  </Badge>
+                                )}
+                              </Group>
+                              <Text size="xs" c="dimmed" lineClamp={2}>
+                                {template.metadata.style} • {template.metadata.complexity}
+                              </Text>
+                            </Stack>
+                          </Card>
+                        ))}
+                      </SimpleGrid>
+                    </Box>
+                  )}
+
+                  {/* Legal Documents */}
+                  {otherTemplates.legal.length > 0 && (
+                    <Box>
+                      <Group mb="md">
+                        <IconGavel size={20} />
+                        <Text size="sm" fw={600} c="white">
+                          Legal Documents
+                        </Text>
+                        <Badge size="sm" color="orange">
+                          {otherTemplates.legal.length}
+                        </Badge>
+                      </Group>
+                      <SimpleGrid cols={2} spacing="md">
+                        {otherTemplates.legal.map((template) => (
+                          <Card
+                            key={template.id}
+                            padding="md"
+                            radius="md"
+                            withBorder
+                            styles={{
+                              root: {
+                                borderColor:
+                                  selectedTemplateId === template.id ? '#3B82F6' : '#373A40',
+                                backgroundColor: '#25262B',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  borderColor: '#3B82F6',
+                                  transform: 'translateY(-2px)',
+                                },
+                              },
+                            }}
+                            onClick={() => handleTemplateSelect(template)}
+                          >
+                            <Stack gap="xs">
+                              <Group justify="space-between">
+                                <Text size="sm" fw={500} c="white" lineClamp={1}>
+                                  {template.name}
+                                </Text>
+                                {selectedTemplateId === template.id && (
+                                  <Badge size="xs" color="blue">
+                                    Selected
+                                  </Badge>
+                                )}
+                              </Group>
+                              <Text size="xs" c="dimmed" lineClamp={2}>
+                                {template.metadata.style} • {template.metadata.complexity}
+                              </Text>
+                            </Stack>
+                          </Card>
+                        ))}
+                      </SimpleGrid>
+                    </Box>
+                  )}
+
+                  {/* Presentation Documents */}
+                  {otherTemplates.presentation.length > 0 && (
+                    <Box>
+                      <Group mb="md">
+                        <IconPresentation size={20} />
+                        <Text size="sm" fw={600} c="white">
+                          Presentation Documents
+                        </Text>
+                        <Badge size="sm" color="pink">
+                          {otherTemplates.presentation.length}
+                        </Badge>
+                      </Group>
+                      <SimpleGrid cols={2} spacing="md">
+                        {otherTemplates.presentation.map((template) => (
+                          <Card
+                            key={template.id}
+                            padding="md"
+                            radius="md"
+                            withBorder
+                            styles={{
+                              root: {
+                                borderColor:
+                                  selectedTemplateId === template.id ? '#3B82F6' : '#373A40',
+                                backgroundColor: '#25262B',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  borderColor: '#3B82F6',
+                                  transform: 'translateY(-2px)',
+                                },
+                              },
+                            }}
+                            onClick={() => handleTemplateSelect(template)}
+                          >
+                            <Stack gap="xs">
+                              <Group justify="space-between">
+                                <Text size="sm" fw={500} c="white" lineClamp={1}>
+                                  {template.name}
+                                </Text>
+                                {selectedTemplateId === template.id && (
+                                  <Badge size="xs" color="blue">
+                                    Selected
+                                  </Badge>
+                                )}
+                              </Group>
+                              <Text size="xs" c="dimmed" lineClamp={2}>
+                                {template.metadata.style} • {template.metadata.complexity}
+                              </Text>
+                            </Stack>
+                          </Card>
+                        ))}
+                      </SimpleGrid>
+                    </Box>
+                  )}
+
+                  {/* Administrative Documents */}
+                  {otherTemplates.administrative.length > 0 && (
+                    <Box>
+                      <Group mb="md">
+                        <IconReceipt size={20} />
+                        <Text size="sm" fw={600} c="white">
+                          Administrative Documents
+                        </Text>
+                        <Badge size="sm" color="cyan">
+                          {otherTemplates.administrative.length}
+                        </Badge>
+                      </Group>
+                      <SimpleGrid cols={2} spacing="md">
+                        {otherTemplates.administrative.map((template) => (
+                          <Card
+                            key={template.id}
+                            padding="md"
+                            radius="md"
+                            withBorder
+                            styles={{
+                              root: {
+                                borderColor:
+                                  selectedTemplateId === template.id ? '#3B82F6' : '#373A40',
+                                backgroundColor: '#25262B',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  borderColor: '#3B82F6',
+                                  transform: 'translateY(-2px)',
+                                },
+                              },
+                            }}
+                            onClick={() => handleTemplateSelect(template)}
+                          >
+                            <Stack gap="xs">
+                              <Group justify="space-between">
+                                <Text size="sm" fw={500} c="white" lineClamp={1}>
+                                  {template.name}
+                                </Text>
+                                {selectedTemplateId === template.id && (
+                                  <Badge size="xs" color="blue">
+                                    Selected
+                                  </Badge>
+                                )}
+                              </Group>
+                              <Text size="xs" c="dimmed" lineClamp={2}>
+                                {template.metadata.style} • {template.metadata.complexity}
+                              </Text>
+                            </Stack>
+                          </Card>
+                        ))}
+                      </SimpleGrid>
+                    </Box>
+                  )}
+
+                  {/* Certificates */}
+                  {otherTemplates.certificate.length > 0 && (
+                    <Box>
+                      <Group mb="md">
+                        <IconCertificate size={20} />
+                        <Text size="sm" fw={600} c="white">
+                          Certificates
+                        </Text>
+                        <Badge size="sm" color="yellow">
+                          {otherTemplates.certificate.length}
+                        </Badge>
+                      </Group>
+                      <SimpleGrid cols={2} spacing="md">
+                        {otherTemplates.certificate.map((template) => (
+                          <Card
+                            key={template.id}
+                            padding="md"
+                            radius="md"
+                            withBorder
+                            styles={{
+                              root: {
+                                borderColor:
+                                  selectedTemplateId === template.id ? '#3B82F6' : '#373A40',
+                                backgroundColor: '#25262B',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  borderColor: '#3B82F6',
+                                  transform: 'translateY(-2px)',
+                                },
+                              },
+                            }}
+                            onClick={() => handleTemplateSelect(template)}
+                          >
+                            <Stack gap="xs">
+                              <Group justify="space-between">
+                                <Text size="sm" fw={500} c="white" lineClamp={1}>
+                                  {template.name}
+                                </Text>
+                                {selectedTemplateId === template.id && (
+                                  <Badge size="xs" color="blue">
+                                    Selected
+                                  </Badge>
+                                )}
+                              </Group>
+                              <Text size="xs" c="dimmed" lineClamp={2}>
+                                {template.metadata.style} • {template.metadata.complexity}
+                              </Text>
+                            </Stack>
+                          </Card>
+                        ))}
+                      </SimpleGrid>
+                    </Box>
+                  )}
+                </>
+              );
+            })()}
+          </Stack>
+        </ScrollArea>
+      </Drawer>
+
       {/* NavBar */}
       <Group
         h={rem(60)}
@@ -1163,6 +1782,37 @@ const CreateTemplate: React.FC = () => {
                   >
                     Export as {format.toUpperCase()} PDF
                   </Button>
+                </Box>
+
+                {/* Start from Template section */}
+                <Box>
+                  <Text size="sm" fw={600} c="white" mb="md" fs="uppercase">
+                    Templates
+                  </Text>
+                  <Text size="xs" c="dimmed" mb="md">
+                    Start from a pre-built template
+                  </Text>
+                  <Button
+                    fullWidth
+                    leftSection={<IconFileText size={16} />}
+                    onClick={openTemplateDrawer}
+                    variant="light"
+                    color="purple"
+                    styles={{
+                      root: {
+                        transition: 'all 0.2s ease',
+                        '&:hover': { transform: 'translateY(-1px)' },
+                      },
+                    }}
+                    mb="md"
+                  >
+                    Start from Template
+                  </Button>
+                  {selectedTemplateId && (
+                    <Text size="xs" c="dimmed" style={{ fontStyle: 'italic' }}>
+                      Template selected
+                    </Text>
+                  )}
                 </Box>
 
                 {/* Variables section */}
