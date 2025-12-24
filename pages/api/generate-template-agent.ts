@@ -28,6 +28,7 @@ export default async function handler(
       warnings: result.warnings,
     });
   } catch (error: any) {
+    // eslint-disable-next-line no-console
     console.error('Error generating template with agent:', error);
     return res.status(500).json({
       error: 'Failed to generate template',

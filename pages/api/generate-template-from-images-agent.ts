@@ -39,6 +39,7 @@ export default async function handler(
       warnings: result.warnings,
     });
   } catch (error: any) {
+    // eslint-disable-next-line no-console
     console.error('Error generating template from images with agent:', error);
     return res.status(500).json({
       error: 'Failed to generate template from images',

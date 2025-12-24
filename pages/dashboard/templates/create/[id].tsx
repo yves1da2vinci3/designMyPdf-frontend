@@ -34,7 +34,6 @@ import {
   IconMinus,
   IconPlus,
   IconWand,
-  IconSparkles,
   IconChartDots,
   IconShoppingCart,
   IconPhoto,
@@ -53,7 +52,6 @@ import {
   IconGavel,
   IconPresentation,
   IconReceipt,
-  IconTruck,
   IconCertificate,
 } from '@tabler/icons-react';
 
@@ -136,7 +134,6 @@ const CreateTemplate: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [promptDrawerOpened, { open: openPromptDrawer, close: closePromptDrawer }] =
     useDisclosure(false);
-  const [isImproving, setIsImproving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [files, setFiles] = useState<FileWithPath[]>([]);
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
@@ -185,23 +182,23 @@ const CreateTemplate: React.FC = () => {
     setJsonContent(JSON.stringify(newVariables, null, 2));
   };
 
-  const handleTemplateSelect = (template: ReferenceTemplate) => {
+  const handleTemplateSelect = (templateItem: ReferenceTemplate) => {
     // Charger le code HTML du template
-    setCode(template.code);
+    setCode(templateItem.code);
 
     // Extraire les variables Handlebars du code
-    const extractedVars = extractVariablesFromTemplate(template.code);
+    const extractedVars = extractVariablesFromTemplate(templateItem.code);
 
     // Générer les variables par défaut avec des valeurs réalistes
-    const defaultVariables = buildVariableStructure(extractedVars, template.code);
+    const defaultVariables = buildVariableStructure(extractedVars, templateItem.code);
 
     // Mettre à jour les variables
     handleVariablesUpdate(defaultVariables);
-    setSelectedTemplateId(template.id);
+    setSelectedTemplateId(templateItem.id);
     closeTemplateDrawer();
 
     notificationService.showSuccessNotification(
-      `Template "${template.name}" loaded successfully`,
+      `Template "${templateItem.name}" loaded successfully`,
     );
   };
 
@@ -491,33 +488,6 @@ const CreateTemplate: React.FC = () => {
       notificationService.showErrorNotification(error?.message || 'Error generating template');
     } finally {
       setIsGenerating(false);
-    }
-  };
-
-  const improveTemplateUI = async (): Promise<void> => {
-    if (!code) return;
-
-    setIsImproving(true);
-    try {
-      const response = await fetch('/api/improve-template', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          template: code,
-          variables,
-        }),
-      });
-
-      const improvedData = await response.json();
-      if (improvedData.content) {
-        setCode(improvedData.content);
-      }
-    } catch (error: any) {
-      notificationService.showErrorNotification(error?.message || 'Error improving template');
-    } finally {
-      setIsImproving(false);
     }
   };
 
@@ -933,7 +903,8 @@ const CreateTemplate: React.FC = () => {
         <ScrollArea h="calc(100vh - 80px)">
           <Stack gap="xl" p="xl">
             <Text size="sm" c="dimmed">
-              Select a template to start with. The template code and default variables will be loaded automatically.
+              Select a template to start with. The template code and default variables
+              will be loaded automatically.
             </Text>
 
             {/* Helper function to get icon for template type */}
@@ -1019,16 +990,16 @@ const CreateTemplate: React.FC = () => {
                         </Badge>
                       </Group>
                       <SimpleGrid cols={2} spacing="md">
-                        {templatesByType.invoice.map((template) => (
+                        {templatesByType.invoice.map((templateItem) => (
                           <Card
-                            key={template.id}
+                            key={templateItem.id}
                             padding="md"
                             radius="md"
                             withBorder
                             styles={{
                               root: {
                                 borderColor:
-                                  selectedTemplateId === template.id ? '#3B82F6' : '#373A40',
+                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
                                 backgroundColor: '#25262B',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
@@ -1038,24 +1009,24 @@ const CreateTemplate: React.FC = () => {
                                 },
                               },
                             }}
-                            onClick={() => handleTemplateSelect(template)}
+                            onClick={() => handleTemplateSelect(templateItem)}
                           >
                             <Stack gap="xs">
                               <Group justify="space-between">
                                 <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {template.name}
+                                  {templateItem.name}
                                 </Text>
-                                {selectedTemplateId === template.id && (
+                                {selectedTemplateId === templateItem.id && (
                                   <Badge size="xs" color="blue">
                                     Selected
                                   </Badge>
                                 )}
                               </Group>
                               <Text size="xs" c="dimmed" lineClamp={2}>
-                                {template.metadata.style} • {template.metadata.complexity}
+                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
                               </Text>
                               <Group gap="xs" mt="xs">
-                                {template.metadata.colors.slice(0, 3).map((color, idx) => {
+                                {templateItem.metadata.colors.slice(0, 3).map((color, idx) => {
                                   // Map Tailwind colors to hex values
                                   const colorMap: Record<string, string> = {
                                     'blue-600': '#2563eb',
@@ -1105,16 +1076,16 @@ const CreateTemplate: React.FC = () => {
                         </Badge>
                       </Group>
                       <SimpleGrid cols={2} spacing="md">
-                        {templatesByType.resume.map((template) => (
+                        {templatesByType.resume.map((templateItem) => (
                           <Card
-                            key={template.id}
+                            key={templateItem.id}
                             padding="md"
                             radius="md"
                             withBorder
                             styles={{
                               root: {
                                 borderColor:
-                                  selectedTemplateId === template.id ? '#3B82F6' : '#373A40',
+                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
                                 backgroundColor: '#25262B',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
@@ -1124,21 +1095,21 @@ const CreateTemplate: React.FC = () => {
                                 },
                               },
                             }}
-                            onClick={() => handleTemplateSelect(template)}
+                            onClick={() => handleTemplateSelect(templateItem)}
                           >
                             <Stack gap="xs">
                               <Group justify="space-between">
                                 <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {template.name}
+                                  {templateItem.name}
                                 </Text>
-                                {selectedTemplateId === template.id && (
+                                {selectedTemplateId === templateItem.id && (
                                   <Badge size="xs" color="blue">
                                     Selected
                                   </Badge>
                                 )}
                               </Group>
                               <Text size="xs" c="dimmed" lineClamp={2}>
-                                {template.metadata.style} • {template.metadata.complexity}
+                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
                               </Text>
                             </Stack>
                           </Card>
@@ -1160,16 +1131,16 @@ const CreateTemplate: React.FC = () => {
                         </Badge>
                       </Group>
                       <SimpleGrid cols={2} spacing="md">
-                        {templatesByType.report.map((template) => (
+                        {templatesByType.report.map((templateItem) => (
                           <Card
-                            key={template.id}
+                            key={templateItem.id}
                             padding="md"
                             radius="md"
                             withBorder
                             styles={{
                               root: {
                                 borderColor:
-                                  selectedTemplateId === template.id ? '#3B82F6' : '#373A40',
+                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
                                 backgroundColor: '#25262B',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
@@ -1179,21 +1150,21 @@ const CreateTemplate: React.FC = () => {
                                 },
                               },
                             }}
-                            onClick={() => handleTemplateSelect(template)}
+                            onClick={() => handleTemplateSelect(templateItem)}
                           >
                             <Stack gap="xs">
                               <Group justify="space-between">
                                 <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {template.name}
+                                  {templateItem.name}
                                 </Text>
-                                {selectedTemplateId === template.id && (
+                                {selectedTemplateId === templateItem.id && (
                                   <Badge size="xs" color="blue">
                                     Selected
                                   </Badge>
                                 )}
                               </Group>
                               <Text size="xs" c="dimmed" lineClamp={2}>
-                                {template.metadata.style} • {template.metadata.complexity}
+                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
                               </Text>
                             </Stack>
                           </Card>
@@ -1215,16 +1186,16 @@ const CreateTemplate: React.FC = () => {
                         </Badge>
                       </Group>
                       <SimpleGrid cols={2} spacing="md">
-                        {otherTemplates.commercial.map((template) => (
+                        {otherTemplates.commercial.map((templateItem) => (
                           <Card
-                            key={template.id}
+                            key={templateItem.id}
                             padding="md"
                             radius="md"
                             withBorder
                             styles={{
                               root: {
                                 borderColor:
-                                  selectedTemplateId === template.id ? '#3B82F6' : '#373A40',
+                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
                                 backgroundColor: '#25262B',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
@@ -1234,21 +1205,21 @@ const CreateTemplate: React.FC = () => {
                                 },
                               },
                             }}
-                            onClick={() => handleTemplateSelect(template)}
+                            onClick={() => handleTemplateSelect(templateItem)}
                           >
                             <Stack gap="xs">
                               <Group justify="space-between">
                                 <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {template.name}
+                                  {templateItem.name}
                                 </Text>
-                                {selectedTemplateId === template.id && (
+                                {selectedTemplateId === templateItem.id && (
                                   <Badge size="xs" color="blue">
                                     Selected
                                   </Badge>
                                 )}
                               </Group>
                               <Text size="xs" c="dimmed" lineClamp={2}>
-                                {template.metadata.style} • {template.metadata.complexity}
+                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
                               </Text>
                             </Stack>
                           </Card>
@@ -1270,16 +1241,16 @@ const CreateTemplate: React.FC = () => {
                         </Badge>
                       </Group>
                       <SimpleGrid cols={2} spacing="md">
-                        {otherTemplates.legal.map((template) => (
+                        {otherTemplates.legal.map((templateItem) => (
                           <Card
-                            key={template.id}
+                            key={templateItem.id}
                             padding="md"
                             radius="md"
                             withBorder
                             styles={{
                               root: {
                                 borderColor:
-                                  selectedTemplateId === template.id ? '#3B82F6' : '#373A40',
+                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
                                 backgroundColor: '#25262B',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
@@ -1289,21 +1260,21 @@ const CreateTemplate: React.FC = () => {
                                 },
                               },
                             }}
-                            onClick={() => handleTemplateSelect(template)}
+                            onClick={() => handleTemplateSelect(templateItem)}
                           >
                             <Stack gap="xs">
                               <Group justify="space-between">
                                 <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {template.name}
+                                  {templateItem.name}
                                 </Text>
-                                {selectedTemplateId === template.id && (
+                                {selectedTemplateId === templateItem.id && (
                                   <Badge size="xs" color="blue">
                                     Selected
                                   </Badge>
                                 )}
                               </Group>
                               <Text size="xs" c="dimmed" lineClamp={2}>
-                                {template.metadata.style} • {template.metadata.complexity}
+                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
                               </Text>
                             </Stack>
                           </Card>
@@ -1325,16 +1296,16 @@ const CreateTemplate: React.FC = () => {
                         </Badge>
                       </Group>
                       <SimpleGrid cols={2} spacing="md">
-                        {otherTemplates.presentation.map((template) => (
+                        {otherTemplates.presentation.map((templateItem) => (
                           <Card
-                            key={template.id}
+                            key={templateItem.id}
                             padding="md"
                             radius="md"
                             withBorder
                             styles={{
                               root: {
                                 borderColor:
-                                  selectedTemplateId === template.id ? '#3B82F6' : '#373A40',
+                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
                                 backgroundColor: '#25262B',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
@@ -1344,21 +1315,21 @@ const CreateTemplate: React.FC = () => {
                                 },
                               },
                             }}
-                            onClick={() => handleTemplateSelect(template)}
+                            onClick={() => handleTemplateSelect(templateItem)}
                           >
                             <Stack gap="xs">
                               <Group justify="space-between">
                                 <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {template.name}
+                                  {templateItem.name}
                                 </Text>
-                                {selectedTemplateId === template.id && (
+                                {selectedTemplateId === templateItem.id && (
                                   <Badge size="xs" color="blue">
                                     Selected
                                   </Badge>
                                 )}
                               </Group>
                               <Text size="xs" c="dimmed" lineClamp={2}>
-                                {template.metadata.style} • {template.metadata.complexity}
+                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
                               </Text>
                             </Stack>
                           </Card>
@@ -1380,16 +1351,16 @@ const CreateTemplate: React.FC = () => {
                         </Badge>
                       </Group>
                       <SimpleGrid cols={2} spacing="md">
-                        {otherTemplates.administrative.map((template) => (
+                        {otherTemplates.administrative.map((templateItem) => (
                           <Card
-                            key={template.id}
+                            key={templateItem.id}
                             padding="md"
                             radius="md"
                             withBorder
                             styles={{
                               root: {
                                 borderColor:
-                                  selectedTemplateId === template.id ? '#3B82F6' : '#373A40',
+                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
                                 backgroundColor: '#25262B',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
@@ -1399,21 +1370,21 @@ const CreateTemplate: React.FC = () => {
                                 },
                               },
                             }}
-                            onClick={() => handleTemplateSelect(template)}
+                            onClick={() => handleTemplateSelect(templateItem)}
                           >
                             <Stack gap="xs">
                               <Group justify="space-between">
                                 <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {template.name}
+                                  {templateItem.name}
                                 </Text>
-                                {selectedTemplateId === template.id && (
+                                {selectedTemplateId === templateItem.id && (
                                   <Badge size="xs" color="blue">
                                     Selected
                                   </Badge>
                                 )}
                               </Group>
                               <Text size="xs" c="dimmed" lineClamp={2}>
-                                {template.metadata.style} • {template.metadata.complexity}
+                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
                               </Text>
                             </Stack>
                           </Card>
@@ -1435,16 +1406,16 @@ const CreateTemplate: React.FC = () => {
                         </Badge>
                       </Group>
                       <SimpleGrid cols={2} spacing="md">
-                        {otherTemplates.certificate.map((template) => (
+                        {otherTemplates.certificate.map((templateItem) => (
                           <Card
-                            key={template.id}
+                            key={templateItem.id}
                             padding="md"
                             radius="md"
                             withBorder
                             styles={{
                               root: {
                                 borderColor:
-                                  selectedTemplateId === template.id ? '#3B82F6' : '#373A40',
+                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
                                 backgroundColor: '#25262B',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
@@ -1454,21 +1425,21 @@ const CreateTemplate: React.FC = () => {
                                 },
                               },
                             }}
-                            onClick={() => handleTemplateSelect(template)}
+                            onClick={() => handleTemplateSelect(templateItem)}
                           >
                             <Stack gap="xs">
                               <Group justify="space-between">
                                 <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {template.name}
+                                  {templateItem.name}
                                 </Text>
-                                {selectedTemplateId === template.id && (
+                                {selectedTemplateId === templateItem.id && (
                                   <Badge size="xs" color="blue">
                                     Selected
                                   </Badge>
                                 )}
                               </Group>
                               <Text size="xs" c="dimmed" lineClamp={2}>
-                                {template.metadata.style} • {template.metadata.complexity}
+                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
                               </Text>
                             </Stack>
                           </Card>
