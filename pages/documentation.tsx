@@ -103,7 +103,7 @@ const Documentation = () => (
 
                 <Box mb="sm">
                   <CodeHighlight
-                    code={`fetch('https://v0s8g4wckkso40ocg8ogk4gk.yvesdavinci.tech/api/generate-pdf/YOUR_TEMPLATE_ID', {
+                    code={`fetch('https://ycwsfk5z1o2olxi83ktd3jk9.yvesdavinci.tech/api/generate-pdf/YOUR_TEMPLATE_ID', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
