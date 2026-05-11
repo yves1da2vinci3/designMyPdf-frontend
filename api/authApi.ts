@@ -36,6 +36,7 @@ export interface ForgotPasswordDto {
 }
 
 export interface UserSession {
+  userId: number;
   accessToken: string;
   refreshToken: string;
   email: string;
@@ -48,6 +49,7 @@ export const authApi = {
       const loginResponse = await apiClient.post('/auth/login', loginDto);
       console.log('login Response : ', loginResponse);
       const userSession: UserSession = {
+        userId: Number(get(loginResponse, 'data.data.id') || 0),
         accessToken: get(loginResponse, 'data.accessToken'),
         refreshToken: get(loginResponse, 'data.refreshToken'),
         email: get(loginResponse, 'data.data.email'),

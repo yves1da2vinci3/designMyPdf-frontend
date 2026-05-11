@@ -278,6 +278,9 @@ export default function MarketplacePage() {
                   <Text size="xs" c="dimmed" lineClamp={2} mb="md">
                     {template.description || 'No description available.'}
                   </Text>
+                  <Text size="xs" c="dimmed" mb="sm">
+                    By {template.author_user_name || 'Unknown'}
+                  </Text>
                   <Group gap={6}>
                     <Button
                       variant="outline"

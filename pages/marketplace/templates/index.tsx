@@ -57,7 +57,10 @@ export default function MarketplaceTemplates() {
           preview: template.preview || template.cover_image_url || '',
           rating: template.rating || 0,
           reviewCount: template.reviewCount || 0,
-          author: template.author || { name: 'Unknown', avatar: '' },
+          author: {
+            name: template.author_user_name || template.author?.name || 'Unknown',
+            avatar: template.author?.avatar || '',
+          },
         })),
       );
       setIsLoading(RequestStatus.Succeeded);

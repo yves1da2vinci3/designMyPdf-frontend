@@ -70,6 +70,8 @@ export interface TemplateDTO {
   is_marketplace?: boolean;
   is_published?: boolean;
   uses_count?: number;
+  author_user_id?: number;
+  author_user_name?: string;
 }
 
 /** Row returned by GET /marketplace (no content, no variables). */
