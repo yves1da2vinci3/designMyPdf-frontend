@@ -301,7 +301,10 @@ export default function AddListingPage() {
                   <Select
                     label="Select Template to Publish"
                     placeholder="Tapez pour filtrer par titre…"
-                    data={templates.map((t) => ({ value: String(t.ID), label: t.name || 'Sans titre' }))}
+                    data={templates.map((t) => ({
+                      value: String(t.ID),
+                      label: t.name || 'Sans titre',
+                    }))}
                     value={selectedTemplateId}
                     onChange={setSelectedTemplateId}
                     searchable

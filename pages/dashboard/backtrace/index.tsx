@@ -60,7 +60,7 @@ const PERIOD_DAYS: Record<string, number> = {
 type StatusFilter = 'all' | 'success' | 'error';
 
 function responseTimeMsForLog(logId: number): number {
-  return 200 + (logId * 7919) % 900;
+  return 200 + ((logId * 7919) % 900);
 }
 
 function escapeCsvCell(value: string): string {
@@ -353,7 +353,12 @@ export default function Log() {
               </Text>
             </Box>
             <Group gap="sm" wrap="wrap">
-              <Button variant="outline" leftSection={<IconFilter size={16} />} size="sm" onClick={openFilters}>
+              <Button
+                variant="outline"
+                leftSection={<IconFilter size={16} />}
+                size="sm"
+                onClick={openFilters}
+              >
                 Filtres
               </Button>
               <Button
