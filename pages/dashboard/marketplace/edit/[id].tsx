@@ -23,12 +23,9 @@ import { Dropzone, IMAGE_MIME_TYPE } from '@mantine/dropzone';
 import { notifications } from '@mantine/notifications';
 import { IconPhoto, IconUpload } from '@tabler/icons-react';
 import DashboardLayout from '@/layouts/DashboardLayout';
+import { MarketplaceFeaturesTags } from '@/components/marketplace/MarketplaceFeaturesTags';
 import { templateApi, TemplateDTO } from '@/api/templateApi';
-import {
-  MARKETPLACE_CATEGORIES,
-  MIN_MARKETPLACE_DESCRIPTION_LENGTH,
-  validateMarketplaceListingInput,
-} from '@/constants/marketplace';
+import { MARKETPLACE_CATEGORIES, validateMarketplaceListingInput } from '@/constants/marketplace';
 
 export default function EditMarketplaceListingPage() {
   const router = useRouter();
@@ -42,8 +39,9 @@ export default function EditMarketplaceListingPage() {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [description, setDescription] = useState('');
+  const [isPaid, setIsPaid] = useState(true);
   const [price, setPrice] = useState<number>(0);
-  const [features, setFeatures] = useState('');
+  const [featureTags, setFeatureTags] = useState<string[]>([]);
   const [coverImageUrl, setCoverImageUrl] = useState('');
   const [pendingCoverFile, setPendingCoverFile] = useState<File | null>(null);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
@@ -83,8 +81,10 @@ export default function EditMarketplaceListingPage() {
         setTitle(t.name || '');
         setDescription(t.description || '');
         setCategory(t.category || null);
-        setPrice(t.price != null && t.price > 0 ? t.price / 100 : 0);
-        setFeatures(t.features?.length ? t.features.join(', ') : '');
+        const paid = t.price != null && t.price > 0;
+        setIsPaid(paid);
+        setPrice(paid && t.price != null ? t.price / 100 : 0);
+        setFeatureTags(t.features?.length ? [...t.features] : []);
         revokeCoverPreview();
         setCoverImageUrl(t.cover_image_url || '');
         setIsPublished(!!t.is_published);
@@ -124,10 +124,6 @@ export default function EditMarketplaceListingPage() {
     const validationErrors = validateMarketplaceListingInput({
       title,
       category,
-      description,
-      coverImageUrl,
-      hasPendingCoverFile: !!pendingCoverFile,
-      featuresRaw: features,
     });
     if (validationErrors.length > 0) {
       notifications.show({
@@ -162,13 +158,10 @@ export default function EditMarketplaceListingPage() {
 
       await templateApi.updateMarketplaceListing(template.ID, {
         name: title.trim(),
-        price: Math.round(price * 100),
+        price: isPaid ? Math.round(price * 100) : 0,
         description: description.trim(),
         category: category!,
-        features: features
-          .split(',')
-          .map((f) => f.trim())
-          .filter(Boolean),
+        features: featureTags.map((f) => f.trim()).filter(Boolean),
         coverImageURL: finalCoverUrl,
         isPublished,
       });
@@ -261,33 +254,43 @@ export default function EditMarketplaceListingPage() {
 
           <Textarea
             label="Description"
-            description={`Minimum ${MIN_MARKETPLACE_DESCRIPTION_LENGTH} caractères (${description.trim().length}/${MIN_MARKETPLACE_DESCRIPTION_LENGTH}).`}
-            minRows={4}
+            description="Optionnel."
+            minRows={3}
             value={description}
             onChange={(e) => setDescription(e.currentTarget.value)}
-            required
           />
 
-          <Grid gutter="md">
-            <Grid.Col span={{ base: 12, sm: 6 }}>
-              <NumberInput
-                label="Prix ($)"
-                value={price}
-                onChange={(v) => setPrice(Number(v) || 0)}
-                min={0}
-                decimalScale={2}
-                prefix="$ "
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6 }}>
-              <TextInput
-                label="Fonctionnalités (virgules)"
-                value={features}
-                onChange={(e) => setFeatures(e.currentTarget.value)}
-                required
-              />
-            </Grid.Col>
-          </Grid>
+          <Switch
+            label="Annonce payante"
+            description="Désactivé = gratuit (prix à 0)."
+            checked={isPaid}
+            onChange={(e) => {
+              const v = e.currentTarget.checked;
+              setIsPaid(v);
+              if (!v) setPrice(0);
+            }}
+          />
+
+          {isPaid ? (
+            <Grid gutter="md">
+              <Grid.Col span={12}>
+                <NumberInput
+                  label="Prix ($)"
+                  value={price}
+                  onChange={(v) => setPrice(Number(v) || 0)}
+                  min={0}
+                  decimalScale={2}
+                  prefix="$ "
+                />
+              </Grid.Col>
+            </Grid>
+          ) : null}
+
+          <MarketplaceFeaturesTags
+            label="Fonctionnalités"
+            value={featureTags}
+            onChange={setFeatureTags}
+          />
 
           <Switch
             label="Publié sur le marketplace"

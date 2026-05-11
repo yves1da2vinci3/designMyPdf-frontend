@@ -11,6 +11,7 @@ import {
   ScrollArea,
   Select,
   Stack,
+  Switch,
   Text,
   Textarea,
   TextInput,
@@ -33,11 +34,8 @@ import {
 } from '@tabler/icons-react';
 import { templateApi, TemplateDTO } from '@/api/templateApi';
 import { authApi } from '@/api/authApi';
-import {
-  MARKETPLACE_CATEGORIES,
-  MIN_MARKETPLACE_DESCRIPTION_LENGTH,
-  validateMarketplaceListingInput,
-} from '@/constants/marketplace';
+import { MarketplaceFeaturesTags } from '@/components/marketplace/MarketplaceFeaturesTags';
+import { MARKETPLACE_CATEGORIES, validateMarketplaceListingInput } from '@/constants/marketplace';
 
 export default function AddListingPage() {
   const router = useRouter();
@@ -46,8 +44,9 @@ export default function AddListingPage() {
   const [category, setCategory] = useState<string | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [description, setDescription] = useState('');
+  const [isPaid, setIsPaid] = useState(true);
   const [price, setPrice] = useState<number>(0);
-  const [features, setFeatures] = useState('');
+  const [featureTags, setFeatureTags] = useState<string[]>([]);
   /** URL HTTPS après chargement template ou après upload au publish */
   const [coverImageUrl, setCoverImageUrl] = useState('');
   /** Fichier choisi au drop — upload Backblaze uniquement au publish */
@@ -99,8 +98,10 @@ export default function AddListingPage() {
         setTitle(t.name || '');
         if (t.description) setDescription(t.description);
         if (t.category) setCategory(t.category);
-        if (t.price != null && t.price > 0) setPrice(t.price / 100);
-        if (t.features?.length) setFeatures(t.features.join(', '));
+        const paid = t.price != null && t.price > 0;
+        setIsPaid(paid);
+        setPrice(paid && t.price != null ? t.price / 100 : 0);
+        setFeatureTags(t.features?.length ? [...t.features] : []);
         revokeCoverPreview();
         setCoverImageUrl(t.cover_image_url || '');
       })
@@ -142,10 +143,6 @@ export default function AddListingPage() {
     const validationErrors = validateMarketplaceListingInput({
       title,
       category,
-      description,
-      coverImageUrl,
-      hasPendingCoverFile: !!pendingCoverFile,
-      featuresRaw: features,
     });
     if (validationErrors.length > 0) {
       notifications.show({
@@ -181,13 +178,10 @@ export default function AddListingPage() {
       await templateApi.publishToMarketplace({
         templateId: Number(selectedTemplateId),
         name: title.trim(),
-        price: Math.round(price * 100),
+        price: isPaid ? Math.round(price * 100) : 0,
         description: description.trim(),
         category: category!,
-        features: features
-          .split(',')
-          .map((f) => f.trim())
-          .filter(Boolean),
+        features: featureTags.map((f) => f.trim()).filter(Boolean),
         coverImageURL: finalCoverUrl,
       });
       notifications.show({
@@ -211,11 +205,8 @@ export default function AddListingPage() {
     }
   };
 
-  const featureBadges = features
-    .split(',')
-    .map((f) => f.trim())
-    .filter(Boolean);
-  const previewPrice = price > 0 ? `$${price.toFixed(2)}` : '$0.00';
+  const featureBadges = featureTags.map((f) => f.trim()).filter(Boolean);
+  const previewPrice = !isPaid ? 'Gratuit' : price > 0 ? `$${price.toFixed(2)}` : '$0.00';
 
   return (
     <Box style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
@@ -309,10 +300,15 @@ export default function AddListingPage() {
 
                   <Select
                     label="Select Template to Publish"
-                    placeholder="Choose from your templates..."
-                    data={templates.map((t) => ({ value: String(t.ID), label: t.name }))}
+                    placeholder="Tapez pour filtrer par titre…"
+                    data={templates.map((t) => ({
+                      value: String(t.ID),
+                      label: t.name || 'Sans titre',
+                    }))}
                     value={selectedTemplateId}
                     onChange={setSelectedTemplateId}
+                    searchable
+                    nothingFoundMessage="Aucun modèle ne correspond à ce titre."
                     required
                     disabled={lockTemplateSelect}
                     description={
@@ -322,37 +318,45 @@ export default function AddListingPage() {
 
                   <Textarea
                     label="Detailed Description"
-                    placeholder="Describe the template structure, intended use cases, and design philosophy..."
-                    description={`Minimum ${MIN_MARKETPLACE_DESCRIPTION_LENGTH} caractères (${description.trim().length}/${MIN_MARKETPLACE_DESCRIPTION_LENGTH}).`}
-                    minRows={4}
+                    placeholder="Optionnel — décrivez le modèle si vous le souhaitez."
+                    minRows={3}
                     value={description}
                     onChange={(e) => setDescription(e.currentTarget.value)}
-                    required
                   />
 
-                  <Grid gutter="md">
-                    <Grid.Col span={{ base: 12, sm: 6 }}>
-                      <NumberInput
-                        label="Price ($)"
-                        placeholder="0.00"
-                        value={price}
-                        onChange={(v) => setPrice(Number(v) || 0)}
-                        min={0}
-                        decimalScale={2}
-                        prefix="$ "
-                      />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 12, sm: 6 }}>
-                      <TextInput
-                        label="Features (comma separated)"
-                        placeholder="Auto-pagination, Dynamic Tables, SVG support..."
-                        value={features}
-                        onChange={(e) => setFeatures(e.currentTarget.value)}
-                        required
-                        description="Au moins une fonctionnalité, séparées par des virgules."
-                      />
-                    </Grid.Col>
-                  </Grid>
+                  <Switch
+                    label="Annonce payante"
+                    description="Désactivé = gratuit sur le marketplace (pas de prix affiché)."
+                    checked={isPaid}
+                    onChange={(e) => {
+                      const v = e.currentTarget.checked;
+                      setIsPaid(v);
+                      if (!v) setPrice(0);
+                    }}
+                  />
+
+                  {isPaid ? (
+                    <Grid gutter="md">
+                      <Grid.Col span={12}>
+                        <NumberInput
+                          label="Price ($)"
+                          placeholder="0.00"
+                          value={price}
+                          onChange={(v) => setPrice(Number(v) || 0)}
+                          min={0}
+                          decimalScale={2}
+                          prefix="$ "
+                        />
+                      </Grid.Col>
+                    </Grid>
+                  ) : null}
+
+                  <MarketplaceFeaturesTags
+                    label="Features"
+                    value={featureTags}
+                    onChange={setFeatureTags}
+                    placeholder="Ajouter une fonctionnalité"
+                  />
 
                   {/* Cover image dropzone */}
                   <Box>
@@ -526,12 +530,17 @@ export default function AddListingPage() {
                           'Template description will appear here as you type. Ensure your description highlights the technical benefits and ease of integration.'}
                       </Text>
                       {featureBadges.length > 0 && (
-                        <Group gap={4} mt={8}>
-                          {featureBadges.slice(0, 3).map((f) => (
+                        <Group gap={4} mt={8} wrap="wrap">
+                          {featureBadges.slice(0, 4).map((f) => (
                             <Badge key={f} size="xs" variant="outline" color="gray">
                               {f}
                             </Badge>
                           ))}
+                          {featureBadges.length > 4 && (
+                            <Badge size="xs" variant="light" color="gray">
+                              +{featureBadges.length - 4}
+                            </Badge>
+                          )}
                         </Group>
                       )}
                     </Box>

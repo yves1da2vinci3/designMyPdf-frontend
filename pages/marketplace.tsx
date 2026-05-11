@@ -28,6 +28,7 @@ import {
 } from '@tabler/icons-react';
 import { templateApi, TemplateDTO } from '@/api/templateApi';
 import { authApi } from '@/api/authApi';
+import Preview from '@/components/Preview';
 import CopyTemplateModal from '@/components/marketplace/CopyTemplateModal';
 import PurchaseModal from '@/components/marketplace/PurchaseModal';
 
@@ -228,7 +229,7 @@ export default function MarketplacePage() {
                 shadow="xs"
                 style={{ overflow: 'hidden' }}
               >
-                {/* Cover image */}
+                {/* Couverture marketplace si définie ; sinon aperçu du contenu auteur (pas d’image imposée). */}
                 <Box
                   style={{
                     position: 'relative',
@@ -237,14 +238,23 @@ export default function MarketplacePage() {
                     overflow: 'hidden',
                   }}
                 >
-                  {template.preview ? (
-                    <Image src={template.preview} alt={template.name} h={180} fit="cover" />
+                  {template.cover_image_url?.trim() ? (
+                    <Image
+                      src={template.cover_image_url.trim()}
+                      alt={template.name || ''}
+                      h={180}
+                      fit="cover"
+                    />
                   ) : (
-                    <Center h={180} style={{ backgroundColor: '#dee2e6' }}>
-                      <Text size="xs" c="dimmed">
-                        No preview
-                      </Text>
-                    </Center>
+                    <Box h={180} style={{ overflow: 'hidden', backgroundColor: '#fff' }}>
+                      <Preview
+                        format="a4"
+                        htmlContent={template.content || ''}
+                        data={template.variables || {}}
+                        fonts={template.fonts || []}
+                        isLandscape={false}
+                      />
+                    </Box>
                   )}
                   {(template.price ?? 0) > 0 && (
                     <Badge

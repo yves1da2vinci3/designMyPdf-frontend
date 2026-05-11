@@ -6,17 +6,12 @@ export const MARKETPLACE_CATEGORIES = [
   { value: 'OTHER', label: 'Other' },
 ] as const;
 
-export const MIN_MARKETPLACE_DESCRIPTION_LENGTH = 80;
+/** @deprecated conservé pour compat ; la description marketplace n’a plus de longueur minimale. */
+export const MIN_MARKETPLACE_DESCRIPTION_LENGTH = 0;
 
 export function validateMarketplaceListingInput(params: {
   title: string;
   category: string | null;
-  description: string;
-  /** URL distante déjà enregistrée (pas blob:) */
-  coverImageUrl: string;
-  /** Image choisie en local, upload Backblaze au submit */
-  hasPendingCoverFile?: boolean;
-  featuresRaw: string;
 }): string[] {
   const errors: string[] = [];
   if (!params.title.trim()) {
@@ -24,21 +19,6 @@ export function validateMarketplaceListingInput(params: {
   }
   if (!params.category) {
     errors.push('La catégorie est obligatoire.');
-  }
-  if (params.description.trim().length < MIN_MARKETPLACE_DESCRIPTION_LENGTH) {
-    errors.push(
-      `La description doit contenir au moins ${MIN_MARKETPLACE_DESCRIPTION_LENGTH} caractères (actuellement ${params.description.trim().length}).`,
-    );
-  }
-  if (!params.coverImageUrl.trim() && !params.hasPendingCoverFile) {
-    errors.push("L'image de couverture est obligatoire.");
-  }
-  const feats = params.featuresRaw
-    .split(',')
-    .map((f) => f.trim())
-    .filter(Boolean);
-  if (feats.length === 0) {
-    errors.push('Au moins une fonctionnalité est requise (liste séparée par des virgules).');
   }
   return errors;
 }
