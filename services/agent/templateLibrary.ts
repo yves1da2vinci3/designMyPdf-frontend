@@ -12,7 +12,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     name: 'Facture Minimaliste Bleue',
     type: 'invoice',
     code: `<div class="mx-auto bg-white">
-  <div class="p-8">
+  <div class="p-4">
     <div class="flex items-center justify-between mb-8">
       <div>
         <h1 class="text-3xl font-bold text-blue-600 mb-2">{{companyName}}</h1>
@@ -98,14 +98,14 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     id: 'invoice-modern-gradient',
     name: 'Facture Moderne avec Dégradés',
     type: 'invoice',
-    code: `<div class="bg-gradient-to-br from-indigo-50 to-blue-50 min-h-screen">
-  <div class="max-w-4xl mx-auto bg-white shadow-lg">
-    <div class="bg-gradient-to-r from-indigo-600 to-blue-600 p-8 text-white">
+    code: `<div class="bg-blue-50 min-h-screen">
+  <div class="max-w-4xl mx-auto bg-white shadow-sm">
+    <div class="bg-indigo-700 p-6 text-white">
       <h1 class="text-4xl font-bold mb-2">{{companyName}}</h1>
       <p class="text-indigo-100">{{companyAddress}}</p>
     </div>
     
-    <div class="p-8">
+    <div class="p-4">
       <div class="flex items-center justify-between mb-8">
         <div>
           <h2 class="text-3xl font-bold text-gray-900">Invoice</h2>
@@ -190,7 +190,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     id: 'resume-classic',
     name: 'CV Classique',
     type: 'resume',
-    code: `<div class="max-w-4xl mx-auto bg-white p-8">
+    code: `<div class="max-w-4xl mx-auto bg-white p-0">
   <header class="mb-8 border-b-2 border-gray-300 pb-6">
     <h1 class="text-4xl font-bold text-gray-900 mb-2">{{fullName}}</h1>
     <p class="text-lg text-gray-600">{{jobTitle}}</p>
@@ -263,7 +263,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     id: 'report-dashboard',
     name: 'Rapport avec Graphiques',
     type: 'report',
-    code: `<div class="bg-white p-8">
+    code: `<div class="bg-white p-0">
   <header class="mb-8">
     <h1 class="text-4xl font-bold text-gray-900 mb-2">{{reportTitle}}</h1>
     <p class="text-lg text-gray-600">{{reportSubtitle}}</p>
@@ -344,7 +344,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     name: 'Facture Détaillée avec Tableaux',
     type: 'invoice',
     code: `<div class="bg-white">
-  <div class="p-8">
+  <div class="p-4">
     <div class="flex items-center justify-between mb-8 pb-6 border-b-2 border-gray-300">
       <div>
         <h1 class="text-3xl font-bold text-gray-900 mb-2">{{companyName}}</h1>
@@ -482,7 +482,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     name: 'Proposition Commerciale',
     type: 'other',
     code: `<div class="bg-white">
-  <div class="p-8">
+  <div class="p-4">
     <header class="mb-8 pb-6 border-b-2 border-blue-700">
       <h1 class="text-4xl font-bold text-blue-700 mb-2">{{companyName}}</h1>
       <p class="text-lg text-gray-600">{{proposalTitle}}</p>
@@ -598,7 +598,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     id: 'quote-estimate',
     name: 'Devis/Estimation',
     type: 'other',
-    code: `<div class="bg-white p-8">
+    code: `<div class="bg-white p-0">
   <div class="mb-8 pb-6 border-b-2 border-teal-600">
     <div class="flex items-center justify-between">
       <div>
@@ -703,7 +703,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     id: 'purchase-order',
     name: 'Bon de Commande',
     type: 'other',
-    code: `<div class="bg-white p-8">
+    code: `<div class="bg-white p-0">
   <header class="mb-8 pb-6 border-b-2 border-indigo-700">
     <div class="flex items-center justify-between">
       <div>
@@ -856,7 +856,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     id: 'contract-agreement',
     name: 'Contrat/Accord',
     type: 'other',
-    code: `<div class="bg-white p-8">
+    code: `<div class="bg-white p-0">
   <header class="mb-8 text-center pb-6 border-b-2 border-gray-900">
     <h1 class="text-4xl font-bold text-gray-900 mb-2">{{contractTitle}}</h1>
     <p class="text-lg text-gray-600">{{contractType}}</p>
@@ -1008,7 +1008,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     id: 'nda-confidentiality',
     name: 'Accord de Confidentialité (NDA)',
     type: 'other',
-    code: `<div class="bg-white p-8">
+    code: `<div class="bg-white p-0">
   <header class="mb-8 text-center pb-6 border-b-2 border-slate-900">
     <h1 class="text-4xl font-bold text-slate-900 mb-2">NON-DISCLOSURE AGREEMENT</h1>
     <p class="text-lg text-gray-600">Confidentiality Agreement</p>
@@ -1140,10 +1140,10 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     id: 'presentation-slide',
     name: 'Slide de Présentation',
     type: 'other',
-    code: `<div class="bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 min-h-screen p-8">
-  <div class="bg-white rounded-xl shadow-2xl p-8">
-    <header class="mb-8 text-center">
-      <h1 class="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-4">{{slideTitle}}</h1>
+    code: `<div class="bg-blue-600 min-h-screen p-0">
+  <div class="bg-white rounded-xl shadow-sm p-6">
+    <header class="mb-6 text-center">
+      <h1 class="text-3xl font-bold text-blue-700 mb-3">{{slideTitle}}</h1>
       {{#if slideSubtitle}}
       <p class="text-2xl text-gray-600">{{slideSubtitle}}</p>
       {{/if}}
@@ -1210,7 +1210,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     id: 'pitch-deck',
     name: "Pitch Deck d'Entreprise",
     type: 'other',
-    code: `<div class="bg-white p-8">
+    code: `<div class="bg-white p-0">
   <header class="mb-8 pb-6 border-b-2 border-purple-600">
     <h1 class="text-4xl font-bold text-purple-600 mb-2">{{companyName}}</h1>
     <p class="text-lg text-gray-600">{{tagline}}</p>
@@ -1367,7 +1367,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     id: 'receipt-payment',
     name: 'Reçu de Paiement',
     type: 'other',
-    code: `<div class="bg-white p-8">
+    code: `<div class="bg-white p-0">
   <header class="mb-8 pb-6 border-b-2 border-green-600 text-center">
     <h1 class="text-4xl font-bold text-green-600 mb-2">PAYMENT RECEIPT</h1>
     <p class="text-sm text-gray-500">Receipt #: {{receiptNumber}}</p>
@@ -1475,7 +1475,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     id: 'delivery-note',
     name: 'Bon de Livraison',
     type: 'other',
-    code: `<div class="bg-white p-8">
+    code: `<div class="bg-white p-0">
   <header class="mb-8 pb-6 border-b-2 border-orange-600">
     <div class="flex items-center justify-between">
       <div>
@@ -1722,17 +1722,17 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     name: 'CV Moderne',
     type: 'resume',
     code: `<div class="max-w-5xl mx-auto bg-white">
-  <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-white">
+  <div class="bg-indigo-700 p-6 text-white">
     <div class="flex items-center justify-between mb-4">
       <div>
-        <h1 class="text-4xl font-bold mb-2">{{fullName}}</h1>
-        <p class="text-xl text-indigo-100">{{jobTitle}}</p>
+        <h1 class="text-3xl font-bold mb-2">{{fullName}}</h1>
+        <p class="text-lg text-indigo-100">{{jobTitle}}</p>
       </div>
       {{#if profileImage}}
       <img src="{{profileImage}}" alt="Profile" class="w-24 h-24 rounded-full border-4 border-white">
       {{/if}}
     </div>
-    <div class="grid grid-cols-3 gap-4 mt-6 text-sm">
+    <div class="grid grid-cols-3 mt-6 text-sm">
       <div>
         <p class="text-indigo-100 mb-1">Email</p>
         <p class="font-semibold">{{email}}</p>
@@ -1748,13 +1748,13 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     </div>
   </div>
   
-  <div class="p-8">
+  <div class="p-4">
     <section class="mb-8">
       <h2 class="text-2xl font-bold text-indigo-600 mb-4 border-l-4 border-indigo-600 pl-4">Profil Professionnel</h2>
       <p class="text-gray-700 leading-relaxed">{{summary}}</p>
     </section>
     
-    <div class="grid grid-cols-2 gap-8 mb-8">
+    <div class="grid grid-cols-2 mb-8">
       <section>
         <h2 class="text-2xl font-bold text-indigo-600 mb-4 border-l-4 border-indigo-600 pl-4">Expérience</h2>
         {{#each experience}}
@@ -1793,7 +1793,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     
     <section class="mb-8">
       <h2 class="text-2xl font-bold text-indigo-600 mb-4 border-l-4 border-indigo-600 pl-4">Compétences</h2>
-      <div class="grid grid-cols-3 gap-6">
+      <div class="grid grid-cols-3">
         {{#each skills}}
         <div>
           <p class="text-sm font-semibold text-gray-700 mb-2">{{this.category}}</p>
@@ -1810,7 +1810,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     {{#if projects}}
     <section class="mb-8">
       <h2 class="text-2xl font-bold text-indigo-600 mb-4 border-l-4 border-indigo-600 pl-4">Projets</h2>
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-2">
         {{#each projects}}
         <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
           <h3 class="text-lg font-semibold text-gray-900 mb-2">{{this.name}}</h3>
@@ -1865,7 +1865,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     id: 'report-analytical',
     name: 'Rapport Analytique',
     type: 'report',
-    code: `<div class="max-w-6xl mx-auto bg-white p-8">
+    code: `<div class="max-w-6xl mx-auto bg-white p-0">
   <header class="mb-8 border-b-4 border-blue-600 pb-6">
     <div class="flex items-center justify-between mb-4">
       <div>
@@ -1876,7 +1876,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
       <img src="{{logoUrl}}" alt="Logo" class="h-16 w-auto">
       {{/if}}
     </div>
-    <div class="grid grid-cols-3 gap-4 mt-4 text-sm">
+    <div class="grid grid-cols-3 mt-4 text-sm">
       <div>
         <p class="text-gray-500 mb-1">Période</p>
         <p class="font-semibold text-gray-900">{{period}}</p>
@@ -1894,7 +1894,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
   
   <section class="mb-8">
     <h2 class="text-2xl font-bold text-blue-600 mb-6">Métriques Clés</h2>
-    <div class="grid grid-cols-4 gap-4">
+    <div class="grid grid-cols-4">
       {{#each keyMetrics}}
       <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 text-center">
         <p class="text-sm text-blue-600 mb-2 font-medium">{{this.label}}</p>
@@ -1946,14 +1946,14 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
   {{#if charts}}
   <section class="mb-8">
     <h2 class="text-2xl font-bold text-blue-600 mb-6">Visualisations</h2>
-    <div class="grid grid-cols-2 gap-6">
+    <div class="grid grid-cols-2">
       {{#each charts}}
       <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">{{this.title}}</h3>
         {{#if this.imageUrl}}
         <img src="{{this.imageUrl}}" alt="{{this.title}}" class="w-full h-auto">
         {{else}}
-        <div class="bg-white p-8 text-center text-gray-400 border-2 border-dashed border-gray-300 rounded">
+        <div class="bg-white p-4 text-center text-gray-400 border-2 border-dashed border-gray-300 rounded">
           [Graphique: {{this.type}}]
         </div>
         {{/if}}
@@ -2029,7 +2029,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     name: 'Menu Restaurant',
     type: 'other',
     code: `<div class="max-w-4xl mx-auto bg-white">
-  <header class="bg-gradient-to-r from-amber-600 to-orange-600 text-white p-8 text-center">
+  <header class="bg-amber-600 text-white p-6 text-center">
     {{#if logoUrl}}
     <img src="{{logoUrl}}" alt="Logo" class="h-24 w-auto mx-auto mb-4">
     {{/if}}
@@ -2041,7 +2041,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     </div>
   </header>
   
-  <div class="p-8">
+  <div class="p-4">
     {{#each sections}}
     <section class="mb-12">
       <div class="text-center mb-6">
@@ -2131,8 +2131,8 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     name: 'Newsletter',
     type: 'other',
     code: `<div class="max-w-4xl mx-auto bg-white">
-  <header class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-8 text-center">
-    <h1 class="text-4xl font-bold mb-2">{{newsletterTitle}}</h1>
+  <header class="bg-blue-700 text-white p-6 text-center">
+    <h1 class="text-3xl font-bold mb-2">{{newsletterTitle}}</h1>
     <p class="text-xl text-blue-100 mb-4">{{newsletterSubtitle}}</p>
     <div class="flex items-center justify-center text-sm">
       <span>{{issueDate}}</span>
@@ -2143,7 +2143,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     </div>
   </header>
   
-  <div class="p-8">
+  <div class="p-4">
     {{#if editorNote}}
     <div class="bg-blue-50 border-l-4 border-blue-600 p-6 mb-8 rounded">
       <h2 class="text-lg font-semibold text-blue-900 mb-2">Note de la Rédaction</h2>
@@ -2151,7 +2151,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     </div>
     {{/if}}
     
-    <div class="grid grid-cols-2 gap-8 mb-8">
+    <div class="grid grid-cols-2 mb-8">
       {{#each featuredArticles}}
       <article class="border border-gray-200 rounded-lg overflow-hidden">
         {{#if this.imageUrl}}
@@ -2164,7 +2164,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
           </div>
           <h2 class="text-xl font-bold text-gray-900 mb-2">{{this.title}}</h2>
           <p class="text-gray-600 text-sm mb-4 line-clamp-3">{{this.excerpt}}</p>
-          <a href="#" class="text-blue-600 text-sm font-medium hover:underline">Lire la suite →</a>
+          <a href="#" class="text-blue-600 text-sm font-medium">Lire la suite →</a>
         </div>
       </article>
       {{/each}}
@@ -2185,7 +2185,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
             </div>
             <h3 class="text-lg font-semibold text-gray-900 mb-2">{{this.title}}</h3>
             <p class="text-gray-600 text-sm mb-3 leading-relaxed">{{this.excerpt}}</p>
-            <a href="#" class="text-indigo-600 text-sm font-medium hover:underline">Lire la suite →</a>
+            <a href="#" class="text-indigo-600 text-sm font-medium">Lire la suite →</a>
           </div>
         </article>
         {{/each}}
@@ -2214,7 +2214,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     {{/if}}
     
     <footer class="mt-12 pt-6 border-t border-gray-300">
-      <div class="grid grid-cols-3 gap-6 text-sm">
+      <div class="grid grid-cols-3 text-sm">
         <div>
           <h3 class="font-semibold text-gray-900 mb-2">Contact</h3>
           <p class="text-gray-600">{{contactEmail}}</p>
@@ -2261,13 +2261,13 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     name: 'Fiche Produit',
     type: 'other',
     code: `<div class="max-w-5xl mx-auto bg-white">
-  <div class="grid grid-cols-2 gap-8 p-8">
+  <div class="grid grid-cols-2 p-4">
     <div>
       {{#if mainImage}}
       <img src="{{mainImage}}" alt="{{productName}}" class="w-full h-auto rounded-lg border border-gray-200 mb-4">
       {{/if}}
       {{#if additionalImages}}
-      <div class="grid grid-cols-4 gap-2">
+      <div class="grid grid-cols-4">
         {{#each additionalImages}}
         <img src="{{this}}" alt="Product view" class="w-full h-20 object-cover rounded border border-gray-200">
         {{/each}}
@@ -2369,10 +2369,10 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
       
       <div class="border-t border-gray-200 pt-6">
         <div class="flex items-center space-x-4">
-          <button class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 flex-1">
+          <button class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold flex-1">
             Ajouter au Panier
           </button>
-          <button class="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50">
+          <button class="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold">
             Favoris
           </button>
         </div>
@@ -2384,9 +2384,9 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
   </div>
   
   {{#if relatedProducts}}
-  <div class="border-t border-gray-200 p-8">
+  <div class="border-t border-gray-200 p-4">
     <h2 class="text-2xl font-bold text-gray-900 mb-6">Produits Similaires</h2>
-    <div class="grid grid-cols-4 gap-4">
+    <div class="grid grid-cols-4">
       {{#each relatedProducts}}
       <div class="border border-gray-200 rounded-lg p-4">
         {{#if this.image}}

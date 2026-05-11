@@ -11,7 +11,7 @@ import { findClosestTemplate } from './templateLibrary';
  * Modèle Claude configuré pour la planification
  */
 const model = new ChatAnthropic({
-  modelName: 'claude-3-haiku-20240307',
+  modelName: 'claude-haiku-4-5-20251001',
   temperature: 0.3,
   maxTokens: 4096,
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -58,7 +58,7 @@ Your task is to create a structured plan in JSON format with the following struc
       "components": ["logo", "companyInfo", "table", "items", "totals", etc.],
       "style": {
         "backgroundColor": "tailwind color class",
-        "padding": "tailwind padding class",
+        "padding": "tailwind padding class (p-0 for root wrapper; py-2 to py-4 for inner sections only)",
         "margin": "tailwind margin class",
         "border": "tailwind border class"
       }
@@ -101,6 +101,8 @@ IMPORTANT:
 - Identify all sections needed (header, body, footer, etc.)
 - List all components that should be in each section
 - Always set pdfConstraints to true for all constraints
+- PADDING: Root wrapper MUST be p-0 (the preview scaffold already adds outer padding); inner sections use py-2 to py-4 or margin only — never stack p-* on nested containers
+- COLORS: Use at most 5 Tailwind color classes (primary/neutral/surface/border/text); no gradients; no opacity modifiers
 ${
   processedImages && processedImages.length > 0
     ? '- Extract exact colors and layout from the provided images'
@@ -194,8 +196,8 @@ function createDefaultPlan(userPrompt: string): any {
         components: ['title', 'subtitle'],
         style: {
           backgroundColor: 'white',
-          padding: 'p-8',
-          margin: 'mb-8',
+          padding: 'p-0',
+          margin: 'mb-4',
         },
       },
       {
@@ -203,7 +205,7 @@ function createDefaultPlan(userPrompt: string): any {
         components: ['content'],
         style: {
           backgroundColor: 'white',
-          padding: 'p-8',
+          padding: 'py-3',
         },
       },
     ],

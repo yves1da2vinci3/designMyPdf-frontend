@@ -4,7 +4,7 @@
 import { ChatAnthropic } from '@langchain/anthropic';
 import { HumanMessage } from '@langchain/core/messages';
 import type { TemplatePlan, ProcessedImage } from './types';
-import { PDF_SURVIVAL_GUIDE } from './pdfConstraints';
+import { PDF_SURVIVAL_GUIDE, TEMPLATE_DESIGN_GUIDE } from './pdfConstraints';
 import { getTemplateById } from './templateLibrary';
 import { formatImagesForClaude } from './imageProcessor';
 
@@ -12,7 +12,7 @@ import { formatImagesForClaude } from './imageProcessor';
  * Modèle Claude configuré pour la génération
  */
 const model = new ChatAnthropic({
-  modelName: 'claude-3-haiku-20240307',
+  modelName: 'claude-haiku-4-5-20251001',
   temperature: 0.3,
   maxTokens: 8192,
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -62,6 +62,7 @@ Variables used in reference: ${referenceTemplate.variables.join(', ')}
 }
 
 ${PDF_SURVIVAL_GUIDE}
+${TEMPLATE_DESIGN_GUIDE}
 
 CRITICAL REQUIREMENTS:
 1. Generate COMPLETE HTML code from start to finish (no ellipsis, no placeholders)
@@ -78,6 +79,7 @@ CRITICAL REQUIREMENTS:
 8. Use the typography classes specified: ${Object.values(plan.typography).join(', ')}
 9. Structure the code according to the sections: ${plan.sections.map((s) => s.name).join(', ')}
 10. Apply the style properties for each section
+11. PADDING: The root <div> wrapper MUST be p-0 — the preview scaffold already provides outer padding (2rem editor / 10mm catalog); inner sections use py-3 or py-4 at most; NEVER stack p-6+ on any nested container
 ${
   plan.imageAnalysis
     ? `11. Match the detected layout and components from image analysis: ${plan.imageAnalysis.components.join(', ')}`

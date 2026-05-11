@@ -19,6 +19,16 @@ CRITICAL PDF RENDERING CONSTRAINTS:
 - Ensure all images have explicit dimensions
 `;
 
+export const TEMPLATE_DESIGN_GUIDE = `
+DESIGN CONSTRAINTS FOR PDF TEMPLATES:
+- Padding: the root wrapper MUST use p-0 (the preview scaffold already adds 2rem/10mm padding around it); inner sections use py-2 to py-4 only; NEVER add p-* on the outermost div
+- Spacing between sections: use space-y-4 to space-y-6 or margin mb-4 to mb-6; NEVER gap-*
+- Colors: max 5 Tailwind color classes (primary/neutral/surface/border/text); no gradients (bg-gradient-*); no opacity shortcuts (bg-blue-500/10)
+- Hover/animation: NEVER use hover:, transition-, scale-, translate- (not rendered in PDF)
+- Container: max-w-4xl or max-w-5xl mx-auto; avoid max-w-7xl (too wide for A4)
+- Cards: rounded-lg shadow-sm p-4 (not p-8, not shadow-xl)
+`;
+
 /**
  * Patterns interdits dans le code généré
  */
