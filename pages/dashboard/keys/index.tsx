@@ -320,68 +320,68 @@ export default function Keys() {
           <Paper withBorder radius="md" shadow="xs" style={{ overflow: 'hidden' }}>
             <ScrollArea type="scroll" offsetScrollbars="x" scrollbarSize={8}>
               <Table highlightOnHover style={{ minWidth: 640 }}>
-              <Table.Thead style={{ backgroundColor: '#f8f9fa' }}>
-                <Table.Tr>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Name
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Created Date
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Last Used
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Status
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                      textAlign: 'right',
-                    }}
-                  >
-                    Actions
-                  </Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>{rows}</Table.Tbody>
-            </Table>
+                <Table.Thead style={{ backgroundColor: '#f8f9fa' }}>
+                  <Table.Tr>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Name
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Created Date
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Last Used
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Status
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                        textAlign: 'right',
+                      }}
+                    >
+                      Actions
+                    </Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>{rows}</Table.Tbody>
+              </Table>
             </ScrollArea>
           </Paper>
 

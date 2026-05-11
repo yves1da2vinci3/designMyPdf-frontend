@@ -213,8 +213,8 @@ export default function EditMarketplaceListingPage() {
     return (
       <Stack gap="md">
         <Alert color="yellow" title="Annonce introuvable">
-          Ce template n’est pas une annonce marketplace ou n’existe pas. Publiez-le d’abord depuis le
-          formulaire dédié.
+          Ce template n’est pas une annonce marketplace ou n’existe pas. Publiez-le d’abord depuis
+          le formulaire dédié.
         </Alert>
         <Button variant="light" onClick={() => router.push('/marketplace/add')}>
           Nouvelle annonce

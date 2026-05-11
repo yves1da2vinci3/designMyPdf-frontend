@@ -316,78 +316,78 @@ export default function Log() {
           <Paper withBorder radius="md" shadow="xs" style={{ overflow: 'hidden' }}>
             <ScrollArea type="scroll" offsetScrollbars="x" scrollbarSize={8}>
               <Table highlightOnHover style={{ minWidth: 720 }}>
-              <Table.Thead style={{ backgroundColor: '#f8f9fa' }}>
-                <Table.Tr>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    ID
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Date
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Template
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Status
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Response Time
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Actions
-                  </Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>{rows}</Table.Tbody>
-            </Table>
+                <Table.Thead style={{ backgroundColor: '#f8f9fa' }}>
+                  <Table.Tr>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      ID
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Date
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Template
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Status
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Response Time
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Actions
+                    </Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>{rows}</Table.Tbody>
+              </Table>
             </ScrollArea>
           </Paper>
 

@@ -75,8 +75,7 @@ export default function AddListingPage() {
 
   const isMdUp = useMediaQuery('(min-width: 62em)');
   const { ref: formMeasureRef, height: formColumnHeight } = useElementSize();
-  const previewMaxHeight =
-    isMdUp && formColumnHeight > 0 ? formColumnHeight : undefined;
+  const previewMaxHeight = isMdUp && formColumnHeight > 0 ? formColumnHeight : undefined;
 
   const session = authApi.getUserSession();
   const userName = session?.userName ?? 'G';
@@ -108,7 +107,8 @@ export default function AddListingPage() {
       .catch(() => {});
   }, [router.isReady, router.query.templateId, revokeCoverPreview]);
 
-  const lockTemplateSelect = typeof router.query.templateId === 'string' && router.query.templateId.length > 0;
+  const lockTemplateSelect =
+    typeof router.query.templateId === 'string' && router.query.templateId.length > 0;
 
   const handleImageDrop = (files: File[]) => {
     const file = files[0];
@@ -284,162 +284,160 @@ export default function AddListingPage() {
           <Grid.Col span={{ base: 12, md: 8 }}>
             <Box ref={formMeasureRef}>
               <Card withBorder radius="md" p="xl" shadow="xs">
-              <Stack gap="md">
-                <Grid gutter="md">
-                  <Grid.Col span={{ base: 12, sm: 6 }}>
-                    <TextInput
-                      label="Template Title"
-                      placeholder="e.g. Modern Professional Invoice"
-                      value={title}
-                      onChange={(e) => setTitle(e.currentTarget.value)}
-                      required
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6 }}>
-                    <Select
-                      label="Category"
-                      placeholder="Select category"
-                      data={[...MARKETPLACE_CATEGORIES]}
-                      value={category}
-                      onChange={setCategory}
-                      required
-                    />
-                  </Grid.Col>
-                </Grid>
+                <Stack gap="md">
+                  <Grid gutter="md">
+                    <Grid.Col span={{ base: 12, sm: 6 }}>
+                      <TextInput
+                        label="Template Title"
+                        placeholder="e.g. Modern Professional Invoice"
+                        value={title}
+                        onChange={(e) => setTitle(e.currentTarget.value)}
+                        required
+                      />
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 12, sm: 6 }}>
+                      <Select
+                        label="Category"
+                        placeholder="Select category"
+                        data={[...MARKETPLACE_CATEGORIES]}
+                        value={category}
+                        onChange={setCategory}
+                        required
+                      />
+                    </Grid.Col>
+                  </Grid>
 
-                <Select
-                  label="Select Template to Publish"
-                  placeholder="Choose from your templates..."
-                  data={templates.map((t) => ({ value: String(t.ID), label: t.name }))}
-                  value={selectedTemplateId}
-                  onChange={setSelectedTemplateId}
-                  required
-                  disabled={lockTemplateSelect}
-                  description={
-                    lockTemplateSelect
-                      ? 'Template pré-sélectionné depuis l’éditeur.'
-                      : undefined
-                  }
-                />
+                  <Select
+                    label="Select Template to Publish"
+                    placeholder="Choose from your templates..."
+                    data={templates.map((t) => ({ value: String(t.ID), label: t.name }))}
+                    value={selectedTemplateId}
+                    onChange={setSelectedTemplateId}
+                    required
+                    disabled={lockTemplateSelect}
+                    description={
+                      lockTemplateSelect ? 'Template pré-sélectionné depuis l’éditeur.' : undefined
+                    }
+                  />
 
-                <Textarea
-                  label="Detailed Description"
-                  placeholder="Describe the template structure, intended use cases, and design philosophy..."
-                  description={`Minimum ${MIN_MARKETPLACE_DESCRIPTION_LENGTH} caractères (${description.trim().length}/${MIN_MARKETPLACE_DESCRIPTION_LENGTH}).`}
-                  minRows={4}
-                  value={description}
-                  onChange={(e) => setDescription(e.currentTarget.value)}
-                  required
-                />
+                  <Textarea
+                    label="Detailed Description"
+                    placeholder="Describe the template structure, intended use cases, and design philosophy..."
+                    description={`Minimum ${MIN_MARKETPLACE_DESCRIPTION_LENGTH} caractères (${description.trim().length}/${MIN_MARKETPLACE_DESCRIPTION_LENGTH}).`}
+                    minRows={4}
+                    value={description}
+                    onChange={(e) => setDescription(e.currentTarget.value)}
+                    required
+                  />
 
-                <Grid gutter="md">
-                  <Grid.Col span={{ base: 12, sm: 6 }}>
-                    <NumberInput
-                      label="Price ($)"
-                      placeholder="0.00"
-                      value={price}
-                      onChange={(v) => setPrice(Number(v) || 0)}
-                      min={0}
-                      decimalScale={2}
-                      prefix="$ "
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6 }}>
-                    <TextInput
-                      label="Features (comma separated)"
-                      placeholder="Auto-pagination, Dynamic Tables, SVG support..."
-                      value={features}
-                      onChange={(e) => setFeatures(e.currentTarget.value)}
-                      required
-                      description="Au moins une fonctionnalité, séparées par des virgules."
-                    />
-                  </Grid.Col>
-                </Grid>
+                  <Grid gutter="md">
+                    <Grid.Col span={{ base: 12, sm: 6 }}>
+                      <NumberInput
+                        label="Price ($)"
+                        placeholder="0.00"
+                        value={price}
+                        onChange={(v) => setPrice(Number(v) || 0)}
+                        min={0}
+                        decimalScale={2}
+                        prefix="$ "
+                      />
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 12, sm: 6 }}>
+                      <TextInput
+                        label="Features (comma separated)"
+                        placeholder="Auto-pagination, Dynamic Tables, SVG support..."
+                        value={features}
+                        onChange={(e) => setFeatures(e.currentTarget.value)}
+                        required
+                        description="Au moins une fonctionnalité, séparées par des virgules."
+                      />
+                    </Grid.Col>
+                  </Grid>
 
-                {/* Cover image dropzone */}
-                <Box>
-                  <Text size="sm" fw={500} mb={6}>
-                    Template Preview Thumbnail
-                  </Text>
-                  {hasCoverVisual ? (
-                    <Box style={{ position: 'relative' }}>
-                      <Box
-                        h={200}
-                        w="100%"
-                        pos="relative"
+                  {/* Cover image dropzone */}
+                  <Box>
+                    <Text size="sm" fw={500} mb={6}>
+                      Template Preview Thumbnail
+                    </Text>
+                    {hasCoverVisual ? (
+                      <Box style={{ position: 'relative' }}>
+                        <Box
+                          h={200}
+                          w="100%"
+                          pos="relative"
+                          style={{
+                            overflow: 'hidden',
+                            borderRadius: 8,
+                            border: '1px solid #e9ecef',
+                            backgroundColor: '#f8f9fa',
+                          }}
+                        >
+                          <Image
+                            src={coverDisplaySrc}
+                            alt="Cover"
+                            fit="cover"
+                            w="100%"
+                            h="100%"
+                            style={{ objectFit: 'cover' }}
+                          />
+                        </Box>
+                        <Button size="xs" variant="light" mt={8} onClick={clearCover}>
+                          Remove image
+                        </Button>
+                      </Box>
+                    ) : (
+                      <Dropzone
+                        onDrop={handleImageDrop}
+                        accept={IMAGE_MIME_TYPE}
+                        maxSize={10 * 1024 * 1024}
+                        loading={false}
                         style={{
-                          overflow: 'hidden',
+                          border: '1.5px dashed #ced4da',
                           borderRadius: 8,
-                          border: '1px solid #e9ecef',
-                          backgroundColor: '#f8f9fa',
+                          padding: 32,
+                          textAlign: 'center',
+                          cursor: 'pointer',
                         }}
                       >
-                        <Image
-                          src={coverDisplaySrc}
-                          alt="Cover"
-                          fit="cover"
-                          w="100%"
-                          h="100%"
-                          style={{ objectFit: 'cover' }}
-                        />
-                      </Box>
-                      <Button size="xs" variant="light" mt={8} onClick={clearCover}>
-                        Remove image
-                      </Button>
-                    </Box>
-                  ) : (
-                    <Dropzone
-                      onDrop={handleImageDrop}
-                      accept={IMAGE_MIME_TYPE}
-                      maxSize={10 * 1024 * 1024}
-                      loading={false}
-                      style={{
-                        border: '1.5px dashed #ced4da',
-                        borderRadius: 8,
-                        padding: 32,
-                        textAlign: 'center',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <Center>
-                        <Stack align="center" gap={8}>
-                          <Dropzone.Accept>
-                            <IconUpload size={32} color="#228be6" />
-                          </Dropzone.Accept>
-                          <Dropzone.Reject>
-                            <IconPhoto size={32} color="red" />
-                          </Dropzone.Reject>
-                          <Dropzone.Idle>
-                            <IconPhoto size={32} color="#adb5bd" />
-                          </Dropzone.Idle>
-                          <Text fw={600} size="sm">
-                            Drop thumbnail here or click to browse
-                          </Text>
-                          <Text size="xs" c="dimmed">
-                            PNG or JPEG up to 10MB. Recommended ratio 4:3.
-                          </Text>
-                        </Stack>
-                      </Center>
-                    </Dropzone>
-                  )}
-                </Box>
-              </Stack>
+                        <Center>
+                          <Stack align="center" gap={8}>
+                            <Dropzone.Accept>
+                              <IconUpload size={32} color="#228be6" />
+                            </Dropzone.Accept>
+                            <Dropzone.Reject>
+                              <IconPhoto size={32} color="red" />
+                            </Dropzone.Reject>
+                            <Dropzone.Idle>
+                              <IconPhoto size={32} color="#adb5bd" />
+                            </Dropzone.Idle>
+                            <Text fw={600} size="sm">
+                              Drop thumbnail here or click to browse
+                            </Text>
+                            <Text size="xs" c="dimmed">
+                              PNG or JPEG up to 10MB. Recommended ratio 4:3.
+                            </Text>
+                          </Stack>
+                        </Center>
+                      </Dropzone>
+                    )}
+                  </Box>
+                </Stack>
 
-              <Box style={{ borderTop: '1px solid #e9ecef', marginTop: 24, paddingTop: 20 }}>
-                <Group justify="flex-end" gap="md">
-                  <Button variant="subtle" c="dimmed" onClick={() => router.back()}>
-                    Discard Draft
-                  </Button>
-                  <Button
-                    loading={publishing || uploading}
-                    rightSection={<span>▷</span>}
-                    onClick={handlePublish}
-                  >
-                    Publish Template
-                  </Button>
-                </Group>
-              </Box>
-            </Card>
+                <Box style={{ borderTop: '1px solid #e9ecef', marginTop: 24, paddingTop: 20 }}>
+                  <Group justify="flex-end" gap="md">
+                    <Button variant="subtle" c="dimmed" onClick={() => router.back()}>
+                      Discard Draft
+                    </Button>
+                    <Button
+                      loading={publishing || uploading}
+                      rightSection={<span>▷</span>}
+                      onClick={handlePublish}
+                    >
+                      Publish Template
+                    </Button>
+                  </Group>
+                </Box>
+              </Card>
             </Box>
           </Grid.Col>
 
@@ -451,134 +449,134 @@ export default function AddListingPage() {
               style={{ maxHeight: previewMaxHeight }}
               offsetScrollbars="y"
             >
-            <Stack gap="md">
-              <Box>
-                <Text
-                  size="xs"
-                  fw={700}
-                  tt="uppercase"
-                  c="dimmed"
-                  mb="xs"
-                  style={{ letterSpacing: '0.05em' }}
-                >
-                  REAL-TIME PREVIEW
-                </Text>
-                <Card withBorder radius="md" shadow="xs" p={0} style={{ overflow: 'hidden' }}>
-                  {hasCoverVisual ? (
-                    <Box
-                      h={160}
-                      pos="relative"
-                      style={{
-                        overflow: 'hidden',
-                        backgroundColor: '#e9ecef',
-                      }}
-                    >
-                      <Image
-                        src={coverDisplaySrc}
-                        alt="preview"
-                        fit="cover"
-                        w="100%"
-                        h="100%"
-                        style={{ objectFit: 'cover' }}
-                      />
+              <Stack gap="md">
+                <Box>
+                  <Text
+                    size="xs"
+                    fw={700}
+                    tt="uppercase"
+                    c="dimmed"
+                    mb="xs"
+                    style={{ letterSpacing: '0.05em' }}
+                  >
+                    REAL-TIME PREVIEW
+                  </Text>
+                  <Card withBorder radius="md" shadow="xs" p={0} style={{ overflow: 'hidden' }}>
+                    {hasCoverVisual ? (
+                      <Box
+                        h={160}
+                        pos="relative"
+                        style={{
+                          overflow: 'hidden',
+                          backgroundColor: '#e9ecef',
+                        }}
+                      >
+                        <Image
+                          src={coverDisplaySrc}
+                          alt="preview"
+                          fit="cover"
+                          w="100%"
+                          h="100%"
+                          style={{ objectFit: 'cover' }}
+                        />
+                      </Box>
+                    ) : (
+                      <Box
+                        h={160}
+                        style={{
+                          backgroundColor: '#e9ecef',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Stack align="center" gap={4}>
+                          <Box
+                            style={{
+                              width: 80,
+                              height: 100,
+                              backgroundColor: '#dee2e6',
+                              borderRadius: 4,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Text size="xs" c="dimmed" ta="center">
+                              PREVIEWING LAYOUT
+                            </Text>
+                          </Box>
+                        </Stack>
+                      </Box>
+                    )}
+                    <Box p="md">
+                      <Group justify="space-between" mb={8}>
+                        <Badge color="gray" variant="light" size="xs">
+                          UNPUBLISHED
+                        </Badge>
+                        <Text fw={700} size="sm" c="blue">
+                          {previewPrice}
+                        </Text>
+                      </Group>
+                      <Text fw={700} size="sm" mb={4}>
+                        {title || 'Document Title'}
+                      </Text>
+                      <Text size="xs" c="dimmed" lineClamp={3}>
+                        {description ||
+                          'Template description will appear here as you type. Ensure your description highlights the technical benefits and ease of integration.'}
+                      </Text>
+                      {featureBadges.length > 0 && (
+                        <Group gap={4} mt={8}>
+                          {featureBadges.slice(0, 3).map((f) => (
+                            <Badge key={f} size="xs" variant="outline" color="gray">
+                              {f}
+                            </Badge>
+                          ))}
+                        </Group>
+                      )}
                     </Box>
-                  ) : (
+                  </Card>
+                </Box>
+
+                <Card withBorder radius="md" shadow="xs" p="md">
+                  <Group gap={6} mb="sm">
                     <Box
-                      h={160}
+                      w={16}
+                      h={16}
                       style={{
-                        backgroundColor: '#e9ecef',
+                        borderRadius: '50%',
+                        backgroundColor: '#228be6',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                       }}
                     >
-                      <Stack align="center" gap={4}>
-                        <Box
-                          style={{
-                            width: 80,
-                            height: 100,
-                            backgroundColor: '#dee2e6',
-                            borderRadius: 4,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <Text size="xs" c="dimmed" ta="center">
-                            PREVIEWING LAYOUT
-                          </Text>
-                        </Box>
-                      </Stack>
+                      <Text size="xs" c="white" fw={700}>
+                        ✓
+                      </Text>
                     </Box>
-                  )}
-                  <Box p="md">
-                    <Group justify="space-between" mb={8}>
-                      <Badge color="gray" variant="light" size="xs">
-                        UNPUBLISHED
-                      </Badge>
-                      <Text fw={700} size="sm" c="blue">
-                        {previewPrice}
-                      </Text>
-                    </Group>
-                    <Text fw={700} size="sm" mb={4}>
-                      {title || 'Document Title'}
+                    <Text size="sm" fw={600} c="blue">
+                      Marketplace Guidelines
                     </Text>
-                    <Text size="xs" c="dimmed" lineClamp={3}>
-                      {description ||
-                        'Template description will appear here as you type. Ensure your description highlights the technical benefits and ease of integration.'}
-                    </Text>
-                    {featureBadges.length > 0 && (
-                      <Group gap={4} mt={8}>
-                        {featureBadges.slice(0, 3).map((f) => (
-                          <Badge key={f} size="xs" variant="outline" color="gray">
-                            {f}
-                          </Badge>
-                        ))}
+                  </Group>
+                  <Stack gap={6}>
+                    {[
+                      'Ensure all dynamic variables follow the {{VARIABLE}} syntax.',
+                      'Thumbnails must be original and represent the final output.',
+                      'Payouts are processed 14 days after a successful transaction.',
+                    ].map((g) => (
+                      <Group key={g} gap={6} align="flex-start">
+                        <Text size="xs" c="dimmed">
+                          →
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {g}
+                        </Text>
                       </Group>
-                    )}
-                  </Box>
+                    ))}
+                  </Stack>
                 </Card>
-              </Box>
-
-              <Card withBorder radius="md" shadow="xs" p="md">
-                <Group gap={6} mb="sm">
-                  <Box
-                    w={16}
-                    h={16}
-                    style={{
-                      borderRadius: '50%',
-                      backgroundColor: '#228be6',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Text size="xs" c="white" fw={700}>
-                      ✓
-                    </Text>
-                  </Box>
-                  <Text size="sm" fw={600} c="blue">
-                    Marketplace Guidelines
-                  </Text>
-                </Group>
-                <Stack gap={6}>
-                  {[
-                    'Ensure all dynamic variables follow the {{VARIABLE}} syntax.',
-                    'Thumbnails must be original and represent the final output.',
-                    'Payouts are processed 14 days after a successful transaction.',
-                  ].map((g) => (
-                    <Group key={g} gap={6} align="flex-start">
-                      <Text size="xs" c="dimmed">
-                        →
-                      </Text>
-                      <Text size="xs" c="dimmed">
-                        {g}
-                      </Text>
-                    </Group>
-                  ))}
-                </Stack>
-              </Card>
-            </Stack>
+              </Stack>
             </ScrollArea>
           </Grid.Col>
         </Grid>

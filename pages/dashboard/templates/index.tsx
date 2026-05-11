@@ -200,7 +200,8 @@ function TemplatesPage() {
           minHeight: 0,
           display: 'flex',
           flexDirection: 'column',
-          maxHeight: 'calc(100dvh - var(--app-shell-header-offset, 0px) - 2 * var(--mantine-spacing-md))',
+          maxHeight:
+            'calc(100dvh - var(--app-shell-header-offset, 0px) - 2 * var(--mantine-spacing-md))',
         }}
       >
         <AddTemplate
