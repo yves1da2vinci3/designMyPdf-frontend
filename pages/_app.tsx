@@ -48,24 +48,31 @@ type AppPropsWithLayout = AppProps & {
   Component: NextPageWithLayout;
 };
 
-const screensNameAllowedToMoveToHomePage = ['/login', '/signup'];
+/** Routes auth « publiques » : si déjà connecté, on va au dashboard */
+const AUTH_PUBLIC_ROUTES = ['/login', '/signup', '/forgot-password', '/reset-password'];
 
 export default function App({ Component, pageProps }: AppPropsWithLayout) {
   const getLayout = Component.getLayout ?? ((page) => page);
   const router = useRouter();
 
   useEffect(() => {
-    const userSession = authApi.getUserSession();
-    const pathName = router.pathname;
+    if (!router.isReady) return;
 
-    if (userSession?.accessToken) {
-      if (screensNameAllowedToMoveToHomePage.includes(pathName)) {
+    const session = authApi.getUserSession();
+    const path = router.pathname;
+    const hasToken = !!session?.accessToken;
+
+    if (hasToken) {
+      if (AUTH_PUBLIC_ROUTES.includes(path)) {
         router.replace('/dashboard');
-      } else {
-        router.replace(pathName);
       }
+      return;
     }
-  }, []);
+
+    if (path.startsWith('/dashboard')) {
+      router.replace(`/login?returnUrl=${encodeURIComponent(router.asPath || '/dashboard')}`);
+    }
+  }, [router, router.isReady, router.pathname, router.asPath]);
 
   return (
     <MantineProvider theme={theme}>

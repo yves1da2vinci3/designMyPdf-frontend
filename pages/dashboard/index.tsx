@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import {
   Anchor,
-  Badge,
   Box,
   Button,
   Card,
@@ -11,7 +10,6 @@ import {
   Group,
   Loader,
   Paper,
-  Progress,
   SegmentedControl,
   SimpleGrid,
   Stack,
@@ -35,6 +33,7 @@ import { RequestStatus } from '@/api/request-status.enum';
 import { Links } from '@/constants/routes';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import getFilledStats from '@/utils/filledStats';
+import { filterLogsByApiPeriod } from '@/utils/logPeriodFilter';
 
 const DEFAULT_PERIOD = '7d';
 
@@ -57,14 +56,13 @@ const API_PERIOD_MAP: Record<string, string> = {
 export default function Overview() {
   const [LogsStats, setLogStats] = useState<LogStatDTO[]>([]);
   const [allLogs, setAllLogs] = useState<LogDTO[]>([]);
-  const [recentLogs, setRecentLogs] = useState<LogDTO[]>([]);
   const [fetchLogStatsRequestStatus, setFetchLogStatsRequestStatus] = useState(
     RequestStatus.NotStated,
   );
   const [period, setPeriod] = useState(DEFAULT_PERIOD);
   const router = useRouter();
 
-  const fetchLogStats = async () => {
+  const fetchLogStats = useCallback(async () => {
     setFetchLogStatsRequestStatus(RequestStatus.InProgress);
     try {
       const apiPeriod = API_PERIOD_MAP[period] || 'week';
@@ -75,23 +73,43 @@ export default function Overview() {
 
       const fetchedLogs = await logApi.getLogs();
       setAllLogs(fetchedLogs);
-      setRecentLogs(fetchedLogs.slice(0, 3));
 
       setFetchLogStatsRequestStatus(RequestStatus.Succeeded);
     } catch (error) {
       setFetchLogStatsRequestStatus(RequestStatus.Failed);
     }
-  };
+  }, [period]);
 
   useEffect(() => {
-    fetchLogStats();
-  }, [period]);
+    void fetchLogStats();
+  }, [fetchLogStats]);
 
   const totalGenerated = LogsStats.reduce((sum, s) => sum + (s.count || 0), 0);
 
-  const errorCount = allLogs.filter((l) => l.status_code !== HttpStatusCode.Ok).length;
-  const errorRate =
-    allLogs.length > 0 ? `${((errorCount / allLogs.length) * 100).toFixed(2)}%` : '0.00%';
+  const apiPeriodForFilter = API_PERIOD_MAP[period] || 'week';
+  const logsInPeriod = useMemo(
+    () => filterLogsByApiPeriod(allLogs, apiPeriodForFilter),
+    [allLogs, apiPeriodForFilter],
+  );
+
+  const errorCount = useMemo(
+    () => logsInPeriod.filter((l) => l.status_code !== HttpStatusCode.Ok).length,
+    [logsInPeriod],
+  );
+
+  const errorRate = useMemo(() => {
+    if (logsInPeriod.length === 0) return '0.00%';
+    return `${((errorCount / logsInPeriod.length) * 100).toFixed(2)}%`;
+  }, [logsInPeriod, errorCount]);
+
+  const recentErrorLogs = useMemo(
+    () =>
+      [...logsInPeriod]
+        .filter((l) => l.status_code !== HttpStatusCode.Ok)
+        .sort((a, b) => new Date(b.called_at).getTime() - new Date(a.called_at).getTime())
+        .slice(0, 3),
+    [logsInPeriod],
+  );
 
   const chartData = LogsStats.map((s) => ({
     date: s.date,
@@ -134,9 +152,6 @@ export default function Overview() {
             <ThemeIcon size="md" variant="light" color="blue" radius="md">
               <IconReceipt size={16} />
             </ThemeIcon>
-            <Badge color="teal" variant="light" size="xs">
-              +12%
-            </Badge>
           </Group>
           <Text
             size="xs"
@@ -158,9 +173,6 @@ export default function Overview() {
             <ThemeIcon size="md" variant="light" color="cyan" radius="md">
               <IconClock size={16} />
             </ThemeIcon>
-            <Badge color="teal" variant="light" size="xs">
-              -40ms
-            </Badge>
           </Group>
           <Text
             size="xs"
@@ -173,7 +185,10 @@ export default function Overview() {
             Avg Render Time
           </Text>
           <Text fw={700} fz={26}>
-            320ms
+            —
+          </Text>
+          <Text size="xs" c="dimmed" mt={6}>
+            La durée des appels n&apos;est pas enregistrée par l&apos;API.
           </Text>
         </Card>
 
@@ -203,9 +218,6 @@ export default function Overview() {
             <ThemeIcon size="md" variant="light" color="grape" radius="md">
               <IconCurrencyDollar size={16} />
             </ThemeIcon>
-            <Text size="xs" c="dimmed">
-              Budget
-            </Text>
           </Group>
           <Text
             size="xs"
@@ -218,7 +230,10 @@ export default function Overview() {
             Estimated Cost
           </Text>
           <Text fw={700} fz={26}>
-            Free
+            —
+          </Text>
+          <Text size="xs" c="dimmed" mt={6}>
+            Aucune donnée de facturation n&apos;est exposée pour l&apos;instant.
           </Text>
         </Card>
       </SimpleGrid>
@@ -284,22 +299,20 @@ export default function Overview() {
                       View all →
                     </Anchor>
                   </Group>
-                  {recentLogs.filter((l) => l.status_code !== HttpStatusCode.Ok).length === 0 ? (
+                  {recentErrorLogs.length === 0 ? (
                     <Text size="xs" c="dimmed">
                       No recent errors.
                     </Text>
                   ) : (
                     <Stack gap={6} mt={4}>
-                      {recentLogs
-                        .filter((l) => l.status_code !== HttpStatusCode.Ok)
-                        .map((l) => (
-                          <Group key={l.id} gap={6}>
-                            <IconAlertCircle size={12} color="red" />
-                            <Text size="xs" c="red">
-                              {l.status_code}: {l.error_message || 'Error'}
-                            </Text>
-                          </Group>
-                        ))}
+                      {recentErrorLogs.map((l) => (
+                        <Group key={l.id} gap={6}>
+                          <IconAlertCircle size={12} color="red" />
+                          <Text size="xs" c="red">
+                            {l.status_code}: {l.error_message || 'Error'}
+                          </Text>
+                        </Group>
+                      ))}
                     </Stack>
                   )}
                 </Card>
@@ -310,72 +323,24 @@ export default function Overview() {
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Stack gap="md">
               <Card withBorder radius="md" shadow="xs" p="lg">
-                <Text fw={600} size="sm" mb="md">
-                  Plan Usage
+                <Text fw={600} size="sm" mb="sm">
+                  Plan usage & stockage
                 </Text>
-                <Stack gap="sm">
-                  <Box>
-                    <Group justify="space-between" mb={4}>
-                      <Text size="xs">Generations</Text>
-                      <Text size="xs" fw={600}>
-                        82%
-                      </Text>
-                    </Group>
-                    <Progress value={82} color="blue" radius="xl" size="sm" />
-                    <Text size="xs" c="dimmed" mt={4}>
-                      41,000 / 50,000 requests
-                    </Text>
-                  </Box>
-                  <Box>
-                    <Group justify="space-between" mb={4}>
-                      <Text size="xs">S3 Storage</Text>
-                      <Text size="xs" fw={600}>
-                        45%
-                      </Text>
-                    </Group>
-                    <Progress value={45} color="blue" radius="xl" size="sm" />
-                    <Text size="xs" c="dimmed" mt={4}>
-                      2.2 GB / 5 GB
-                    </Text>
-                  </Box>
-                </Stack>
-                <Button variant="outline" fullWidth mt="lg" size="xs">
-                  Upgrade Plan
-                </Button>
+                <Text size="sm" c="dimmed">
+                  Les quotas de génération et le stockage ne sont pas exposés par l&apos;API pour
+                  l&apos;instant : aucune jauge affichée tant qu&apos;il n&apos;y a pas de endpoint
+                  dédié.
+                </Text>
               </Card>
 
               <Card withBorder radius="md" shadow="xs" p="lg">
-                <Text fw={600} size="sm" mb="md">
-                  Infrastructure Status
+                <Text fw={600} size="sm" mb="sm">
+                  Infrastructure
                 </Text>
-                <Stack gap="sm">
-                  <Group justify="space-between">
-                    <Group gap={8}>
-                      <Box
-                        w={8}
-                        h={8}
-                        style={{ borderRadius: '50%', backgroundColor: '#12b886' }}
-                      />
-                      <Text size="sm">PDF Engine API</Text>
-                    </Group>
-                    <Badge color="teal" variant="light" size="xs">
-                      Stable
-                    </Badge>
-                  </Group>
-                  <Group justify="space-between">
-                    <Group gap={8}>
-                      <Box
-                        w={8}
-                        h={8}
-                        style={{ borderRadius: '50%', backgroundColor: '#12b886' }}
-                      />
-                      <Text size="sm">Template Renderer</Text>
-                    </Group>
-                    <Badge color="teal" variant="light" size="xs">
-                      99.9%
-                    </Badge>
-                  </Group>
-                </Stack>
+                <Text size="sm" c="dimmed">
+                  Aucun état d&apos;infrastructure ni taux de disponibilité n&apos;est remonté au
+                  tableau de bord.
+                </Text>
               </Card>
 
               <Paper

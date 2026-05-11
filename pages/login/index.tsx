@@ -57,7 +57,15 @@ export default function Login() {
     setIsLoading(RequestStatus.InProgress);
     try {
       await authApi.login(loginInfo);
-      router.push(Links.DASHBOARD);
+      const raw = router.query.returnUrl;
+      const next =
+        typeof raw === 'string' &&
+        raw.startsWith('/') &&
+        !raw.startsWith('//') &&
+        !raw.includes('://')
+          ? raw
+          : Links.DASHBOARD;
+      router.push(next);
     } catch (error) {
       setIsLoading(RequestStatus.Failed);
     }

@@ -1,6 +1,10 @@
+'use client';
+
 import { AppShell, Burger, Code, Group } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { authApi } from '@/api/authApi';
 import Logo from '@/components/AppLogo/AppLogo';
 import DashboardNav from './DashboardNav';
 import classes from './DashboardNav.module.scss';
@@ -16,8 +20,16 @@ const HEADER_HEIGHT = 64;
 const HEADER_LOGO_WIDTH = 52;
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+  const router = useRouter();
   const [opened, { toggle: toggleMobile, close: closeMobileNav }] = useDisclosure();
   const [desktopOpened, { toggle: toggleDesktop }] = useDisclosure(true);
+
+  useEffect(() => {
+    if (!router.isReady) return;
+    if (!authApi.isAuthenticated()) {
+      router.replace(`/login?returnUrl=${encodeURIComponent(router.asPath || '/dashboard')}`);
+    }
+  }, [router.isReady, router.asPath]);
 
   return (
     <AppShell

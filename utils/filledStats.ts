@@ -4,6 +4,19 @@ const getFilledStats = (stats: any[], period: string) => {
   let date;
 
   switch (period) {
+    /** Aligné sur GetLogStats period=day (TO_CHAR HH24) : une entrée par heure 0–23 */
+    case 'day':
+      for (let h = 23; h >= 0; h--) {
+        const stat = stats.find((s: { date: string }) => {
+          const n = parseInt(String(s.date).trim(), 10);
+          return !Number.isNaN(n) && n === h;
+        }) || {
+          date: `${String(h).padStart(2, '0')}:00`,
+          count: 0,
+        };
+        filledStats.unshift(stat);
+      }
+      break;
     case 'week':
       for (let i = 0; i < 7; i++) {
         date = new Date(now);
@@ -44,6 +57,16 @@ const getFilledStats = (stats: any[], period: string) => {
       }
       break;
     default:
+      for (let i = 0; i < 7; i++) {
+        date = new Date(now);
+        date.setDate(now.getDate() - i);
+        const day = date.toLocaleString('en-US', { weekday: 'short' }).toUpperCase();
+        const stat = stats.find((stat: { date: string }) => stat.date === day) || {
+          date: day,
+          count: 0,
+        };
+        filledStats.unshift(stat);
+      }
       break;
   }
 
