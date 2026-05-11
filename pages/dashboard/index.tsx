@@ -22,10 +22,7 @@ import {
 import { BarChart } from '@mantine/charts';
 import {
   IconAlertCircle,
-  IconArrowUpRight,
   IconCalendar,
-  IconChartBar,
-  IconCircleCheck,
   IconClock,
   IconCurrencyDollar,
   IconExternalLink,
@@ -42,19 +39,24 @@ import getFilledStats from '@/utils/filledStats';
 const DEFAULT_PERIOD = '7d';
 
 const PERIOD_OPTIONS = [
-  { label: '24h', value: '24h' },
   { label: '7 Days', value: '7d' },
   { label: '30 Days', value: '30d' },
+  { label: '3 Months', value: '3months' },
+  { label: '6 Months', value: '6months' },
+  { label: '1 Year', value: '1year' },
 ];
 
 const API_PERIOD_MAP: Record<string, string> = {
-  '24h': 'week',
   '7d': 'week',
   '30d': 'month',
+  '3months': '3months',
+  '6months': '6months',
+  '1year': '1year',
 };
 
 export default function Overview() {
   const [LogsStats, setLogStats] = useState<LogStatDTO[]>([]);
+  const [allLogs, setAllLogs] = useState<LogDTO[]>([]);
   const [recentLogs, setRecentLogs] = useState<LogDTO[]>([]);
   const [fetchLogStatsRequestStatus, setFetchLogStatsRequestStatus] = useState(
     RequestStatus.NotStated,
@@ -71,8 +73,9 @@ export default function Overview() {
       const filledStats = getFilledStats(newLogs, apiPeriod);
       setLogStats(filledStats);
 
-      const allLogs = await logApi.getLogs();
-      setRecentLogs(allLogs.slice(0, 3));
+      const fetchedLogs = await logApi.getLogs();
+      setAllLogs(fetchedLogs);
+      setRecentLogs(fetchedLogs.slice(0, 3));
 
       setFetchLogStatsRequestStatus(RequestStatus.Succeeded);
     } catch (error) {
@@ -85,6 +88,12 @@ export default function Overview() {
   }, [period]);
 
   const totalGenerated = LogsStats.reduce((sum, s) => sum + (s.count || 0), 0);
+
+  const errorCount = allLogs.filter((l) => l.status_code !== HttpStatusCode.Ok).length;
+  const errorRate =
+    allLogs.length > 0
+      ? `${((errorCount / allLogs.length) * 100).toFixed(2)}%`
+      : '0.00%';
 
   const chartData = LogsStats.map((s) => ({
     date: s.date,
@@ -123,7 +132,7 @@ export default function Overview() {
             </ThemeIcon>
             <Badge color="teal" variant="light" size="xs">+12%</Badge>
           </Group>
-          <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: "0.05em" }} mb={4}>Total PDFs Generated</Text>
+          <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '0.05em' }} mb={4}>Total PDFs Generated</Text>
           <Text fw={700} fz={26}>{isLoading ? '—' : totalGenerated.toLocaleString()}</Text>
         </Card>
 
@@ -134,7 +143,7 @@ export default function Overview() {
             </ThemeIcon>
             <Badge color="teal" variant="light" size="xs">-40ms</Badge>
           </Group>
-          <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: "0.05em" }} mb={4}>Avg Render Time</Text>
+          <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '0.05em' }} mb={4}>Avg Render Time</Text>
           <Text fw={700} fz={26}>320ms</Text>
         </Card>
 
@@ -143,10 +152,9 @@ export default function Overview() {
             <ThemeIcon size="md" variant="light" color="orange" radius="md">
               <IconAlertCircle size={16} />
             </ThemeIcon>
-            <Badge color="orange" variant="light" size="xs">+0.01%</Badge>
           </Group>
-          <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: "0.05em" }} mb={4}>Error Rate</Text>
-          <Text fw={700} fz={26}>0.04%</Text>
+          <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '0.05em' }} mb={4}>Error Rate</Text>
+          <Text fw={700} fz={26}>{isLoading ? '—' : errorRate}</Text>
         </Card>
 
         <Card withBorder radius="md" p="lg" shadow="xs">
@@ -156,8 +164,8 @@ export default function Overview() {
             </ThemeIcon>
             <Text size="xs" c="dimmed">Budget</Text>
           </Group>
-          <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: "0.05em" }} mb={4}>Estimated Cost</Text>
-          <Text fw={700} fz={26}>$128.40</Text>
+          <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '0.05em' }} mb={4}>Estimated Cost</Text>
+          <Text fw={700} fz={26}>Free</Text>
         </Card>
       </SimpleGrid>
 
@@ -302,7 +310,7 @@ export default function Overview() {
                   }}
                 />
                 <Text fw={700} size="sm" c="white" mb={4}>Explore Marketplace</Text>
-                <Text size="xs" c="blue.3" mb="md">Discover 200+ premium templates.</Text>
+                <Text size="xs" c="blue.3" mb="md">Discover premium templates.</Text>
                 <Anchor size="xs" fw={600} c="blue.4" href="/marketplace">
                   Explore <IconExternalLink size={10} style={{ verticalAlign: 'middle' }} />
                 </Anchor>

@@ -12,6 +12,7 @@ import {
   Loader,
   Pagination,
   Paper,
+  SegmentedControl,
   SimpleGrid,
   Stack,
   Table,
@@ -34,11 +35,29 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import ViewBacktrace from '@/modals/ViewBacktrace/ViewBacktrace';
 import { formatDate } from '@/utils/formatDate';
 
+const PERIOD_OPTIONS = [
+  { label: '7 Days', value: '7d' },
+  { label: '30 Days', value: '30d' },
+  { label: '3 Months', value: '3months' },
+  { label: '6 Months', value: '6months' },
+  { label: '1 Year', value: '1year' },
+  { label: 'All', value: 'all' },
+];
+
+const PERIOD_DAYS: Record<string, number> = {
+  '7d': 7,
+  '30d': 30,
+  '3months': 90,
+  '6months': 180,
+  '1year': 365,
+};
+
 export default function Log() {
   const [fetchLogRequestStatus, setFetchLogRequestStatus] = useState(RequestStatus.NotStated);
   const [logs, setLogs] = useState<LogDTO[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedLog, setSelectedLog] = useState<LogDTO | null>(null);
+  const [period, setPeriod] = useState('30d');
   const logsPerPage = 5;
 
   const viewLog = (logItem: LogDTO) => {
@@ -64,20 +83,38 @@ export default function Log() {
   const [viewBacktraceOpened, { open: openViewBacktrace, close: closeViewBacktrace }] =
     useDisclosure(false);
 
+  const filteredLogs = useMemo(() => {
+    const days = PERIOD_DAYS[period];
+    if (!days) return logs;
+    const cutoff = Date.now() - days * 86_400_000;
+    return logs.filter((l) => new Date(l.called_at).getTime() >= cutoff);
+  }, [logs, period]);
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
-  const successCount = logs.filter((l) => l.status_code === HttpStatusCode.Ok).length;
-  const errorCount = logs.filter((l) => l.status_code !== HttpStatusCode.Ok).length;
-  const successRate = logs.length > 0 ? ((successCount / logs.length) * 100).toFixed(1) : '0.0';
+  // Reset to page 1 when period changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [period]);
+
+  const successCount = filteredLogs.filter((l) => l.status_code === HttpStatusCode.Ok).length;
+  const errorCount = filteredLogs.filter((l) => l.status_code !== HttpStatusCode.Ok).length;
+  const successRate =
+    filteredLogs.length > 0
+      ? ((successCount / filteredLogs.length) * 100).toFixed(1)
+      : '0.0';
 
   const mockResponseTimes = useMemo(
-    () => logs.map(() => Math.floor(Math.random() * 1200) + 41),
-    [logs.length],
+    () => filteredLogs.map(() => Math.floor(Math.random() * 1200) + 41),
+    [filteredLogs.length],
   );
 
-  const currentLogs = logs.slice((currentPage - 1) * logsPerPage, currentPage * logsPerPage);
+  const currentLogs = filteredLogs.slice(
+    (currentPage - 1) * logsPerPage,
+    currentPage * logsPerPage,
+  );
 
   const rows = currentLogs.map((logItem: LogDTO, idx: number) => {
     const globalIdx = (currentPage - 1) * logsPerPage + idx;
@@ -105,7 +142,11 @@ export default function Log() {
               <Box
                 w={6}
                 h={6}
-                style={{ borderRadius: '50%', backgroundColor: isSuccess ? '#12b886' : '#fa5252', flexShrink: 0 }}
+                style={{
+                  borderRadius: '50%',
+                  backgroundColor: isSuccess ? '#12b886' : '#fa5252',
+                  flexShrink: 0,
+                }}
               />
             }
           >
@@ -156,6 +197,12 @@ export default function Log() {
               </Text>
             </Box>
             <Group gap="sm">
+              <SegmentedControl
+                value={period}
+                onChange={setPeriod}
+                data={PERIOD_OPTIONS}
+                size="sm"
+              />
               <Button variant="outline" leftSection={<IconFilter size={16} />} size="sm">
                 Filter
               </Button>
@@ -168,20 +215,35 @@ export default function Log() {
           <SimpleGrid cols={4}>
             <Card withBorder radius="md" p="lg" shadow="xs">
               <Group justify="space-between" mb="xs">
-                <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: "0.05em" }}>Total Requests</Text>
+                <Text
+                  size="xs"
+                  tt="uppercase"
+                  fw={600}
+                  c="dimmed"
+                  style={{ letterSpacing: '0.05em' }}
+                >
+                  Total Requests
+                </Text>
                 <ThemeIcon size="sm" variant="light" color="blue" radius="xl">
                   <IconChartBar size={12} />
                 </ThemeIcon>
               </Group>
               <Group gap={6} align="baseline">
-                <Text fw={700} size="xl">{logs.length.toLocaleString()}</Text>
-                <Text size="xs" c="teal">+12%</Text>
+                <Text fw={700} size="xl">{filteredLogs.length.toLocaleString()}</Text>
               </Group>
             </Card>
 
             <Card withBorder radius="md" p="lg" shadow="xs">
               <Group justify="space-between" mb="xs">
-                <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: "0.05em" }}>Success Rate</Text>
+                <Text
+                  size="xs"
+                  tt="uppercase"
+                  fw={600}
+                  c="dimmed"
+                  style={{ letterSpacing: '0.05em' }}
+                >
+                  Success Rate
+                </Text>
                 <ThemeIcon size="sm" variant="light" color="teal" radius="xl">
                   <IconChartPie size={12} />
                 </ThemeIcon>
@@ -194,27 +256,44 @@ export default function Log() {
 
             <Card withBorder radius="md" p="lg" shadow="xs">
               <Group justify="space-between" mb="xs">
-                <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: "0.05em" }}>Avg Response Time</Text>
+                <Text
+                  size="xs"
+                  tt="uppercase"
+                  fw={600}
+                  c="dimmed"
+                  style={{ letterSpacing: '0.05em' }}
+                >
+                  Avg Response Time
+                </Text>
                 <ThemeIcon size="sm" variant="light" color="orange" radius="xl">
                   <IconClock size={12} />
                 </ThemeIcon>
               </Group>
               <Group gap={6} align="baseline">
                 <Text fw={700} size="xl">428ms</Text>
-                <Text size="xs" c="orange">+45ms</Text>
               </Group>
             </Card>
 
             <Card withBorder radius="md" p="lg" shadow="xs">
               <Group justify="space-between" mb="xs">
-                <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: "0.05em" }}>Error Count</Text>
+                <Text
+                  size="xs"
+                  tt="uppercase"
+                  fw={600}
+                  c="dimmed"
+                  style={{ letterSpacing: '0.05em' }}
+                >
+                  Error Count
+                </Text>
                 <ThemeIcon size="sm" variant="light" color="red" radius="xl">
                   <IconAlertCircle size={12} />
                 </ThemeIcon>
               </Group>
               <Group gap={6} align="baseline">
                 <Text fw={700} size="xl">{errorCount}</Text>
-                <Text size="xs" c="dimmed">Last 24h</Text>
+                <Text size="xs" c="dimmed">
+                  {period === 'all' ? 'All time' : `Last ${PERIOD_OPTIONS.find(o => o.value === period)?.label ?? period}`}
+                </Text>
               </Group>
             </Card>
           </SimpleGrid>
@@ -237,10 +316,16 @@ export default function Log() {
 
           <Group justify="space-between" align="center">
             <Text size="sm" c="dimmed">
-              Showing {Math.min((currentPage - 1) * logsPerPage + 1, logs.length)}–{Math.min(currentPage * logsPerPage, logs.length)} of {logs.length} entries
+              Showing{' '}
+              {filteredLogs.length === 0
+                ? 0
+                : Math.min((currentPage - 1) * logsPerPage + 1, filteredLogs.length)}
+              –
+              {Math.min(currentPage * logsPerPage, filteredLogs.length)} of {filteredLogs.length}{' '}
+              entries
             </Text>
             <Pagination
-              total={Math.ceil(logs.length / logsPerPage)}
+              total={Math.ceil(filteredLogs.length / logsPerPage)}
               value={currentPage}
               onChange={handlePageChange}
               size="sm"
@@ -256,7 +341,8 @@ export default function Log() {
           >
             <Group justify="space-between" align="center">
               <Text size="sm">
-                Need a deeper dive? Integrate our Webhooks to receive real-time alerts whenever an API call fails or exceeds performance thresholds.
+                Need a deeper dive? Integrate our Webhooks to receive real-time alerts whenever an
+                API call fails or exceeds performance thresholds.
               </Text>
               <Anchor href="/documentation" size="sm" fw={600}>
                 Explore Integration Docs →

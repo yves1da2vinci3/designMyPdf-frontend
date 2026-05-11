@@ -24,20 +24,19 @@ import {
   IconActivity,
   IconBook,
   IconChartBar,
-  IconCircleCheck,
   IconKey,
   IconPencil,
   IconPlus,
   IconTrash,
 } from '@tabler/icons-react';
 import { KeyDTO, CreateKeyDto, UpdateKeyDto, keyApi } from '@/api/keyApi';
+import { logApi } from '@/api/logApi';
 import { RequestStatus } from '@/api/request-status.enum';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import AddKeyModal from '@/modals/AddKey/AddKey';
 import UpdateKeyModal from '@/modals/UpdateKey/UpdateKey';
 import { formatDate } from '@/utils/formatDate';
 
-const MOCK_LAST_USED = ['2 mins ago', '3 days ago', '1 week ago', 'Never', '5 hours ago'];
 const maskKey = (value: string) => {
   if (!value || value.length < 8) return value;
   return `${value.slice(0, 8)}${'•'.repeat(16)}${value.slice(-3)}`;
@@ -47,6 +46,7 @@ export default function Keys() {
   const [fetchKeysRequestStatus, setFetchKeysRequestStatus] = useState(RequestStatus.NotStated);
   const [keys, setKeys] = useState<KeyDTO[]>([]);
   const [rows, setRows] = useState<React.ReactNode[]>([]);
+  const [total24h, setTotal24h] = useState<number | null>(null);
 
   const fetchKeys = async () => {
     setFetchKeysRequestStatus(RequestStatus.InProgress);
@@ -56,6 +56,16 @@ export default function Keys() {
       setKeys(fetchedKeys);
     } catch (error) {
       setFetchKeysRequestStatus(RequestStatus.Failed);
+    }
+  };
+
+  const fetchDayStats = async () => {
+    try {
+      const stats = await logApi.getLogsStats('day');
+      const count = (stats || []).reduce((sum, s) => sum + (s.count || 0), 0);
+      setTotal24h(count);
+    } catch {
+      setTotal24h(0);
     }
   };
 
@@ -70,6 +80,7 @@ export default function Keys() {
 
   useEffect(() => {
     fetchKeys();
+    fetchDayStats();
   }, []);
 
   const deleteConfirmation = (name: string, keyId: number) => {
@@ -94,55 +105,47 @@ export default function Keys() {
   };
 
   useEffect(() => {
-    const updatedRows = keys.map((keyItem, idx) => {
-      const isRevoked = idx === keys.length - 1 && keys.length > 1;
-      return (
-        <Table.Tr key={keyItem.id} style={{ transition: 'background 0.15s' }}>
-          <Table.Td>
-            <Box>
-              <Text fw={600} size="sm">{keyItem.name}</Text>
-              <Text size="xs" c="dimmed" ff="monospace">{maskKey(keyItem.value)}</Text>
-            </Box>
-          </Table.Td>
-          <Table.Td>
-            <Text size="sm" c="dimmed">{formatDate(keyItem.created_at)}</Text>
-          </Table.Td>
-          <Table.Td>
-            <Text size="sm" c="dimmed">{MOCK_LAST_USED[idx % MOCK_LAST_USED.length]}</Text>
-          </Table.Td>
-          <Table.Td>
-            <Badge
-              color={isRevoked ? 'gray' : 'teal'}
-              variant="light"
-              radius="sm"
-              size="sm"
+    const updatedRows = keys.map((keyItem) => (
+      <Table.Tr key={keyItem.id} style={{ transition: 'background 0.15s' }}>
+        <Table.Td>
+          <Box>
+            <Text fw={600} size="sm">{keyItem.name}</Text>
+            <Text size="xs" c="dimmed" ff="monospace">{maskKey(keyItem.value)}</Text>
+          </Box>
+        </Table.Td>
+        <Table.Td>
+          <Text size="sm" c="dimmed">{formatDate(keyItem.created_at)}</Text>
+        </Table.Td>
+        <Table.Td>
+          <Text size="sm" c="dimmed">
+            {keyItem.last_used_at ? formatDate(keyItem.last_used_at) : 'Never'}
+          </Text>
+        </Table.Td>
+        <Table.Td>
+          <Badge color="teal" variant="light" radius="sm" size="sm">ACTIVE</Badge>
+        </Table.Td>
+        <Table.Td>
+          <Group gap="xs" justify="flex-end">
+            <ActionIcon
+              variant="subtle"
+              color="blue"
+              onClick={() => updateKey(keyItem.id)}
+              title="Edit"
             >
-              {isRevoked ? 'REVOKED' : 'ACTIVE'}
-            </Badge>
-          </Table.Td>
-          <Table.Td>
-            <Group gap="xs" justify="flex-end">
-              <ActionIcon
-                variant="subtle"
-                color="blue"
-                onClick={() => updateKey(keyItem.id)}
-                title="Edit"
-              >
-                <IconPencil size={16} />
-              </ActionIcon>
-              <ActionIcon
-                variant="subtle"
-                color="red"
-                onClick={() => deleteConfirmation(keyItem.name, keyItem.id)}
-                title="Delete"
-              >
-                <IconTrash size={16} />
-              </ActionIcon>
-            </Group>
-          </Table.Td>
-        </Table.Tr>
-      );
-    });
+              <IconPencil size={16} />
+            </ActionIcon>
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              onClick={() => deleteConfirmation(keyItem.name, keyItem.id)}
+              title="Delete"
+            >
+              <IconTrash size={16} />
+            </ActionIcon>
+          </Group>
+        </Table.Td>
+      </Table.Tr>
+    ));
     setRows(updatedRows);
   }, [keys]);
 
@@ -230,7 +233,7 @@ export default function Keys() {
           <SimpleGrid cols={3}>
             <Card withBorder radius="md" p="lg" shadow="xs">
               <Group justify="space-between" mb="xs">
-                <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: "0.05em" }}>Active Keys</Text>
+                <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '0.05em' }}>Active Keys</Text>
                 <ThemeIcon size="sm" variant="light" color="blue" radius="xl">
                   <IconKey size={12} />
                 </ThemeIcon>
@@ -241,18 +244,20 @@ export default function Keys() {
 
             <Card withBorder radius="md" p="lg" shadow="xs">
               <Group justify="space-between" mb="xs">
-                <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: "0.05em" }}>Total Requests (24H)</Text>
+                <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '0.05em' }}>Total Requests (24H)</Text>
                 <ThemeIcon size="sm" variant="light" color="violet" radius="xl">
                   <IconChartBar size={12} />
                 </ThemeIcon>
               </Group>
-              <Text fw={700} size="xl">12,402</Text>
-              <Text size="xs" c="teal" mt={4}>↑ 8.4% increase</Text>
+              <Text fw={700} size="xl">
+                {total24h === null ? '—' : total24h.toLocaleString()}
+              </Text>
+              <Text size="xs" c="dimmed" mt={4}>Last 24 hours</Text>
             </Card>
 
             <Card withBorder radius="md" p="lg" shadow="xs">
               <Group justify="space-between" mb="xs">
-                <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: "0.05em" }}>Health Status</Text>
+                <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '0.05em' }}>Health Status</Text>
                 <ThemeIcon size="sm" variant="light" color="teal" radius="xl">
                   <IconActivity size={12} />
                 </ThemeIcon>

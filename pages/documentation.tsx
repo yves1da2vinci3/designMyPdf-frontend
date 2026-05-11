@@ -14,7 +14,6 @@ import {
   Group,
   List,
   Text,
-  ThemeIcon,
   Title,
 } from '@mantine/core';
 import {
@@ -105,7 +104,7 @@ const Documentation = () => {
                 size="xs"
                 fw={700}
                 tt="uppercase"
-                style={{ letterSpacing: "0.05em" }}
+                style={{ letterSpacing: '0.05em' }}
                 c="dimmed"
                 mb="xs"
               >
@@ -165,7 +164,14 @@ const Documentation = () => {
             </Button>
           </Group>
 
-          <Badge variant="light" color="blue" mb="md" size="xs" tt="uppercase" style={{ letterSpacing: "0.08em" }}>
+          <Badge
+            variant="light"
+            color="blue"
+            mb="md"
+            size="xs"
+            tt="uppercase"
+            style={{ letterSpacing: '0.08em' }}
+          >
             Documentation
           </Badge>
 
@@ -356,41 +362,57 @@ const Documentation = () => {
           <Grid mb="xl">
             <Grid.Col span={6}>
               <Card withBorder radius="md" p={0} style={{ overflow: 'hidden' }}>
-                <Box px="md" py="xs" style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}>
+                <Box
+                  px="md"
+                  py="xs"
+                  style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}
+                >
                   <Text size="xs" fw={600} c="dimmed">Simple Variables</Text>
                 </Box>
                 <CodeHighlight
-                  code={`<p>Hello, {{name}}!</p>\n<p>Your email: {{email}}</p>`}
+                  code={'<p>Hello, {{name}}!</p>\n<p>Your email: {{email}}</p>'}
                   language="html"
                 />
               </Card>
             </Grid.Col>
             <Grid.Col span={6}>
               <Card withBorder radius="md" p={0} style={{ overflow: 'hidden' }}>
-                <Box px="md" py="xs" style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}>
+                <Box
+                  px="md"
+                  py="xs"
+                  style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}
+                >
                   <Text size="xs" fw={600} c="dimmed">Conditionals</Text>
                 </Box>
                 <CodeHighlight
-                  code={`{{#if premium}}\n  <p>You are a premium user!</p>\n{{else}}\n  <p>Upgrade to premium!</p>\n{{/if}}`}
+                  code={
+                    '{{#if premium}}\n  <p>You are a premium user!</p>\n{{else}}\n  <p>Upgrade to premium!</p>\n{{/if}}'
+                  }
                   language="html"
                 />
               </Card>
             </Grid.Col>
             <Grid.Col span={12}>
               <Card withBorder radius="md" p={0} style={{ overflow: 'hidden' }}>
-                <Box px="md" py="xs" style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}>
+                <Box
+                  px="md"
+                  py="xs"
+                  style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}
+                >
                   <Text size="xs" fw={600} c="dimmed">Loops</Text>
                 </Box>
                 <CodeHighlight
-                  code={`<table>
-  <tr><th>Product</th><th>Price</th></tr>
-  {{#each items}}
-  <tr>
-    <td>{{this.product}}</td>
-    <td>{{this.price}} €</td>
-  </tr>
-  {{/each}}
-</table>`}
+                  code={
+                    '<table>\n'
+                    + '  <tr><th>Product</th><th>Price</th></tr>\n'
+                    + '  {{#each items}}\n'
+                    + '  <tr>\n'
+                    + '    <td>{{this.product}}</td>\n'
+                    + '    <td>{{this.price}} €</td>\n'
+                    + '  </tr>\n'
+                    + '  {{/each}}\n'
+                    + '</table>'
+                  }
                   language="html"
                 />
               </Card>
@@ -429,11 +451,29 @@ const Documentation = () => {
           <Alert color="orange" variant="light" radius="md" mb="xl">
             <Box>
               {[
-                { code: '401', msg: 'Unauthorized — Check that your API key is valid and correctly sent in the "dmp_KEY" header.' },
-                { code: '400', msg: 'Bad Request — Ensure the request format is correct and all required data is provided.' },
-                { code: '404', msg: 'Not Found — Verify that the templateId is correct.' },
-                { code: '429', msg: 'Too Many Requests — You have exceeded your usage limit. Check your quota in the dashboard.' },
-                { code: '500', msg: 'Internal Server Error — Contact support if the problem persists.' },
+                {
+                  code: '401',
+                  msg:
+                    'Unauthorized — Check that your API key is valid and correctly sent in the dmp_KEY header.',
+                },
+                {
+                  code: '400',
+                  msg:
+                    'Bad Request — Ensure the request format is correct and all required data is provided.',
+                },
+                {
+                  code: '404',
+                  msg: 'Not Found — Verify that the templateId is correct.',
+                },
+                {
+                  code: '429',
+                  msg:
+                    'Too Many Requests — You have exceeded your usage limit. Check your quota in the dashboard.',
+                },
+                {
+                  code: '500',
+                  msg: 'Internal Server Error — Contact support if the problem persists.',
+                },
               ].map((e) => (
                 <Group key={e.code} mb="xs" align="flex-start" gap="sm">
                   <Text ff="monospace" size="sm" fw={700}>{e.code}</Text>
@@ -447,12 +487,19 @@ const Documentation = () => {
           <Divider my="xl" id="marketplace" />
           <Title order={2} fw={700} mb="md">Marketplace Integrations</Title>
           <Text c="dimmed" mb="md">
-            Connect Design My PDF with your existing tools and services through our growing marketplace of integrations.
+            Connect Design My PDF with your existing tools and services through our growing
+            marketplace of integrations.
           </Text>
           <Alert color="blue" variant="light" radius="md" mb="xl">
             <Group align="center" gap="sm">
               <Badge color="blue" variant="filled" size="xs">Coming Soon</Badge>
-              <Text size="sm">Integrations with Zapier, Make (Integromat), and direct platform connectors are in active development. <Anchor href="/dashboard" size="sm">Get notified →</Anchor></Text>
+              <Text size="sm">
+                Integrations with Zapier, Make (Integromat), and direct platform connectors are in
+                active development.{' '}
+                <Anchor href="/dashboard" size="sm">
+                  Get notified →
+                </Anchor>
+              </Text>
             </Group>
           </Alert>
 
@@ -460,16 +507,28 @@ const Documentation = () => {
           <Divider my="xl" id="webhooks" />
           <Title order={2} fw={700} mb="md">Webhooks</Title>
           <Text c="dimmed" mb="md">
-            Receive real-time event notifications when PDF generation completes, fails, or when usage limits are approached.
+            Receive real-time event notifications when PDF generation completes, fails, or when
+            usage limits are approached.
           </Text>
           <Alert color="orange" variant="light" radius="md" mb="xl" title="In Development">
             <Text size="sm" mb="xs">
-              Webhooks are currently in active development and are not yet available in production. This feature will allow you to:
+              Webhooks are currently in active development and are not yet available in production.
+              This feature will allow you to:
             </Text>
             <Box component="ul" pl="md" style={{ margin: 0 }}>
-              <Box component="li"><Text size="sm">Receive <code>generation.completed</code> events with download URLs</Text></Box>
-              <Box component="li"><Text size="sm">Handle <code>generation.failed</code> errors in real time</Text></Box>
-              <Box component="li"><Text size="sm">Get <code>quota.warning</code> alerts before hitting usage limits</Text></Box>
+              <Box component="li">
+                <Text size="sm">
+                  Receive <code>generation.completed</code> events with download URLs
+                </Text>
+              </Box>
+              <Box component="li">
+                <Text size="sm">Handle <code>generation.failed</code> errors in real time</Text>
+              </Box>
+              <Box component="li">
+                <Text size="sm">
+                  Get <code>quota.warning</code> alerts before hitting usage limits
+                </Text>
+              </Box>
             </Box>
           </Alert>
 
@@ -477,14 +536,15 @@ const Documentation = () => {
           <Divider my="xl" id="nodejs" />
           <Title order={2} fw={700} mb="md">Node.js SDK</Title>
           <Text c="dimmed" mb="md">
-            The official Node.js SDK provides a simple, typed interface for all Design My PDF API endpoints.
+            The official Node.js SDK provides a simple, typed interface for all Design My PDF API
+            endpoints.
           </Text>
           {SDK_IN_DEV_ALERT}
           <Card withBorder radius="md" p={0} mb="md" style={{ overflow: 'hidden' }}>
             <Group px="md" py="xs" style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}>
               <Text size="xs" fw={600} c="dimmed">Installation</Text>
             </Group>
-            <CodeHighlight code={`npm install @designmypdf/node`} language="javascript" />
+            <CodeHighlight code="npm install @designmypdf/node" language="javascript" />
           </Card>
           <Card withBorder radius="md" p={0} mb="xl" style={{ overflow: 'hidden' }}>
             <Group px="md" py="xs" style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}>
@@ -514,14 +574,15 @@ console.log(pdf.path);`}
           <Divider my="xl" id="python" />
           <Title order={2} fw={700} mb="md">Python Client</Title>
           <Text c="dimmed" mb="md">
-            Use the Python client to integrate PDF generation into data pipelines, Django, Flask, or FastAPI applications.
+            Use the Python client to integrate PDF generation into data pipelines, Django, Flask, or
+            FastAPI applications.
           </Text>
           {SDK_IN_DEV_ALERT}
           <Card withBorder radius="md" p={0} mb="md" style={{ overflow: 'hidden' }}>
             <Group px="md" py="xs" style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}>
               <Text size="xs" fw={600} c="dimmed">Installation</Text>
             </Group>
-            <CodeHighlight code={`pip install designmypdf`} language="javascript" />
+            <CodeHighlight code="pip install designmypdf" language="javascript" />
           </Card>
           <Card withBorder radius="md" p={0} mb="xl" style={{ overflow: 'hidden' }}>
             <Group px="md" py="xs" style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}>
@@ -550,14 +611,15 @@ print(pdf["path"])  # download link`}
           <Divider my="xl" id="cli" />
           <Title order={2} fw={700} mb="md">CLI Reference</Title>
           <Text c="dimmed" mb="md">
-            The Design My PDF CLI lets you generate PDFs, manage templates, and test your integration directly from the terminal.
+            The Design My PDF CLI lets you generate PDFs, manage templates, and test your
+            integration directly from the terminal.
           </Text>
           {SDK_IN_DEV_ALERT}
           <Card withBorder radius="md" p={0} mb="md" style={{ overflow: 'hidden' }}>
             <Group px="md" py="xs" style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}>
               <Text size="xs" fw={600} c="dimmed">Installation</Text>
             </Group>
-            <CodeHighlight code={`npm install -g @designmypdf/cli`} language="javascript" />
+            <CodeHighlight code="npm install -g @designmypdf/cli" language="javascript" />
           </Card>
           <Card withBorder radius="md" p={0} mb="xl" style={{ overflow: 'hidden' }}>
             <Group px="md" py="xs" style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}>

@@ -495,14 +495,12 @@ const CreateTemplate: React.FC = () => {
     try {
       setIsPublishing(true);
       await templateApi.publishToMarketplace({
-        templateId: params.id as string,
+        templateId: Number(template?.ID),
         price: 499,
-        name: template?.name || 'Untitled Template',
         description: template?.description || '',
-        preview: template?.preview || '',
-        content: code,
-        variables,
-        fonts: fontsSelected,
+        category: 'OTHER',
+        features: [],
+        coverImageURL: template?.preview || '',
       });
       notificationService.showSuccessNotification('Template published to marketplace successfully');
     } catch (error: any) {

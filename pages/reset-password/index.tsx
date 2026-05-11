@@ -18,7 +18,6 @@ import { useForm } from '@mantine/form';
 import { IconArrowRight, IconCheck, IconCircleCheck, IconDiamondFilled } from '@tabler/icons-react';
 import { ResetPasswordDto, authApi } from '@/api/authApi';
 import { RequestStatus } from '@/api/request-status.enum';
-import { Links } from '@/constants/routes';
 
 export default function ResetPassword() {
   const router = useRouter();
@@ -108,7 +107,14 @@ export default function ResetPassword() {
                   border: '1px solid #e9ecef',
                 }}
               >
-                <Text size="xs" fw={700} tt="uppercase" style={{ letterSpacing: "0.05em" }} mb="xs" c="dimmed">
+                <Text
+                  size="xs"
+                  fw={700}
+                  tt="uppercase"
+                  style={{ letterSpacing: '0.05em' }}
+                  mb="xs"
+                  c="dimmed"
+                >
                   Security Criteria:
                 </Text>
                 <List
@@ -184,7 +190,7 @@ export default function ResetPassword() {
             }}
           >
             <Box mb="md" style={{ display: 'flex', gap: 6 }}>
-              {[1,2,3].map(i => (
+              {[1, 2, 3].map((i) => (
                 <Box key={i} h={6} style={{ flex: 1, backgroundColor: '#e9ecef', borderRadius: 3 }} />
               ))}
             </Box>

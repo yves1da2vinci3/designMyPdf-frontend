@@ -238,9 +238,15 @@ function TemplatesPage() {
             </Button>
             {showTourButton && (
               <Tooltip label="Show guided tour">
-                <ActionIcon variant="subtle" size="lg" onClick={() => {
-                  manuallyStartTour(() => { setHasSeenTour(true); }, 'dashboard');
-                }}>
+                <ActionIcon
+                  variant="subtle"
+                  size="lg"
+                  onClick={() => {
+                    manuallyStartTour(() => {
+                      setHasSeenTour(true);
+                    }, 'dashboard');
+                  }}
+                >
                   <IconHelp size={18} />
                 </ActionIcon>
               </Tooltip>
@@ -265,7 +271,7 @@ function TemplatesPage() {
               size="xs"
               fw={700}
               tt="uppercase"
-              style={{ letterSpacing: "0.05em" }}
+              style={{ letterSpacing: '0.05em' }}
               c="dimmed"
               mb="sm"
             >
@@ -323,7 +329,7 @@ function TemplatesPage() {
               size="xs"
               fw={700}
               tt="uppercase"
-              style={{ letterSpacing: "0.05em" }}
+              style={{ letterSpacing: '0.05em' }}
               c="dimmed"
               mb="sm"
             >
@@ -392,7 +398,8 @@ function TemplatesPage() {
             {searchedTemplates.length > 0 && (
               <Group justify="space-between" mt="xl" align="center">
                 <Text size="sm" c="dimmed">
-                  Showing 1 to {Math.min(searchedTemplates.length, 12)} of {searchedTemplates.length} templates
+                  Showing 1 to {Math.min(searchedTemplates.length, 12)} of{' '}
+                  {searchedTemplates.length} templates
                 </Text>
                 <Pagination total={Math.ceil(searchedTemplates.length / 12)} size="sm" />
               </Group>
