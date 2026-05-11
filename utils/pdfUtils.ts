@@ -1,5 +1,4 @@
 import { TemplateDTO } from '@/api/templateApi';
-import notificationService from '@/services/NotificationService';
 import { notifications } from '@mantine/notifications';
 import { FormatType } from './types';
 
@@ -29,22 +28,30 @@ export async function exportPdfDocument({
   try {
     notifications.show({
       id: exportNotificationId,
-      title: 'Exporting PDF',
-      message: `Preparing document as ${format.toUpperCase()}...`,
+      title: 'Exportation PDF',
+      message: `Préparation du document ${format.toUpperCase()}...`,
       color: 'blue',
       loading: true,
       autoClose: false,
     });
 
+    const PIXELS_PER_MM = 3.779527559;
+
     const iframe = document.createElement('iframe');
-    iframe.style.width = `${pageWidth * 3.779527559}px`;
-    iframe.style.height = `${pageHeight * 3.779527559}px`;
-    iframe.style.position = 'absolute';
-    iframe.style.top = '-9999px';
-    iframe.style.left = '-9999px';
+    // Fixed + visibility:hidden → browser renders fully (Tailwind JIT needs a visible viewport)
+    iframe.style.position = 'fixed';
+    iframe.style.top = '0';
+    iframe.style.left = '0';
+    iframe.style.width = `${pageWidth * PIXELS_PER_MM}px`;
+    iframe.style.height = `${pageHeight * PIXELS_PER_MM}px`;
+    iframe.style.visibility = 'hidden';
+    iframe.style.pointerEvents = 'none';
+    iframe.style.zIndex = '-1';
     iframe.style.border = 'none';
     iframe.style.overflow = 'hidden';
     document.body.appendChild(iframe);
+
+    const primaryFont = fontsSelected[0] || 'system-ui';
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -71,18 +78,13 @@ export async function exportPdfDocument({
             html, body {
               margin: 0;
               padding: 0;
-              font-family: '${fontsSelected[0] || 'system-ui'}', sans-serif;
+              font-family: '${primaryFont}', sans-serif;
               background-color: white;
-              min-height: 100vh;
               width: 100%;
             }
-            #content-container {
-              width: 100%;
-              min-height: 100vh;
-              background-color: white;
+            /* Match Preview.tsx scaffold exactly — no box-sizing override, same .content class */
+            .content {
               padding: 2rem;
-              box-sizing: border-box;
-              position: relative;
             }
             .page-break {
               page-break-after: always;
@@ -92,9 +94,7 @@ export async function exportPdfDocument({
               display: none !important;
             }
             @media print {
-              .preview-only {
-                display: none !important;
-              }
+              .preview-only { display: none !important; }
             }
             canvas {
               max-width: 100%;
@@ -103,7 +103,7 @@ export async function exportPdfDocument({
           </style>
         </head>
         <body>
-          <div id="content-container">
+          <div class="content">
             ${renderedContent}
           </div>
           <script>
@@ -115,7 +115,6 @@ export async function exportPdfDocument({
                   document.body.appendChild(testDiv);
                   const hasStyles = window.getComputedStyle(testDiv).backgroundColor !== 'rgba(0, 0, 0, 0)';
                   document.body.removeChild(testDiv);
-                  
                   if (hasStyles) {
                     resolve(true);
                   } else {
@@ -125,74 +124,85 @@ export async function exportPdfDocument({
                 checkTailwind();
               });
             }
-            
+
             async function initCharts() {
               await waitForTailwind();
-              
+
+              // Wait for fonts to be ready
+              if (document.fonts && document.fonts.ready) {
+                await document.fonts.ready;
+              }
+
               if (!window.Chart) {
                 await new Promise(resolve => setTimeout(resolve, 500));
-                if (!window.Chart) {
-                  window.parent.postMessage('contentLoaded', '*');
-                  return;
-                }
               }
-              
-              document.querySelectorAll('canvas[data-chart-type]').forEach(canvas => {
+
+              const canvases = document.querySelectorAll('canvas[data-chart-type]');
+
+              canvases.forEach(canvas => {
                 const type = canvas.getAttribute('data-chart-type');
                 const chartDataAttr = canvas.getAttribute('data-chart-data');
-                
-                if (!type || !chartDataAttr) return;
-                
+
+                if (!type || !chartDataAttr) {
+                  drawChartWarning(canvas, 'Attributs manquants');
+                  return;
+                }
+
                 let chartData;
                 try {
                   chartData = JSON.parse(chartDataAttr);
                 } catch (e) {
-                  chartData = { labels: [], datasets: [] };
+                  drawChartWarning(canvas, 'JSON invalide');
+                  return;
                 }
-                
+
+                if (!chartData || !chartData.labels || !Array.isArray(chartData.datasets)) {
+                  drawChartWarning(canvas, 'Données manquantes');
+                  return;
+                }
+
                 try {
-                  new Chart(canvas, {
-                    type,
-                    data: chartData,
-                    options: {
-                      responsive: true,
-                      maintainAspectRatio: true,
-                      animation: false,
-                      plugins: {
-                        legend: {
-                          position: 'top',
-                          labels: {
-                            padding: 20,
-                            font: {
-                              size: 12,
-                              family: "'${fontsSelected[0] || 'system-ui'}', sans-serif"
+                  if (window.Chart) {
+                    new Chart(canvas, {
+                      type: type,
+                      data: chartData,
+                      options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        animation: false,
+                        plugins: {
+                          legend: {
+                            position: 'top',
+                            labels: {
+                              padding: 20,
+                              font: { size: 12, family: "'${primaryFont}', sans-serif" }
                             }
-                          }
-                        },
-                        tooltip: {
-                          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                          padding: 12,
-                          titleFont: {
-                            size: 14,
-                            family: "'${fontsSelected[0] || 'system-ui'}', sans-serif"
                           },
-                          bodyFont: {
-                            size: 12,
-                            family: "'${fontsSelected[0] || 'system-ui'}', sans-serif"
-                          }
+                          tooltip: { enabled: false }
                         }
                       }
-                    }
-                  });
+                    });
+                  }
                 } catch (error) {
-                  console.error('Error initializing chart:', error);
+                  drawChartWarning(canvas, 'Erreur rendu');
                 }
               });
-              
-              await new Promise(resolve => setTimeout(resolve, 2000));
+
+              // Small paint-flush buffer, then signal ready
+              await new Promise(resolve => setTimeout(resolve, 300));
               window.parent.postMessage('contentLoaded', '*');
             }
-            
+
+            function drawChartWarning(canvas, msg) {
+              const ctx = canvas.getContext('2d');
+              if (!ctx) return;
+              ctx.fillStyle = '#fef3c7';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.fillStyle = '#92400e';
+              ctx.font = '12px sans-serif';
+              ctx.fillText('⚠ ' + msg, 8, 24);
+            }
+
             if (document.readyState === 'loading') {
               document.addEventListener('DOMContentLoaded', initCharts);
             } else {
@@ -203,7 +213,6 @@ export async function exportPdfDocument({
       </html>
     `;
 
-    // Set the content to the iframe
     const iframeDoc = iframe.contentWindow?.document;
     if (!iframeDoc) {
       throw new Error('Could not access iframe document');
@@ -213,34 +222,36 @@ export async function exportPdfDocument({
     iframeDoc.write(htmlContent);
     iframeDoc.close();
 
-    // Pass variables to the iframe for chart data access
     (iframe.contentWindow as any).templateVariables = variables;
 
+    // Wait for contentLoaded message (chart init + paint flush)
     await new Promise<void>((resolve) => {
-      let contentLoaded = false;
+      let resolved = false;
 
       const handler = (event: MessageEvent) => {
-        if (event.data === 'contentLoaded' && !contentLoaded) {
-          contentLoaded = true;
+        if (event.data === 'contentLoaded' && !resolved) {
+          resolved = true;
           window.removeEventListener('message', handler);
-          setTimeout(resolve, 3000);
+          // Small extra buffer to ensure final paint
+          setTimeout(resolve, 200);
         }
       };
 
       window.addEventListener('message', handler);
 
+      // Hard timeout fallback — 10s max
       setTimeout(() => {
-        if (!contentLoaded) {
+        if (!resolved) {
           window.removeEventListener('message', handler);
           resolve();
         }
-      }, 15000);
+      }, 10000);
     });
 
     notifications.update({
       id: exportNotificationId,
-      title: 'Exporting PDF',
-      message: 'Rendering charts and content...',
+      title: 'Exportation PDF',
+      message: 'Capture du contenu...',
       color: 'blue',
       loading: true,
       autoClose: false,
@@ -249,31 +260,19 @@ export async function exportPdfDocument({
     const { default: jsPDF } = await import('jspdf');
     const { default: html2canvas } = await import('html2canvas');
 
-    // Create jsPDF instance with the correct dimensions
-    const JsPDF = jsPDF;
-    const pdf = new JsPDF({
+    const pdf = new jsPDF({
       orientation: isLandScape ? 'landscape' : 'portrait',
       unit: 'mm',
       format,
     });
 
-    const contentContainer = iframeDoc.getElementById('content-container');
-    if (!contentContainer) {
+    // Use .content class, matching Preview.tsx scaffold
+    const contentEl = iframeDoc.querySelector('.content') as HTMLElement;
+    if (!contentEl) {
       throw new Error('Content container not found');
     }
 
-    const PIXELS_PER_MM = 3.779527559;
-
-    notifications.update({
-      id: exportNotificationId,
-      title: 'Exporting PDF',
-      message: 'Capturing document content...',
-      color: 'blue',
-      loading: true,
-      autoClose: false,
-    });
-
-    const fullCanvas = await html2canvas(contentContainer, {
+    const fullCanvas = await html2canvas(contentEl, {
       scale: 2,
       useCORS: true,
       allowTaint: true,
@@ -282,11 +281,13 @@ export async function exportPdfDocument({
       imageTimeout: 0,
       removeContainer: false,
       foreignObjectRendering: false,
-      windowHeight: contentContainer.scrollHeight,
-      height: contentContainer.scrollHeight,
+      width: contentEl.offsetWidth,
+      windowWidth: iframe.clientWidth,
+      windowHeight: contentEl.scrollHeight,
+      height: contentEl.scrollHeight,
       onclone: (clonedDoc) => {
         const canvases = clonedDoc.querySelectorAll('canvas');
-        const originalCanvases = contentContainer.querySelectorAll('canvas');
+        const originalCanvases = contentEl.querySelectorAll('canvas');
         canvases.forEach((canvas, index) => {
           const originalCanvas = originalCanvases[index] as HTMLCanvasElement;
           if (originalCanvas) {
@@ -299,10 +300,12 @@ export async function exportPdfDocument({
       },
     });
 
+    // Margins: 10mm each side
     const imgWidth = pageWidth - 20;
     const imgHeight = (fullCanvas.height * imgWidth) / fullCanvas.width;
 
     const pageHeightMm = pageHeight - 20;
+    // Multiply by 2 to match html2canvas scale: 2
     const pageHeightPx = pageHeightMm * PIXELS_PER_MM * 2;
 
     let heightLeft = fullCanvas.height;
@@ -311,8 +314,8 @@ export async function exportPdfDocument({
 
     notifications.update({
       id: exportNotificationId,
-      title: 'Exporting PDF',
-      message: 'Generating PDF pages...',
+      title: 'Exportation PDF',
+      message: 'Génération des pages...',
       color: 'blue',
       loading: true,
       autoClose: false,
@@ -334,24 +337,18 @@ export async function exportPdfDocument({
       if (ctx) {
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-
         ctx.drawImage(
           fullCanvas,
-          0,
-          sourceY,
-          fullCanvas.width,
-          sourceHeight,
-          0,
-          0,
-          fullCanvas.width,
-          sourceHeight,
+          0, sourceY, fullCanvas.width, sourceHeight,
+          0, 0, fullCanvas.width, sourceHeight,
         );
       }
 
-      const pageImgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+      // PNG for lossless text quality
+      const pageImgData = pageCanvas.toDataURL('image/png');
       const pageImgHeight = (sourceHeight * imgWidth) / fullCanvas.width;
 
-      pdf.addImage(pageImgData, 'JPEG', 10, 10, imgWidth, pageImgHeight, undefined, 'SLOW');
+      pdf.addImage(pageImgData, 'PNG', 10, 10, imgWidth, pageImgHeight, undefined, 'FAST');
 
       heightLeft -= sourceHeight;
       position += sourceHeight;
@@ -359,26 +356,14 @@ export async function exportPdfDocument({
     }
 
     const totalPages = pageNum;
-
     document.body.removeChild(iframe);
-
-    notifications.update({
-      id: exportNotificationId,
-      title: 'Exporting PDF',
-      message: 'Saving document...',
-      color: 'blue',
-      loading: true,
-      autoClose: false,
-    });
 
     pdf.save(`${template?.name || 'template'}_${format.toUpperCase()}.pdf`);
 
     notifications.update({
       id: exportNotificationId,
-      title: 'Export Complete',
-      message: `Document exported as ${format.toUpperCase()} PDF with ${totalPages} page${
-        totalPages > 1 ? 's' : ''
-      }!`,
+      title: 'Export terminé',
+      message: `Document exporté en ${format.toUpperCase()} — ${totalPages} page${totalPages > 1 ? 's' : ''}.`,
       color: 'green',
       loading: false,
       autoClose: 3000,
@@ -387,8 +372,8 @@ export async function exportPdfDocument({
     console.error('Error exporting PDF:', error);
     notifications.update({
       id: exportNotificationId,
-      title: 'Export Failed',
-      message: 'Failed to export document. Please try again.',
+      title: 'Échec export',
+      message: 'Impossible d\'exporter le document. Réessayez.',
       color: 'red',
       loading: false,
       autoClose: 5000,

@@ -14,13 +14,13 @@ import {
   Stack,
   Center,
   Loader,
+  Image,
 } from '@mantine/core';
 import { IconShoppingCart } from '@tabler/icons-react';
 import { RequestStatus } from '@/api/request-status.enum';
-import { TemplateDTO, templateApi } from '@/api/templateApi';
-import Preview from '@/components/Preview';
+import { templateApi, MarketplaceTemplateCard } from '@/api/templateApi';
 
-interface MarketplaceTemplate extends TemplateDTO {
+interface MarketplaceTemplate extends MarketplaceTemplateCard {
   id: string;
   name: string;
   description: string;
@@ -48,13 +48,13 @@ export default function MarketplaceTemplates() {
       setIsLoading(RequestStatus.InProgress);
       const response = await templateApi.getMarketplaceTemplates();
       setTemplates(
-        response.map((template: TemplateDTO) => ({
+        response.map((template: MarketplaceTemplateCard) => ({
           ...template,
           id: template.ID.toString(),
           name: template.name || 'Untitled Template',
           description: template.description || '',
           price: template.price || 0,
-          preview: template.preview || '',
+          preview: template.preview || template.cover_image_url || '',
           rating: template.rating || 0,
           reviewCount: template.reviewCount || 0,
           author: template.author || { name: 'Unknown', avatar: '' },
@@ -123,16 +123,24 @@ export default function MarketplaceTemplates() {
                           height: '200px',
                           overflow: 'hidden',
                           position: 'relative',
-                          backgroundColor: 'white',
+                          backgroundColor: '#2C2E33',
                         }}
                       >
-                        <Preview
-                          format="a4"
-                          htmlContent={template.content || ''}
-                          data={template.variables || {}}
-                          fonts={template.fonts || []}
-                          isLandscape={false}
-                        />
+                        {template.cover_image_url?.trim() ? (
+                          <Image
+                            src={template.cover_image_url.trim()}
+                            alt={template.name}
+                            h={200}
+                            fit="cover"
+                            fallbackSrc="https://placehold.co/600x400?text=Template"
+                          />
+                        ) : (
+                          <Center h={200}>
+                            <Text size="sm" c="dimmed" ta="center" px="md">
+                              Voir le détail pour l’aperçu complet
+                            </Text>
+                          </Center>
+                        )}
                       </Box>
                     </Card.Section>
 

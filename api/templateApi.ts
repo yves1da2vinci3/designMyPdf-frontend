@@ -72,6 +72,13 @@ export interface TemplateDTO {
   uses_count?: number;
 }
 
+/** Row returned by GET /marketplace (no content, no variables). */
+export type MarketplaceTemplateCard = Omit<TemplateDTO, 'content' | 'variables' | 'fonts'> & {
+  content?: string;
+  variables?: any;
+  fonts?: string[];
+};
+
 export interface PublishToMarketplaceDto {
   templateId: number;
   name: string;
@@ -117,6 +124,8 @@ export interface ExportTemplateDto {
   paperSize: string;
   isLandscape: boolean;
   fonts: string[];
+  /** When set, server export uses this HTML (already rendered) instead of fetching the template. */
+  renderedHtml?: string;
 }
 
 export const templateApi = {
@@ -201,7 +210,7 @@ export const templateApi = {
     return res.data.template;
   },
 
-  async getMarketplaceTemplates(category?: string): Promise<TemplateDTO[]> {
+  async getMarketplaceTemplates(category?: string): Promise<MarketplaceTemplateCard[]> {
     const params = category ? { category } : {};
     const res = await apiClient.get('/marketplace', { params });
     return res.data.templates || [];

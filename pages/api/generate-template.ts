@@ -74,6 +74,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 - Examples: {{charts.salesChart}}, {{charts.monthlyRevenue}}, {{charts.userGrowth}}
 - Stat cards: {{totalSales}}, {{activeUsers}}, {{conversionRate}}
 
+CHART DATA STRUCTURE (MANDATORY):
+Chart variables MUST follow this EXACT structure in the generated variables JSON:
+  charts.chartName = { "labels": ["A","B","C"], "datasets": [{ "label": "Series", "data": [10,20,30], "backgroundColor": ["#3B82F6","#10B981","#F59E0B"], "borderColor": "#3B82F6" }] }
+- NEVER put raw numbers or strings directly in data-chart-data attribute
+- ALWAYS use {{charts.variableName}} as the attribute value — Handlebars will inject the JSON at render time
+- Every canvas MUST have a matching entry in the "charts" object of the variables
+- datasets[].data MUST be an array of numbers (not strings)
+
 🔧 HANDLEBARS TEMPLATES (MANDATORY):
 You MUST use Handlebars variables for ALL dynamic content:
 - Simple values: {{variable}} - for any text, numbers, dates

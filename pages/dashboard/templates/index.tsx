@@ -30,6 +30,7 @@ import AddTemplate from '@/modals/AddTemplate/AddTemplate';
 import NamespaceItem from '@/components/NamespaceItem/NamespaceItem';
 import AddNamespace from '@/modals/AddNamespace/AddNamespace';
 import { CreateTemplateDto, TemplateDTO, templateApi } from '@/api/templateApi';
+import RenameTemplate from '@/modals/RenameTemplate/RenameTemplate';
 import { CreateNamespaceDto, NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
 import { RequestStatus } from '@/api/request-status.enum';
 import { manuallyStartTour } from '@/utils/tourUtils';
@@ -140,6 +141,8 @@ function TemplatesPage() {
     setTemplates(templates.filter((template) => template.ID !== id));
   };
 
+  const [renameTarget, setRenameTarget] = useState<TemplateDTO | null>(null);
+
   // Initialize the tour when the component mounts
   useEffect(() => {
     // Only start the tour after the templates have loaded
@@ -215,6 +218,11 @@ function TemplatesPage() {
           onClose={closeAddNamespace}
           addNamespaceHandler={AddNamespaceHandler}
           addNamespaceRequestatus={addNamespaceRequestStatus}
+        />
+        <RenameTemplate
+          template={renameTarget}
+          onClose={() => setRenameTarget(null)}
+          onSuccess={fetchTemplatesAndNamespaces}
         />
 
         {/* Header */}
@@ -453,6 +461,7 @@ function TemplatesPage() {
                         DeleteTemplateFromClient={DeleteTemplateFromClient}
                         id={template?.ID}
                         template={template}
+                        onRename={(t) => setRenameTarget(t)}
                       />
                     </Grid.Col>
                   ))}

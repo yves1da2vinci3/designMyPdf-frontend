@@ -1,6 +1,6 @@
 import { useDrag } from 'react-dnd';
 import { Paper, Box, Menu, Text, Group, ActionIcon } from '@mantine/core';
-import { IconDots, IconTrash, IconEdit } from '@tabler/icons-react';
+import { IconDots, IconTrash, IconEdit, IconPencil } from '@tabler/icons-react';
 import { useRouter } from 'next/router';
 import React from 'react';
 import { TemplateDTO, templateApi } from '@/api/templateApi';
@@ -12,12 +12,14 @@ interface TemplateItemProps {
   id: number;
   template: TemplateDTO;
   DeleteTemplateFromClient: (id: number) => void;
+  onRename?: (template: TemplateDTO) => void;
 }
 
 export default function TemplateItem({
   id,
   template,
   DeleteTemplateFromClient,
+  onRename,
 }: TemplateItemProps) {
   const { name, CreatedAt, content, variables, fonts, uuid } = template;
   const [{ isDragging }, drag] = useDrag(() => ({
@@ -83,6 +85,15 @@ export default function TemplateItem({
               }}
             >
               Edit
+            </Menu.Item>
+            <Menu.Item
+              leftSection={<IconPencil size={14} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                onRename?.(template);
+              }}
+            >
+              Rename
             </Menu.Item>
             <Menu.Divider />
             <Menu.Item

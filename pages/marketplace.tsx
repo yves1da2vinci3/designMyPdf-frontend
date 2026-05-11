@@ -26,9 +26,8 @@ import {
   IconDiamondFilled,
   IconShoppingCart,
 } from '@tabler/icons-react';
-import { templateApi, TemplateDTO } from '@/api/templateApi';
+import { templateApi, MarketplaceTemplateCard } from '@/api/templateApi';
 import { authApi } from '@/api/authApi';
-import Preview from '@/components/Preview';
 import CopyTemplateModal from '@/components/marketplace/CopyTemplateModal';
 import PurchaseModal from '@/components/marketplace/PurchaseModal';
 
@@ -42,12 +41,12 @@ const CATEGORIES = [
 
 export default function MarketplacePage() {
   const router = useRouter();
-  const [templates, setTemplates] = useState<TemplateDTO[]>([]);
+  const [templates, setTemplates] = useState<MarketplaceTemplateCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('');
   const [search, setSearch] = useState('');
-  const [copyTarget, setCopyTarget] = useState<TemplateDTO | null>(null);
-  const [purchaseTarget, setPurchaseTarget] = useState<TemplateDTO | null>(null);
+  const [copyTarget, setCopyTarget] = useState<MarketplaceTemplateCard | null>(null);
+  const [purchaseTarget, setPurchaseTarget] = useState<MarketplaceTemplateCard | null>(null);
 
   const session = authApi.getUserSession();
   const userName = session?.userName ?? 'G';
@@ -73,7 +72,7 @@ export default function MarketplacePage() {
     ? templates.filter((t) => t.name?.toLowerCase().includes(search.toLowerCase()))
     : templates;
 
-  const handleBuyNow = (template: TemplateDTO) => {
+  const handleBuyNow = (template: MarketplaceTemplateCard) => {
     if ((template.price ?? 0) === 0) {
       setCopyTarget(template);
     } else {
@@ -246,15 +245,11 @@ export default function MarketplacePage() {
                       fit="cover"
                     />
                   ) : (
-                    <Box h={180} style={{ overflow: 'hidden', backgroundColor: '#fff' }}>
-                      <Preview
-                        format="a4"
-                        htmlContent={template.content || ''}
-                        data={template.variables || {}}
-                        fonts={template.fonts || []}
-                        isLandscape={false}
-                      />
-                    </Box>
+                    <Center h={180} bg="gray.1">
+                      <Text size="sm" c="dimmed" ta="center" px="md">
+                        Aperçu sur la fiche détail
+                      </Text>
+                    </Center>
                   )}
                   {(template.price ?? 0) > 0 && (
                     <Badge

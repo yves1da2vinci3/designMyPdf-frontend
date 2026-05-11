@@ -22,6 +22,8 @@ import {
   Divider,
   Card,
   Badge,
+  TextInput,
+  Tabs,
 } from '@mantine/core';
 import { useRouter, useParams } from 'next/navigation';
 import { useDisclosure } from '@mantine/hooks';
@@ -53,6 +55,8 @@ import {
   IconPresentation,
   IconReceipt,
   IconCertificate,
+  IconSearch,
+  IconLock,
 } from '@tabler/icons-react';
 
 import { useMonaco } from '@monaco-editor/react';
@@ -63,7 +67,7 @@ import VariableBadge from '@/components/VariableBadge/VariableBadge';
 import { DEFAULT_TEMPLATE } from '@/constants/template';
 import { DEFAULT_FONT, fonts } from '@/constants/fonts';
 import { RequestStatus } from '@/api/request-status.enum';
-import { TemplateDTO, templateApi } from '@/api/templateApi';
+import { TemplateDTO, templateApi, MarketplaceTemplateCard } from '@/api/templateApi';
 import notificationService from '@/services/NotificationService';
 import { FormatType } from '../../../../utils/types';
 import {
@@ -72,8 +76,7 @@ import {
   processChartData,
   replaceChartDataPlaceholders,
 } from '../../../../utils/chartUtils';
-import { exportPdfDocument } from '../../../../utils/pdfUtils';
-import { DEFAULT_FORMAT, getPageDimensions } from '../../../../utils/paperUtils';
+import { DEFAULT_FORMAT } from '../../../../utils/paperUtils';
 import { manuallyStartTour } from '../../../../utils/tourUtils';
 import { useLocalStorage } from '../../../../utils/useLocalStorage';
 import { REFERENCE_TEMPLATES } from '@/services/agent/templateLibrary';
@@ -150,6 +153,11 @@ const CreateTemplate: React.FC = () => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [templateDrawerOpened, { open: openTemplateDrawer, close: closeTemplateDrawer }] =
     useDisclosure(false);
+  const [templateTab, setTemplateTab] = useState<string>('default');
+  const [templateSearch, setTemplateSearch] = useState('');
+  const [marketplaceTemplates, setMarketplaceTemplates] = useState<MarketplaceTemplateCard[]>([]);
+  const [marketplaceLoading, setMarketplaceLoading] = useState(false);
+  const [marketplaceLoaded, setMarketplaceLoaded] = useState(false);
 
   const fetchTemplate = async () => {
     try {
@@ -202,6 +210,35 @@ const CreateTemplate: React.FC = () => {
     notificationService.showSuccessNotification(
       `Template "${templateItem.name}" loaded successfully`,
     );
+  };
+
+  const loadMarketplaceTemplates = async () => {
+    if (marketplaceLoaded) return;
+    setMarketplaceLoading(true);
+    try {
+      const results = await templateApi.getMarketplaceTemplates();
+      setMarketplaceTemplates(results);
+      setMarketplaceLoaded(true);
+    } catch {
+      // Silently handle
+    } finally {
+      setMarketplaceLoading(false);
+    }
+  };
+
+  const handleMarketplaceSelect = async (tpl: MarketplaceTemplateCard) => {
+    try {
+      const full = await templateApi.getMarketplaceTemplate(String(tpl.ID));
+      setCode(full.content || DEFAULT_TEMPLATE);
+      const extractedVars = extractVariablesFromTemplate(full.content || '');
+      const defaultVariables = buildVariableStructure(extractedVars, full.content || '');
+      handleVariablesUpdate(defaultVariables);
+      setSelectedTemplateId(String(tpl.ID));
+      closeTemplateDrawer();
+      notificationService.showSuccessNotification(`Template "${tpl.name}" loaded successfully`);
+    } catch {
+      notificationService.showErrorNotification('Failed to load marketplace template');
+    }
   };
 
   const mergeSuggestedVariables = () => {
@@ -502,32 +539,34 @@ const CreateTemplate: React.FC = () => {
     try {
       if (!template) return;
 
-      // Use Handlebars to render the template with variables
       const { default: Handlebars } = await import('handlebars');
       await import('../../../../utils/handlebarsHelpers');
 
-      // Process the template to handle chart data
       const processedCode = processChartData(code);
       const compiledTemplate = Handlebars.compile(processedCode);
       let renderedContent = compiledTemplate(variables);
-
-      // Replace chart data placeholders with actual data
       renderedContent = replaceChartDataPlaceholders(renderedContent, variables);
 
-      // Get page dimensions based on format and orientation
-      const { width: pageWidth, height: pageHeight } = getPageDimensions(format, isLandScape);
-
-      // Call the extracted PDF export function
-      await exportPdfDocument({
-        template,
-        format,
-        isLandScape,
-        pageWidth,
-        pageHeight,
-        fontsSelected,
+      const exportId = String(template.uuid ?? template.ID);
+      const blob = await templateApi.exportTemplate({
+        templateId: exportId,
+        format: 'pdf',
         variables,
-        renderedContent,
+        paperSize: format,
+        isLandscape: isLandScape,
+        fonts: fontsSelected,
+        renderedHtml: renderedContent,
       });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(template.name || 'export').replace(/[^\w.-]+/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      notificationService.showSuccessNotification('PDF exporté');
     } catch (error) {
       notificationService.showErrorNotification(
         'Failed to prepare document for export. Please try again.',
@@ -860,7 +899,7 @@ const CreateTemplate: React.FC = () => {
       <Drawer
         opened={templateDrawerOpened}
         onClose={closeTemplateDrawer}
-        title="Choose a Template"
+        title="Choisir un modèle"
         position="right"
         size="lg"
         styles={{
@@ -874,568 +913,216 @@ const CreateTemplate: React.FC = () => {
             backgroundColor: '#1A1B1E',
             color: 'white',
           },
-          close: {
-            color: 'white',
-            transition: 'all 0.2s ease',
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              transform: 'scale(1.1)',
-            },
-          },
+          close: { color: 'white' },
         }}
       >
-        <ScrollArea h="calc(100vh - 80px)">
-          <Stack gap="xl" p="xl">
-            <Text size="sm" c="dimmed">
-              Select a template to start with. The template code and default variables will be
-              loaded automatically.
-            </Text>
+        <Box px="md" pt="md" pb="xs">
+          <TextInput
+            placeholder="Rechercher un modèle..."
+            leftSection={<IconSearch size={14} />}
+            value={templateSearch}
+            onChange={(e) => setTemplateSearch(e.currentTarget.value)}
+            styles={{
+              input: { backgroundColor: '#25262B', borderColor: '#373A40', color: 'white' },
+            }}
+            mb="sm"
+          />
+          <Tabs
+            value={templateTab}
+            onChange={(v) => {
+              setTemplateTab(v || 'default');
+              if (v === 'marketplace') loadMarketplaceTemplates();
+            }}
+            styles={{
+              tab: { color: '#909296' },
+              list: { borderColor: '#373A40' },
+            }}
+          >
+            <Tabs.List>
+              <Tabs.Tab value="default">Défaut ({REFERENCE_TEMPLATES.length})</Tabs.Tab>
+              <Tabs.Tab value="marketplace">Marketplace</Tabs.Tab>
+            </Tabs.List>
 
-            {/* Helper function to get icon for template type */}
-            {(() => {
-              const getTypeIcon = (type: string) => {
-                switch (type) {
-                  case 'invoice':
-                    return <IconFileInvoice size={20} />;
-                  case 'resume':
-                    return <IconUser size={20} />;
-                  case 'report':
-                    return <IconReport size={20} />;
-                  default:
-                    return <IconFileText size={20} />;
-                }
-              };
+            {/* ─── Default tab ─────────────────────────── */}
+            <Tabs.Panel value="default">
+              <ScrollArea h="calc(100vh - 200px)" mt="md">
+                {(() => {
+                  const q = templateSearch.toLowerCase();
+                  const filtered = q
+                    ? REFERENCE_TEMPLATES.filter((t) => t.name.toLowerCase().includes(q) || t.type.toLowerCase().includes(q))
+                    : REFERENCE_TEMPLATES;
 
-              const getTypeColor = (type: string) => {
-                switch (type) {
-                  case 'invoice':
-                    return 'blue';
-                  case 'resume':
-                    return 'green';
-                  case 'report':
-                    return 'purple';
-                  default:
-                    return 'gray';
-                }
-              };
+                  const groups: Record<string, typeof filtered> = {};
+                  filtered.forEach((t) => {
+                    if (!groups[t.type]) groups[t.type] = [];
+                    groups[t.type].push(t);
+                  });
 
-              const getTypeLabel = (type: string) => {
-                switch (type) {
-                  case 'invoice':
-                    return 'Invoices';
-                  case 'resume':
-                    return 'Resumes';
-                  case 'report':
-                    return 'Reports';
-                  default:
-                    return 'Other Documents';
-                }
-              };
+                  const typeLabel: Record<string, string> = {
+                    invoice: 'Factures',
+                    resume: 'CV',
+                    report: 'Rapports',
+                    other: 'Autres documents',
+                  };
+                  const typeColor: Record<string, string> = {
+                    invoice: 'blue',
+                    resume: 'green',
+                    report: 'violet',
+                    other: 'gray',
+                  };
 
-              // Group templates by type
-              const templatesByType = {
-                invoice: REFERENCE_TEMPLATES.filter((t) => t.type === 'invoice'),
-                resume: REFERENCE_TEMPLATES.filter((t) => t.type === 'resume'),
-                report: REFERENCE_TEMPLATES.filter((t) => t.type === 'report'),
-                other: REFERENCE_TEMPLATES.filter((t) => t.type === 'other'),
-              };
+                  if (filtered.length === 0) {
+                    return (
+                      <Center h={200}>
+                        <Text c="dimmed" size="sm">Aucun modèle trouvé</Text>
+                      </Center>
+                    );
+                  }
 
-              // Sub-categorize "other" templates
-              const otherTemplates = {
-                commercial: templatesByType.other.filter((t) =>
-                  ['proposal-business', 'quote-estimate', 'purchase-order'].includes(t.id),
-                ),
-                legal: templatesByType.other.filter((t) =>
-                  ['contract-agreement', 'nda-confidentiality'].includes(t.id),
-                ),
-                presentation: templatesByType.other.filter((t) =>
-                  ['presentation-slide', 'pitch-deck'].includes(t.id),
-                ),
-                administrative: templatesByType.other.filter((t) =>
-                  ['receipt-payment', 'delivery-note'].includes(t.id),
-                ),
-                certificate: templatesByType.other.filter((t) =>
-                  ['certificate-achievement'].includes(t.id),
-                ),
-              };
+                  return (
+                    <Stack gap="xl">
+                      {Object.entries(groups).map(([type, items]) => (
+                        <Box key={type}>
+                          <Group mb="sm">
+                            <Text size="sm" fw={600} c="white">{typeLabel[type] || type}</Text>
+                            <Badge size="sm" color={typeColor[type] || 'gray'}>{items.length}</Badge>
+                          </Group>
+                          <SimpleGrid cols={2} spacing="sm">
+                            {items.map((templateItem) => (
+                              <Card
+                                key={templateItem.id}
+                                padding="sm"
+                                radius="md"
+                                withBorder
+                                styles={{
+                                  root: {
+                                    borderColor: selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
+                                    backgroundColor: '#25262B',
+                                    cursor: 'pointer',
+                                  },
+                                }}
+                                onClick={() => handleTemplateSelect(templateItem)}
+                              >
+                                <Group justify="space-between" wrap="nowrap">
+                                  <Text size="sm" fw={500} c="white" lineClamp={1} style={{ flex: 1 }}>
+                                    {templateItem.name}
+                                  </Text>
+                                  {selectedTemplateId === templateItem.id && (
+                                    <Badge size="xs" color="blue">✓</Badge>
+                                  )}
+                                </Group>
+                                <Text size="xs" c="dimmed" mt={4}>
+                                  {templateItem.metadata.style} · {templateItem.metadata.complexity}
+                                </Text>
+                              </Card>
+                            ))}
+                          </SimpleGrid>
+                        </Box>
+                      ))}
+                    </Stack>
+                  );
+                })()}
+              </ScrollArea>
+            </Tabs.Panel>
 
-              return (
-                <>
-                  {/* Invoices */}
-                  {templatesByType.invoice.length > 0 && (
-                    <Box>
-                      <Group mb="md">
-                        {getTypeIcon('invoice')}
-                        <Text size="sm" fw={600} c="white">
-                          {getTypeLabel('invoice')}
+            {/* ─── Marketplace tab ─────────────────────── */}
+            <Tabs.Panel value="marketplace">
+              <ScrollArea h="calc(100vh - 200px)" mt="md">
+                {marketplaceLoading ? (
+                  <Center h={200}><Loader color="blue" /></Center>
+                ) : (() => {
+                  const q = templateSearch.toLowerCase();
+                  const filtered = q
+                    ? marketplaceTemplates.filter(
+                        (t) =>
+                          t.name?.toLowerCase().includes(q) ||
+                          t.category?.toLowerCase().includes(q),
+                      )
+                    : marketplaceTemplates;
+
+                  if (!marketplaceLoaded) {
+                    return (
+                      <Center h={200}>
+                        <Text c="dimmed" size="sm">Ouvrez l'onglet pour charger les modèles</Text>
+                      </Center>
+                    );
+                  }
+
+                  if (filtered.length === 0) {
+                    return (
+                      <Center h={200}>
+                        <Text c="dimmed" size="sm">
+                          {q ? 'Aucun modèle trouvé' : 'Aucun modèle disponible sur le Marketplace'}
                         </Text>
-                        <Badge size="sm" color={getTypeColor('invoice')}>
-                          {templatesByType.invoice.length}
-                        </Badge>
-                      </Group>
-                      <SimpleGrid cols={2} spacing="md">
-                        {templatesByType.invoice.map((templateItem) => (
+                      </Center>
+                    );
+                  }
+
+                  return (
+                    <SimpleGrid cols={2} spacing="sm">
+                      {filtered.map((tpl) => {
+                        const isFree = !tpl.price || tpl.price === 0;
+                        const cover = tpl.cover_image_url?.trim();
+                        return (
                           <Card
-                            key={templateItem.id}
-                            padding="md"
+                            key={tpl.ID}
+                            padding={0}
                             radius="md"
                             withBorder
                             styles={{
                               root: {
-                                borderColor:
-                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
+                                borderColor: selectedTemplateId === String(tpl.ID) ? '#3B82F6' : '#373A40',
                                 backgroundColor: '#25262B',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  borderColor: '#3B82F6',
-                                  transform: 'translateY(-2px)',
-                                },
+                                cursor: isFree ? 'pointer' : 'default',
+                                opacity: isFree ? 1 : 0.7,
+                                overflow: 'hidden',
                               },
                             }}
-                            onClick={() => handleTemplateSelect(templateItem)}
+                            onClick={() => isFree && handleMarketplaceSelect(tpl)}
                           >
-                            <Stack gap="xs">
-                              <Group justify="space-between">
-                                <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {templateItem.name}
+                            {cover ? (
+                              <Image
+                                src={cover}
+                                alt={tpl.name || 'Cover'}
+                                h={72}
+                                fit="cover"
+                                fallbackSrc="https://placehold.co/400x200?text=Template"
+                              />
+                            ) : (
+                              <Box
+                                h={72}
+                                style={{
+                                  background: 'linear-gradient(135deg, #373A40 0%, #1A1B1E 100%)',
+                                }}
+                              />
+                            )}
+                            <Box p="sm">
+                              <Group justify="space-between" wrap="nowrap" mb={4}>
+                                <Text size="sm" fw={500} c="white" lineClamp={1} style={{ flex: 1 }}>
+                                  {tpl.name}
                                 </Text>
-                                {selectedTemplateId === templateItem.id && (
-                                  <Badge size="xs" color="blue">
-                                    Selected
+                                {isFree ? (
+                                  <Badge size="xs" color="green">Gratuit</Badge>
+                                ) : (
+                                  <Badge size="xs" color="orange" leftSection={<IconLock size={10} />}>
+                                    {tpl.price}€
                                   </Badge>
                                 )}
                               </Group>
-                              <Text size="xs" c="dimmed" lineClamp={2}>
-                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
-                              </Text>
-                              <Group gap="xs" mt="xs">
-                                {templateItem.metadata.colors.slice(0, 3).map((color, idx) => {
-                                  // Map Tailwind colors to hex values
-                                  const colorMap: Record<string, string> = {
-                                    'blue-600': '#2563eb',
-                                    'gray-900': '#111827',
-                                    'gray-600': '#4b5563',
-                                    'blue-50': '#eff6ff',
-                                    'indigo-600': '#4f46e5',
-                                    'purple-600': '#9333ea',
-                                    'green-600': '#16a34a',
-                                    'orange-600': '#ea580c',
-                                    'teal-600': '#0d9488',
-                                    'slate-900': '#0f172a',
-                                    'yellow-400': '#facc15',
-                                    'yellow-600': '#ca8a04',
-                                  };
-                                  const hexColor = colorMap[color] || '#6b7280';
-                                  return (
-                                    <Box
-                                      key={idx}
-                                      style={{
-                                        width: 12,
-                                        height: 12,
-                                        borderRadius: '50%',
-                                        backgroundColor: hexColor,
-                                      }}
-                                    />
-                                  );
-                                })}
-                              </Group>
-                            </Stack>
+                              {tpl.category && (
+                                <Text size="xs" c="dimmed">{tpl.category}</Text>
+                              )}
+                            </Box>
                           </Card>
-                        ))}
-                      </SimpleGrid>
-                    </Box>
-                  )}
-
-                  {/* Resumes */}
-                  {templatesByType.resume.length > 0 && (
-                    <Box>
-                      <Group mb="md">
-                        {getTypeIcon('resume')}
-                        <Text size="sm" fw={600} c="white">
-                          {getTypeLabel('resume')}
-                        </Text>
-                        <Badge size="sm" color={getTypeColor('resume')}>
-                          {templatesByType.resume.length}
-                        </Badge>
-                      </Group>
-                      <SimpleGrid cols={2} spacing="md">
-                        {templatesByType.resume.map((templateItem) => (
-                          <Card
-                            key={templateItem.id}
-                            padding="md"
-                            radius="md"
-                            withBorder
-                            styles={{
-                              root: {
-                                borderColor:
-                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
-                                backgroundColor: '#25262B',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  borderColor: '#3B82F6',
-                                  transform: 'translateY(-2px)',
-                                },
-                              },
-                            }}
-                            onClick={() => handleTemplateSelect(templateItem)}
-                          >
-                            <Stack gap="xs">
-                              <Group justify="space-between">
-                                <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {templateItem.name}
-                                </Text>
-                                {selectedTemplateId === templateItem.id && (
-                                  <Badge size="xs" color="blue">
-                                    Selected
-                                  </Badge>
-                                )}
-                              </Group>
-                              <Text size="xs" c="dimmed" lineClamp={2}>
-                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
-                              </Text>
-                            </Stack>
-                          </Card>
-                        ))}
-                      </SimpleGrid>
-                    </Box>
-                  )}
-
-                  {/* Reports */}
-                  {templatesByType.report.length > 0 && (
-                    <Box>
-                      <Group mb="md">
-                        {getTypeIcon('report')}
-                        <Text size="sm" fw={600} c="white">
-                          {getTypeLabel('report')}
-                        </Text>
-                        <Badge size="sm" color={getTypeColor('report')}>
-                          {templatesByType.report.length}
-                        </Badge>
-                      </Group>
-                      <SimpleGrid cols={2} spacing="md">
-                        {templatesByType.report.map((templateItem) => (
-                          <Card
-                            key={templateItem.id}
-                            padding="md"
-                            radius="md"
-                            withBorder
-                            styles={{
-                              root: {
-                                borderColor:
-                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
-                                backgroundColor: '#25262B',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  borderColor: '#3B82F6',
-                                  transform: 'translateY(-2px)',
-                                },
-                              },
-                            }}
-                            onClick={() => handleTemplateSelect(templateItem)}
-                          >
-                            <Stack gap="xs">
-                              <Group justify="space-between">
-                                <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {templateItem.name}
-                                </Text>
-                                {selectedTemplateId === templateItem.id && (
-                                  <Badge size="xs" color="blue">
-                                    Selected
-                                  </Badge>
-                                )}
-                              </Group>
-                              <Text size="xs" c="dimmed" lineClamp={2}>
-                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
-                              </Text>
-                            </Stack>
-                          </Card>
-                        ))}
-                      </SimpleGrid>
-                    </Box>
-                  )}
-
-                  {/* Commercial Documents */}
-                  {otherTemplates.commercial.length > 0 && (
-                    <Box>
-                      <Group mb="md">
-                        <IconBriefcase size={20} />
-                        <Text size="sm" fw={600} c="white">
-                          Commercial Documents
-                        </Text>
-                        <Badge size="sm" color="teal">
-                          {otherTemplates.commercial.length}
-                        </Badge>
-                      </Group>
-                      <SimpleGrid cols={2} spacing="md">
-                        {otherTemplates.commercial.map((templateItem) => (
-                          <Card
-                            key={templateItem.id}
-                            padding="md"
-                            radius="md"
-                            withBorder
-                            styles={{
-                              root: {
-                                borderColor:
-                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
-                                backgroundColor: '#25262B',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  borderColor: '#3B82F6',
-                                  transform: 'translateY(-2px)',
-                                },
-                              },
-                            }}
-                            onClick={() => handleTemplateSelect(templateItem)}
-                          >
-                            <Stack gap="xs">
-                              <Group justify="space-between">
-                                <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {templateItem.name}
-                                </Text>
-                                {selectedTemplateId === templateItem.id && (
-                                  <Badge size="xs" color="blue">
-                                    Selected
-                                  </Badge>
-                                )}
-                              </Group>
-                              <Text size="xs" c="dimmed" lineClamp={2}>
-                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
-                              </Text>
-                            </Stack>
-                          </Card>
-                        ))}
-                      </SimpleGrid>
-                    </Box>
-                  )}
-
-                  {/* Legal Documents */}
-                  {otherTemplates.legal.length > 0 && (
-                    <Box>
-                      <Group mb="md">
-                        <IconGavel size={20} />
-                        <Text size="sm" fw={600} c="white">
-                          Legal Documents
-                        </Text>
-                        <Badge size="sm" color="orange">
-                          {otherTemplates.legal.length}
-                        </Badge>
-                      </Group>
-                      <SimpleGrid cols={2} spacing="md">
-                        {otherTemplates.legal.map((templateItem) => (
-                          <Card
-                            key={templateItem.id}
-                            padding="md"
-                            radius="md"
-                            withBorder
-                            styles={{
-                              root: {
-                                borderColor:
-                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
-                                backgroundColor: '#25262B',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  borderColor: '#3B82F6',
-                                  transform: 'translateY(-2px)',
-                                },
-                              },
-                            }}
-                            onClick={() => handleTemplateSelect(templateItem)}
-                          >
-                            <Stack gap="xs">
-                              <Group justify="space-between">
-                                <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {templateItem.name}
-                                </Text>
-                                {selectedTemplateId === templateItem.id && (
-                                  <Badge size="xs" color="blue">
-                                    Selected
-                                  </Badge>
-                                )}
-                              </Group>
-                              <Text size="xs" c="dimmed" lineClamp={2}>
-                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
-                              </Text>
-                            </Stack>
-                          </Card>
-                        ))}
-                      </SimpleGrid>
-                    </Box>
-                  )}
-
-                  {/* Presentation Documents */}
-                  {otherTemplates.presentation.length > 0 && (
-                    <Box>
-                      <Group mb="md">
-                        <IconPresentation size={20} />
-                        <Text size="sm" fw={600} c="white">
-                          Presentation Documents
-                        </Text>
-                        <Badge size="sm" color="pink">
-                          {otherTemplates.presentation.length}
-                        </Badge>
-                      </Group>
-                      <SimpleGrid cols={2} spacing="md">
-                        {otherTemplates.presentation.map((templateItem) => (
-                          <Card
-                            key={templateItem.id}
-                            padding="md"
-                            radius="md"
-                            withBorder
-                            styles={{
-                              root: {
-                                borderColor:
-                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
-                                backgroundColor: '#25262B',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  borderColor: '#3B82F6',
-                                  transform: 'translateY(-2px)',
-                                },
-                              },
-                            }}
-                            onClick={() => handleTemplateSelect(templateItem)}
-                          >
-                            <Stack gap="xs">
-                              <Group justify="space-between">
-                                <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {templateItem.name}
-                                </Text>
-                                {selectedTemplateId === templateItem.id && (
-                                  <Badge size="xs" color="blue">
-                                    Selected
-                                  </Badge>
-                                )}
-                              </Group>
-                              <Text size="xs" c="dimmed" lineClamp={2}>
-                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
-                              </Text>
-                            </Stack>
-                          </Card>
-                        ))}
-                      </SimpleGrid>
-                    </Box>
-                  )}
-
-                  {/* Administrative Documents */}
-                  {otherTemplates.administrative.length > 0 && (
-                    <Box>
-                      <Group mb="md">
-                        <IconReceipt size={20} />
-                        <Text size="sm" fw={600} c="white">
-                          Administrative Documents
-                        </Text>
-                        <Badge size="sm" color="cyan">
-                          {otherTemplates.administrative.length}
-                        </Badge>
-                      </Group>
-                      <SimpleGrid cols={2} spacing="md">
-                        {otherTemplates.administrative.map((templateItem) => (
-                          <Card
-                            key={templateItem.id}
-                            padding="md"
-                            radius="md"
-                            withBorder
-                            styles={{
-                              root: {
-                                borderColor:
-                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
-                                backgroundColor: '#25262B',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  borderColor: '#3B82F6',
-                                  transform: 'translateY(-2px)',
-                                },
-                              },
-                            }}
-                            onClick={() => handleTemplateSelect(templateItem)}
-                          >
-                            <Stack gap="xs">
-                              <Group justify="space-between">
-                                <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {templateItem.name}
-                                </Text>
-                                {selectedTemplateId === templateItem.id && (
-                                  <Badge size="xs" color="blue">
-                                    Selected
-                                  </Badge>
-                                )}
-                              </Group>
-                              <Text size="xs" c="dimmed" lineClamp={2}>
-                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
-                              </Text>
-                            </Stack>
-                          </Card>
-                        ))}
-                      </SimpleGrid>
-                    </Box>
-                  )}
-
-                  {/* Certificates */}
-                  {otherTemplates.certificate.length > 0 && (
-                    <Box>
-                      <Group mb="md">
-                        <IconCertificate size={20} />
-                        <Text size="sm" fw={600} c="white">
-                          Certificates
-                        </Text>
-                        <Badge size="sm" color="yellow">
-                          {otherTemplates.certificate.length}
-                        </Badge>
-                      </Group>
-                      <SimpleGrid cols={2} spacing="md">
-                        {otherTemplates.certificate.map((templateItem) => (
-                          <Card
-                            key={templateItem.id}
-                            padding="md"
-                            radius="md"
-                            withBorder
-                            styles={{
-                              root: {
-                                borderColor:
-                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
-                                backgroundColor: '#25262B',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  borderColor: '#3B82F6',
-                                  transform: 'translateY(-2px)',
-                                },
-                              },
-                            }}
-                            onClick={() => handleTemplateSelect(templateItem)}
-                          >
-                            <Stack gap="xs">
-                              <Group justify="space-between">
-                                <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {templateItem.name}
-                                </Text>
-                                {selectedTemplateId === templateItem.id && (
-                                  <Badge size="xs" color="blue">
-                                    Selected
-                                  </Badge>
-                                )}
-                              </Group>
-                              <Text size="xs" c="dimmed" lineClamp={2}>
-                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
-                              </Text>
-                            </Stack>
-                          </Card>
-                        ))}
-                      </SimpleGrid>
-                    </Box>
-                  )}
-                </>
-              );
-            })()}
-          </Stack>
-        </ScrollArea>
+                        );
+                      })}
+                    </SimpleGrid>
+                  );
+                })()}
+              </ScrollArea>
+            </Tabs.Panel>
+          </Tabs>
+        </Box>
       </Drawer>
 
       {/* NavBar */}
@@ -1929,9 +1616,40 @@ const CreateTemplate: React.FC = () => {
                     <Text size="sm" fw={600} c="white" mb="md" tt="uppercase">
                       Charts
                     </Text>
-                    <Text size="xs" c="dimmed" mb="md">
+                    <Text size="xs" c="dimmed" mb="sm">
                       Click on a chart type to add it to your template
                     </Text>
+                    {/* Chart variable status */}
+                    {(() => {
+                      const chartVarMatches = Array.from(code.matchAll(/data-chart-data='?\{\{(charts\.[^}]+)\}\}'?/g));
+                      if (chartVarMatches.length === 0) return null;
+                      const seen = new Set<string>();
+                      const expectedVars = chartVarMatches.map((m) => m[1]).filter((v) => { if (seen.has(v)) return false; seen.add(v); return true; });
+                      const chartsObj = variables?.charts || {};
+                      const missing = expectedVars.filter((v) => {
+                        const key = v.replace('charts.', '');
+                        return !chartsObj[key];
+                      });
+                      return (
+                        <Box mb="sm" style={{ background: '#25262B', borderRadius: 6, padding: '8px 10px', border: '1px solid #373A40' }}>
+                          <Text size="xs" fw={600} c="dimmed" mb={4}>Variables graphique</Text>
+                          {expectedVars.map((v) => {
+                            const key = v.replace('charts.', '');
+                            const exists = !!chartsObj[key];
+                            return (
+                              <Text key={v} size="xs" c={exists ? 'teal.4' : 'orange.4'}>
+                                {exists ? '✓' : '⚠'} {`{{${v}}}`}
+                              </Text>
+                            );
+                          })}
+                          {missing.length > 0 && (
+                            <Text size="xs" c="orange.3" mt={4}>
+                              {missing.length} variable{missing.length > 1 ? 's' : ''} manquante{missing.length > 1 ? 's' : ''} dans les données
+                            </Text>
+                          )}
+                        </Box>
+                      );
+                    })()}
                     <SimpleGrid cols={2} spacing="xs">
                       {Object.entries(CHART_TYPES).map(([type, label]) => (
                         <Box
@@ -1959,11 +1677,11 @@ const CreateTemplate: React.FC = () => {
 
                               // Insert chart canvas element at the end
                               const text = `\n\n<!-- Chart Section -->
-<div class="w-full max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg mb-8">
-  <canvas 
+<div class="w-full max-w-4xl mx-auto py-4">
+  <canvas
     id="${chartId}"
     data-chart-type="${type}"
-    data-chart-data='${JSON.stringify(chartData).replace(/'/g, '&apos;')}'
+    data-chart-data='{{charts.${chartId}}}'
     class="w-full aspect-[16/9]"
   ></canvas>
 </div>`;

@@ -2425,6 +2425,674 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
       'relatedProducts',
     ],
   },
+
+  // ─── 10 NEW TEMPLATES (21-30) ───────────────────────────────────────────
+
+  {
+    id: 'timesheet',
+    name: 'Feuille de Temps',
+    type: 'other',
+    code: `<div class="max-w-4xl mx-auto p-0">
+  <div class="bg-slate-800 py-4 px-6">
+    <h1 class="text-xl font-bold text-white">Feuille de Temps</h1>
+    <p class="text-slate-300 text-sm mt-1">{{employeeName}} — {{period}}</p>
+  </div>
+  <div class="px-6 py-3 bg-slate-50 border-b border-slate-200 flex justify-between text-sm text-slate-600">
+    <span>Département : <strong>{{department}}</strong></span>
+    <span>Manager : <strong>{{managerName}}</strong></span>
+    <span>Projet : <strong>{{projectName}}</strong></span>
+  </div>
+  <div class="px-6 py-4">
+    <table class="w-full text-sm border-collapse">
+      <thead>
+        <tr class="bg-slate-100">
+          <th class="border border-slate-300 px-3 py-2 text-left font-semibold text-slate-700">Date</th>
+          <th class="border border-slate-300 px-3 py-2 text-left font-semibold text-slate-700">Jour</th>
+          <th class="border border-slate-300 px-3 py-2 text-center font-semibold text-slate-700">Arrivée</th>
+          <th class="border border-slate-300 px-3 py-2 text-center font-semibold text-slate-700">Départ</th>
+          <th class="border border-slate-300 px-3 py-2 text-center font-semibold text-slate-700">Pause</th>
+          <th class="border border-slate-300 px-3 py-2 text-center font-semibold text-slate-700">Total</th>
+          <th class="border border-slate-300 px-3 py-2 text-left font-semibold text-slate-700">Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each entries}}
+        <tr class="{{#if @odd}}bg-slate-50{{/if}}">
+          <td class="border border-slate-200 px-3 py-2 text-slate-700">{{date}}</td>
+          <td class="border border-slate-200 px-3 py-2 text-slate-600">{{dayName}}</td>
+          <td class="border border-slate-200 px-3 py-2 text-center text-slate-700">{{startTime}}</td>
+          <td class="border border-slate-200 px-3 py-2 text-center text-slate-700">{{endTime}}</td>
+          <td class="border border-slate-200 px-3 py-2 text-center text-slate-500">{{breakMinutes}}m</td>
+          <td class="border border-slate-200 px-3 py-2 text-center font-medium text-slate-800">{{hoursWorked}}h</td>
+          <td class="border border-slate-200 px-3 py-2 text-slate-500 text-xs">{{note}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+      <tfoot>
+        <tr class="bg-slate-800 text-white">
+          <td colspan="5" class="border border-slate-600 px-3 py-2 font-semibold text-right">Total heures</td>
+          <td class="border border-slate-600 px-3 py-2 text-center font-bold text-lg">{{totalHours}}h</td>
+          <td class="border border-slate-600 px-3 py-2"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <div class="px-6 py-4 border-t border-slate-200 flex justify-between">
+    <div class="text-sm text-slate-600">
+      <p class="font-semibold text-slate-800 mb-1">Signature employé</p>
+      <div class="border-b border-slate-400 w-40 mt-6"></div>
+      <p class="text-xs text-slate-400 mt-1">{{employeeName}}</p>
+    </div>
+    <div class="text-sm text-slate-600 text-right">
+      <p class="font-semibold text-slate-800 mb-1">Validation manager</p>
+      <div class="border-b border-slate-400 w-40 mt-6 ml-auto"></div>
+      <p class="text-xs text-slate-400 mt-1">{{managerName}}</p>
+    </div>
+  </div>
+</div>`,
+    metadata: { colors: ['slate-800', 'slate-100', 'slate-300', 'slate-700', 'white'], style: 'structured', complexity: 'medium' },
+    variables: ['employeeName', 'period', 'department', 'managerName', 'projectName', 'entries', 'totalHours'],
+  },
+
+  {
+    id: 'expense-report',
+    name: 'Note de Frais',
+    type: 'other',
+    code: `<div class="max-w-4xl mx-auto p-0">
+  <div class="py-5 px-6 border-b-4 border-blue-700">
+    <div class="flex justify-between items-start">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Note de Frais</h1>
+        <p class="text-slate-500 text-sm mt-1">Réf. {{refNumber}}</p>
+      </div>
+      <div class="text-right text-sm text-slate-600">
+        <p>Soumis le : <strong>{{submissionDate}}</strong></p>
+        <p>Période : <strong>{{period}}</strong></p>
+      </div>
+    </div>
+  </div>
+  <div class="px-6 py-3 bg-blue-50 grid grid-cols-3 text-sm text-slate-700 border-b border-blue-100">
+    <div><span class="text-slate-500">Employé</span><br/><strong>{{employeeName}}</strong></div>
+    <div><span class="text-slate-500">Service</span><br/><strong>{{department}}</strong></div>
+    <div><span class="text-slate-500">Projet</span><br/><strong>{{projectName}}</strong></div>
+  </div>
+  <div class="px-6 py-4">
+    <table class="w-full text-sm border-collapse">
+      <thead>
+        <tr class="bg-slate-800 text-white">
+          <th class="px-3 py-2 text-left font-semibold">Date</th>
+          <th class="px-3 py-2 text-left font-semibold">Catégorie</th>
+          <th class="px-3 py-2 text-left font-semibold">Description</th>
+          <th class="px-3 py-2 text-center font-semibold">Justificatif</th>
+          <th class="px-3 py-2 text-right font-semibold">Montant</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each expenses}}
+        <tr class="border-b border-slate-100 {{#if @odd}}bg-slate-50{{/if}}">
+          <td class="px-3 py-2 text-slate-600">{{date}}</td>
+          <td class="px-3 py-2 text-slate-700">{{category}}</td>
+          <td class="px-3 py-2 text-slate-600">{{description}}</td>
+          <td class="px-3 py-2 text-center text-xs {{#if hasReceipt}}text-green-700{{else}}text-red-600{{/if}}">{{#if hasReceipt}}Oui{{else}}Non{{/if}}</td>
+          <td class="px-3 py-2 text-right font-medium text-slate-800">{{amount}} €</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+    <div class="mt-4 flex justify-end">
+      <div class="bg-blue-700 text-white px-6 py-3 rounded text-right min-w-40">
+        <p class="text-xs text-blue-200">Total remboursable</p>
+        <p class="text-2xl font-bold mt-1">{{totalAmount}} €</p>
+      </div>
+    </div>
+  </div>
+  <div class="px-6 py-3 border-t border-slate-200 text-xs text-slate-400">
+    <p>{{companyName}} — {{companyAddress}}</p>
+  </div>
+</div>`,
+    metadata: { colors: ['blue-700', 'slate-800', 'slate-50', 'blue-50', 'slate-500'], style: 'professional', complexity: 'medium' },
+    variables: ['refNumber', 'submissionDate', 'period', 'employeeName', 'department', 'projectName', 'expenses', 'totalAmount', 'companyName', 'companyAddress'],
+  },
+
+  {
+    id: 'meeting-minutes',
+    name: 'Compte-Rendu Réunion',
+    type: 'report',
+    code: `<div class="max-w-4xl mx-auto p-0">
+  <div class="py-5 px-6 bg-slate-900 text-white">
+    <div class="flex justify-between items-center">
+      <div>
+        <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">Compte-rendu</p>
+        <h1 class="text-xl font-bold">{{meetingTitle}}</h1>
+      </div>
+      <div class="text-right text-sm text-slate-300">
+        <p>{{meetingDate}}</p>
+        <p>{{startTime}} – {{endTime}}</p>
+      </div>
+    </div>
+  </div>
+  <div class="px-6 py-3 bg-slate-100 border-b border-slate-200 text-sm text-slate-700 flex flex-wrap">
+    <span class="mr-6"><strong>Lieu :</strong> {{location}}</span>
+    <span class="mr-6"><strong>Animateur :</strong> {{facilitator}}</span>
+    <span><strong>Rédacteur :</strong> {{writer}}</span>
+  </div>
+  <div class="px-6 py-4">
+    <div class="mb-4">
+      <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide mb-2 pb-1 border-b border-slate-200">Participants</h2>
+      <div class="flex flex-wrap">
+        {{#each participants}}
+        <span class="mr-3 mb-1 text-sm text-slate-700">{{name}} <span class="text-slate-400 text-xs">({{role}})</span></span>
+        {{/each}}
+      </div>
+    </div>
+    <div class="mb-4">
+      <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide mb-2 pb-1 border-b border-slate-200">Ordre du jour</h2>
+      <ol class="list-decimal list-inside space-y-1 text-sm text-slate-700">
+        {{#each agenda}}
+        <li>{{this}}</li>
+        {{/each}}
+      </ol>
+    </div>
+    <div class="mb-4">
+      <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide mb-2 pb-1 border-b border-slate-200">Points discutés</h2>
+      {{#each discussionPoints}}
+      <div class="mb-3">
+        <p class="font-semibold text-sm text-slate-800">{{topic}}</p>
+        <p class="text-sm text-slate-600 mt-1">{{summary}}</p>
+      </div>
+      {{/each}}
+    </div>
+    <div class="mb-4">
+      <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide mb-2 pb-1 border-b border-slate-200">Actions à mener</h2>
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr class="bg-slate-100">
+            <th class="border border-slate-200 px-3 py-1 text-left text-slate-700">Action</th>
+            <th class="border border-slate-200 px-3 py-1 text-left text-slate-700">Responsable</th>
+            <th class="border border-slate-200 px-3 py-1 text-left text-slate-700">Échéance</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each actionItems}}
+          <tr>
+            <td class="border border-slate-200 px-3 py-1 text-slate-700">{{action}}</td>
+            <td class="border border-slate-200 px-3 py-1 text-slate-600">{{owner}}</td>
+            <td class="border border-slate-200 px-3 py-1 text-slate-600">{{dueDate}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide mb-1 pb-1 border-b border-slate-200">Prochaine réunion</h2>
+      <p class="text-sm text-slate-600 mt-2">{{nextMeetingDate}} à {{nextMeetingTime}} — {{nextMeetingLocation}}</p>
+    </div>
+  </div>
+</div>`,
+    metadata: { colors: ['slate-900', 'slate-100', 'slate-800', 'slate-200', 'slate-700'], style: 'formal', complexity: 'medium' },
+    variables: ['meetingTitle', 'meetingDate', 'startTime', 'endTime', 'location', 'facilitator', 'writer', 'participants', 'agenda', 'discussionPoints', 'actionItems', 'nextMeetingDate', 'nextMeetingTime', 'nextMeetingLocation'],
+  },
+
+  {
+    id: 'payslip',
+    name: 'Fiche de Paie',
+    type: 'other',
+    code: `<div class="max-w-3xl mx-auto p-0">
+  <div class="py-4 px-6 bg-slate-800 text-white flex justify-between items-start">
+    <div>
+      <p class="text-xs text-slate-400 uppercase tracking-widest">Bulletin de Salaire</p>
+      <p class="text-lg font-bold mt-1">{{companyName}}</p>
+      <p class="text-slate-300 text-xs mt-1">{{companyAddress}}</p>
+    </div>
+    <div class="text-right text-sm text-slate-300">
+      <p>Période : <strong class="text-white">{{period}}</strong></p>
+      <p>SIRET : {{companySiret}}</p>
+    </div>
+  </div>
+  <div class="px-6 py-3 bg-slate-100 border-b border-slate-200 grid grid-cols-2 text-sm text-slate-700">
+    <div>
+      <p><strong>{{employeeName}}</strong></p>
+      <p class="text-slate-500">{{jobTitle}} — {{contractType}}</p>
+      <p class="text-slate-500">Matricule : {{employeeId}}</p>
+    </div>
+    <div class="text-right">
+      <p>N° SS : {{socialSecurityNumber}}</p>
+      <p>Entrée : {{hireDate}}</p>
+    </div>
+  </div>
+  <div class="px-6 py-4">
+    <table class="w-full text-sm border-collapse mb-4">
+      <thead>
+        <tr class="bg-slate-700 text-white">
+          <th class="px-3 py-2 text-left font-semibold">Libellé</th>
+          <th class="px-3 py-2 text-right font-semibold">Base</th>
+          <th class="px-3 py-2 text-right font-semibold">Taux salarial</th>
+          <th class="px-3 py-2 text-right font-semibold">Montant salarial</th>
+          <th class="px-3 py-2 text-right font-semibold">Taux patronal</th>
+          <th class="px-3 py-2 text-right font-semibold">Montant patronal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each payLines}}
+        <tr class="border-b border-slate-100 {{#if @odd}}bg-slate-50{{/if}}">
+          <td class="px-3 py-1.5 text-slate-700">{{label}}</td>
+          <td class="px-3 py-1.5 text-right text-slate-600">{{base}}</td>
+          <td class="px-3 py-1.5 text-right text-slate-600">{{employeeRate}}%</td>
+          <td class="px-3 py-1.5 text-right text-slate-800">{{employeeAmount}} €</td>
+          <td class="px-3 py-1.5 text-right text-slate-500">{{employerRate}}%</td>
+          <td class="px-3 py-1.5 text-right text-slate-500">{{employerAmount}} €</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+    <div class="border-t-2 border-slate-800 pt-3 flex justify-between items-end">
+      <div class="text-sm text-slate-600">
+        <p>Salaire brut : <strong class="text-slate-800">{{grossSalary}} €</strong></p>
+        <p>Cotisations salariales : <strong class="text-slate-800">{{totalDeductions}} €</strong></p>
+      </div>
+      <div class="bg-slate-800 text-white px-6 py-3 rounded text-right">
+        <p class="text-xs text-slate-400">Net à payer</p>
+        <p class="text-2xl font-bold">{{netSalary}} €</p>
+        <p class="text-xs text-slate-400 mt-1">Versement le {{paymentDate}}</p>
+      </div>
+    </div>
+  </div>
+  <div class="px-6 py-2 bg-slate-100 border-t border-slate-200 text-xs text-slate-500">
+    <p>Ce bulletin de paie doit être conservé sans limitation de durée.</p>
+  </div>
+</div>`,
+    metadata: { colors: ['slate-800', 'slate-700', 'slate-100', 'slate-200', 'white'], style: 'official', complexity: 'complex' },
+    variables: ['companyName', 'companyAddress', 'companySiret', 'period', 'employeeName', 'jobTitle', 'contractType', 'employeeId', 'socialSecurityNumber', 'hireDate', 'payLines', 'grossSalary', 'totalDeductions', 'netSalary', 'paymentDate'],
+  },
+
+  {
+    id: 'job-offer',
+    name: "Offre d'Emploi",
+    type: 'other',
+    code: `<div class="max-w-3xl mx-auto p-0">
+  <div class="py-6 px-6 bg-blue-700 text-white">
+    <p class="text-xs text-blue-200 uppercase tracking-widest mb-2">{{companyName}} recrute</p>
+    <h1 class="text-2xl font-bold leading-tight">{{jobTitle}}</h1>
+    <div class="flex flex-wrap mt-3 text-sm text-blue-100">
+      <span class="mr-4">📍 {{location}}</span>
+      <span class="mr-4">💼 {{contractType}}</span>
+      <span class="mr-4">⏱ {{schedule}}</span>
+      <span>💰 {{salary}}</span>
+    </div>
+  </div>
+  <div class="px-6 py-4">
+    <div class="mb-4">
+      <h2 class="text-base font-bold text-slate-800 pb-1 border-b-2 border-blue-700 mb-2">L'entreprise</h2>
+      <p class="text-sm text-slate-600 leading-relaxed">{{companyDescription}}</p>
+    </div>
+    <div class="mb-4">
+      <h2 class="text-base font-bold text-slate-800 pb-1 border-b-2 border-blue-700 mb-2">Vos missions</h2>
+      <ul class="text-sm text-slate-600 space-y-1">
+        {{#each missions}}
+        <li class="flex items-start"><span class="text-blue-700 mr-2 mt-0.5">▸</span>{{this}}</li>
+        {{/each}}
+      </ul>
+    </div>
+    <div class="mb-4">
+      <h2 class="text-base font-bold text-slate-800 pb-1 border-b-2 border-blue-700 mb-2">Profil recherché</h2>
+      <ul class="text-sm text-slate-600 space-y-1">
+        {{#each requirements}}
+        <li class="flex items-start"><span class="text-blue-700 mr-2 mt-0.5">▸</span>{{this}}</li>
+        {{/each}}
+      </ul>
+    </div>
+    <div class="mb-4">
+      <h2 class="text-base font-bold text-slate-800 pb-1 border-b-2 border-blue-700 mb-2">Avantages</h2>
+      <div class="flex flex-wrap">
+        {{#each benefits}}
+        <span class="text-xs border border-blue-200 text-blue-700 px-2 py-1 rounded mr-2 mb-2">{{this}}</span>
+        {{/each}}
+      </div>
+    </div>
+    <div class="bg-slate-50 border border-slate-200 rounded px-4 py-3 text-sm">
+      <p class="font-semibold text-slate-800 mb-1">Candidature</p>
+      <p class="text-slate-600">Envoyez votre CV et lettre de motivation à <strong>{{contactEmail}}</strong></p>
+      <p class="text-slate-500 text-xs mt-1">Référence : {{refCode}} — Prise de poste : {{startDate}}</p>
+    </div>
+  </div>
+</div>`,
+    metadata: { colors: ['blue-700', 'slate-800', 'slate-50', 'blue-200', 'slate-600'], style: 'modern', complexity: 'medium' },
+    variables: ['companyName', 'jobTitle', 'location', 'contractType', 'schedule', 'salary', 'companyDescription', 'missions', 'requirements', 'benefits', 'contactEmail', 'refCode', 'startDate'],
+  },
+
+  {
+    id: 'medical-report',
+    name: 'Rapport Médical',
+    type: 'report',
+    code: `<div class="max-w-3xl mx-auto p-0">
+  <div class="py-4 px-6 border-b-4 border-teal-700">
+    <div class="flex justify-between items-start">
+      <div>
+        <p class="text-xs text-slate-500 uppercase tracking-widest">Rapport médical confidentiel</p>
+        <h1 class="text-xl font-bold text-slate-900 mt-1">{{reportTitle}}</h1>
+      </div>
+      <div class="text-right text-sm text-slate-600">
+        <p>Date : <strong>{{reportDate}}</strong></p>
+        <p>Réf. : <strong>{{refNumber}}</strong></p>
+      </div>
+    </div>
+  </div>
+  <div class="px-6 py-3 bg-teal-50 border-b border-teal-100 grid grid-cols-2 text-sm">
+    <div>
+      <p class="text-slate-500 text-xs uppercase">Patient</p>
+      <p class="font-semibold text-slate-800">{{patientName}}</p>
+      <p class="text-slate-600">Né(e) le {{birthDate}} — {{gender}}</p>
+      <p class="text-slate-600">N° dossier : {{patientId}}</p>
+    </div>
+    <div class="text-right">
+      <p class="text-slate-500 text-xs uppercase">Médecin référent</p>
+      <p class="font-semibold text-slate-800">Dr. {{doctorName}}</p>
+      <p class="text-slate-600">{{specialty}}</p>
+      <p class="text-slate-600">{{clinicName}}</p>
+    </div>
+  </div>
+  <div class="px-6 py-4">
+    <div class="mb-4">
+      <h2 class="text-sm font-bold text-teal-700 uppercase tracking-wide mb-2">Motif de consultation</h2>
+      <p class="text-sm text-slate-700 leading-relaxed">{{consultationReason}}</p>
+    </div>
+    <div class="mb-4">
+      <h2 class="text-sm font-bold text-teal-700 uppercase tracking-wide mb-2">Antécédents</h2>
+      <ul class="text-sm text-slate-700 space-y-1">
+        {{#each medicalHistory}}
+        <li class="flex items-start"><span class="text-teal-600 mr-2">•</span>{{this}}</li>
+        {{/each}}
+      </ul>
+    </div>
+    <div class="mb-4">
+      <h2 class="text-sm font-bold text-teal-700 uppercase tracking-wide mb-2">Examen clinique</h2>
+      <p class="text-sm text-slate-700 leading-relaxed">{{clinicalExam}}</p>
+    </div>
+    <div class="mb-4">
+      <h2 class="text-sm font-bold text-teal-700 uppercase tracking-wide mb-2">Diagnostic</h2>
+      <div class="bg-teal-50 border-l-4 border-teal-700 px-4 py-3 rounded-r">
+        <p class="text-sm font-semibold text-teal-900">{{diagnosis}}</p>
+        <p class="text-xs text-teal-700 mt-1">CIM-10 : {{icd10Code}}</p>
+      </div>
+    </div>
+    <div class="mb-4">
+      <h2 class="text-sm font-bold text-teal-700 uppercase tracking-wide mb-2">Traitement prescrit</h2>
+      <ul class="text-sm text-slate-700 space-y-1">
+        {{#each treatments}}
+        <li class="border-b border-slate-100 pb-1"><strong>{{medication}}</strong> — {{dosage}} — {{duration}}</li>
+        {{/each}}
+      </ul>
+    </div>
+    <div>
+      <h2 class="text-sm font-bold text-teal-700 uppercase tracking-wide mb-2">Suivi recommandé</h2>
+      <p class="text-sm text-slate-700">{{followUp}}</p>
+      <p class="text-sm text-slate-500 mt-2">Prochain rendez-vous : <strong>{{nextAppointment}}</strong></p>
+    </div>
+  </div>
+  <div class="px-6 py-3 border-t border-slate-200 flex justify-between text-xs text-slate-400">
+    <span>Document confidentiel — usage médical uniquement</span>
+    <span>{{clinicName}} — {{clinicAddress}}</span>
+  </div>
+</div>`,
+    metadata: { colors: ['teal-700', 'teal-50', 'slate-800', 'slate-700', 'slate-500'], style: 'clinical', complexity: 'complex' },
+    variables: ['reportTitle', 'reportDate', 'refNumber', 'patientName', 'birthDate', 'gender', 'patientId', 'doctorName', 'specialty', 'clinicName', 'clinicAddress', 'consultationReason', 'medicalHistory', 'clinicalExam', 'diagnosis', 'icd10Code', 'treatments', 'followUp', 'nextAppointment'],
+  },
+
+  {
+    id: 'press-release',
+    name: 'Communiqué de Presse',
+    type: 'other',
+    code: `<div class="max-w-3xl mx-auto p-0">
+  <div class="py-4 px-6 border-b border-slate-200 flex justify-between items-center">
+    <p class="text-lg font-bold text-slate-900">{{companyName}}</p>
+    <span class="text-xs font-bold text-red-700 border border-red-700 px-2 py-1 rounded uppercase tracking-widest">Communiqué de presse</span>
+  </div>
+  <div class="px-6 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-500 flex justify-between">
+    <span>Pour diffusion immédiate</span>
+    <span>{{releaseDate}}</span>
+  </div>
+  <div class="px-6 py-5">
+    <h1 class="text-2xl font-bold text-slate-900 leading-tight mb-3">{{headline}}</h1>
+    <p class="text-base font-medium text-slate-600 leading-relaxed mb-4 border-l-4 border-red-700 pl-4">{{subheadline}}</p>
+    <p class="text-sm text-slate-500 mb-4 italic">{{city}}, {{releaseDate}} —</p>
+    <div class="text-sm text-slate-700 leading-relaxed space-y-3">
+      {{#each paragraphs}}
+      <p>{{this}}</p>
+      {{/each}}
+    </div>
+    <div class="mt-5 bg-slate-50 border-l-4 border-slate-400 px-4 py-3 rounded-r">
+      <p class="text-sm text-slate-700 italic">"{{quote}}"</p>
+      <p class="text-xs text-slate-500 mt-1 font-semibold">— {{quotePerson}}, {{quoteTitle}}</p>
+    </div>
+  </div>
+  <div class="px-6 py-4 border-t border-slate-200">
+    <p class="text-xs font-bold text-slate-700 uppercase mb-2">À propos de {{companyName}}</p>
+    <p class="text-xs text-slate-600 leading-relaxed">{{companyBlurb}}</p>
+  </div>
+  <div class="px-6 py-3 bg-slate-900 text-white text-xs">
+    <p class="font-semibold">Contact presse</p>
+    <p class="text-slate-300 mt-1">{{pressContactName}} — {{pressContactEmail}} — {{pressContactPhone}}</p>
+  </div>
+  <div class="px-6 py-2 text-center">
+    <p class="text-sm font-bold text-slate-400 tracking-widest">— FIN DU COMMUNIQUÉ —</p>
+  </div>
+</div>`,
+    metadata: { colors: ['slate-900', 'red-700', 'slate-700', 'slate-50', 'slate-400'], style: 'editorial', complexity: 'medium' },
+    variables: ['companyName', 'releaseDate', 'headline', 'subheadline', 'city', 'paragraphs', 'quote', 'quotePerson', 'quoteTitle', 'companyBlurb', 'pressContactName', 'pressContactEmail', 'pressContactPhone'],
+  },
+
+  {
+    id: 'event-invitation',
+    name: 'Invitation Événement',
+    type: 'other',
+    code: `<div class="max-w-2xl mx-auto p-0">
+  <div class="py-8 px-8 bg-slate-900 text-white text-center">
+    <p class="text-xs text-slate-400 uppercase tracking-widest mb-4">{{organizerName}} vous invite</p>
+    <h1 class="text-3xl font-bold leading-tight">{{eventName}}</h1>
+    <p class="text-slate-300 mt-3 text-base">{{eventTagline}}</p>
+    <div class="mt-6 border-t border-slate-700 pt-5 grid grid-cols-3 text-center text-sm">
+      <div>
+        <p class="text-slate-400 text-xs uppercase tracking-wide">Date</p>
+        <p class="font-semibold mt-1">{{eventDate}}</p>
+      </div>
+      <div class="border-l border-r border-slate-700">
+        <p class="text-slate-400 text-xs uppercase tracking-wide">Heure</p>
+        <p class="font-semibold mt-1">{{eventTime}}</p>
+      </div>
+      <div>
+        <p class="text-slate-400 text-xs uppercase tracking-wide">Lieu</p>
+        <p class="font-semibold mt-1">{{venue}}</p>
+      </div>
+    </div>
+  </div>
+  <div class="px-8 py-6 bg-white">
+    <p class="text-sm text-slate-600 leading-relaxed mb-5">{{invitationMessage}}</p>
+    <div class="mb-5">
+      <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide mb-3 pb-1 border-b border-slate-200">Programme</h2>
+      {{#each programItems}}
+      <div class="flex text-sm mb-2">
+        <span class="text-slate-400 w-20 flex-shrink-0">{{time}}</span>
+        <span class="text-slate-700">{{activity}}</span>
+      </div>
+      {{/each}}
+    </div>
+    <div class="bg-slate-50 border border-slate-200 rounded px-4 py-3 text-sm">
+      <p class="font-semibold text-slate-800 mb-2">Informations pratiques</p>
+      <p class="text-slate-600 mb-1">📍 {{venueAddress}}</p>
+      <p class="text-slate-600 mb-1">🎟 {{dressCode}}</p>
+      <p class="text-slate-600">✉ Confirmation : <strong>{{rsvpEmail}}</strong> avant le <strong>{{rsvpDeadline}}</strong></p>
+    </div>
+  </div>
+  <div class="py-3 px-8 bg-slate-900 text-center">
+    <p class="text-xs text-slate-400">{{organizerName}} — {{organizerContact}}</p>
+  </div>
+</div>`,
+    metadata: { colors: ['slate-900', 'slate-700', 'slate-200', 'slate-50', 'white'], style: 'elegant', complexity: 'medium' },
+    variables: ['organizerName', 'eventName', 'eventTagline', 'eventDate', 'eventTime', 'venue', 'venueAddress', 'invitationMessage', 'programItems', 'dressCode', 'rsvpEmail', 'rsvpDeadline', 'organizerContact'],
+  },
+
+  {
+    id: 'letter-formal',
+    name: 'Lettre Commerciale',
+    type: 'other',
+    code: `<div class="max-w-3xl mx-auto p-0">
+  <div class="py-5 px-8 flex justify-between items-start border-b border-slate-200">
+    <div>
+      <p class="text-base font-bold text-slate-900">{{senderCompany}}</p>
+      <p class="text-xs text-slate-500 mt-1">{{senderAddress}}</p>
+      <p class="text-xs text-slate-500">{{senderCity}}</p>
+      <p class="text-xs text-slate-500">{{senderPhone}} — {{senderEmail}}</p>
+    </div>
+    <div class="text-right">
+      <p class="text-xs text-slate-500">{{city}}, le {{letterDate}}</p>
+      <p class="text-xs text-slate-500 mt-1">Réf. : {{reference}}</p>
+    </div>
+  </div>
+  <div class="px-8 py-4">
+    <div class="text-sm text-slate-700 mb-6">
+      <p class="font-semibold">{{recipientName}}</p>
+      <p>{{recipientTitle}}</p>
+      <p>{{recipientCompany}}</p>
+      <p>{{recipientAddress}}</p>
+      <p>{{recipientCity}}</p>
+    </div>
+    <p class="text-sm font-semibold text-slate-800 mb-4 underline underline-offset-2">Objet : {{subject}}</p>
+    <p class="text-sm text-slate-700 mb-3">{{salutation}},</p>
+    <div class="text-sm text-slate-700 leading-relaxed space-y-3 mb-6">
+      {{#each bodyParagraphs}}
+      <p>{{this}}</p>
+      {{/each}}
+    </div>
+    <p class="text-sm text-slate-700 mb-8">{{closingFormula}}</p>
+    <div class="text-sm text-slate-700">
+      <p class="font-semibold">{{senderName}}</p>
+      <p class="text-slate-500">{{senderTitle}}</p>
+      <div class="border-b border-slate-300 w-32 mt-8 mb-1"></div>
+      <p class="text-xs text-slate-400">Signature</p>
+    </div>
+    {{#if hasAttachments}}
+    <div class="mt-6 pt-4 border-t border-slate-200">
+      <p class="text-xs text-slate-600 font-semibold">PJ : {{attachmentsList}}</p>
+    </div>
+    {{/if}}
+  </div>
+</div>`,
+    metadata: { colors: ['slate-900', 'slate-700', 'slate-500', 'slate-200', 'slate-300'], style: 'classic', complexity: 'simple' },
+    variables: ['senderCompany', 'senderAddress', 'senderCity', 'senderPhone', 'senderEmail', 'city', 'letterDate', 'reference', 'recipientName', 'recipientTitle', 'recipientCompany', 'recipientAddress', 'recipientCity', 'subject', 'salutation', 'bodyParagraphs', 'closingFormula', 'senderName', 'senderTitle', 'hasAttachments', 'attachmentsList'],
+  },
+
+  {
+    id: 'project-brief',
+    name: 'Brief Projet Technique',
+    type: 'report',
+    code: `<div class="max-w-4xl mx-auto p-0">
+  <div class="py-5 px-6 bg-indigo-800 text-white">
+    <div class="flex justify-between items-start">
+      <div>
+        <p class="text-xs text-indigo-300 uppercase tracking-widest">Brief Projet</p>
+        <h1 class="text-2xl font-bold mt-1">{{projectName}}</h1>
+        <p class="text-indigo-200 text-sm mt-1">{{projectCode}} — v{{version}}</p>
+      </div>
+      <div class="text-right text-sm text-indigo-200">
+        <p>{{startDate}} → {{endDate}}</p>
+        <p class="mt-1">Budget : <strong class="text-white">{{budget}}</strong></p>
+      </div>
+    </div>
+  </div>
+  <div class="px-6 py-3 bg-indigo-50 border-b border-indigo-100 flex flex-wrap text-sm">
+    <span class="mr-6 text-slate-600"><strong>Chef de projet :</strong> {{projectManager}}</span>
+    <span class="mr-6 text-slate-600"><strong>Client :</strong> {{clientName}}</span>
+    <span class="text-slate-600"><strong>Priorité :</strong> <span class="text-indigo-700 font-semibold">{{priority}}</span></span>
+  </div>
+  <div class="px-6 py-4">
+    <div class="mb-4">
+      <h2 class="text-sm font-bold text-indigo-800 uppercase tracking-wide mb-2 pb-1 border-b border-indigo-200">Contexte & Objectifs</h2>
+      <p class="text-sm text-slate-700 leading-relaxed">{{context}}</p>
+    </div>
+    <div class="mb-4">
+      <h2 class="text-sm font-bold text-indigo-800 uppercase tracking-wide mb-2 pb-1 border-b border-indigo-200">Périmètre fonctionnel</h2>
+      <div class="grid grid-cols-2 text-sm">
+        <div>
+          <p class="text-xs text-slate-500 uppercase font-semibold mb-1">Dans le périmètre</p>
+          <ul class="space-y-1">
+            {{#each inScope}}
+            <li class="flex items-start text-slate-700"><span class="text-indigo-600 mr-2">✓</span>{{this}}</li>
+            {{/each}}
+          </ul>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 uppercase font-semibold mb-1">Hors périmètre</p>
+          <ul class="space-y-1">
+            {{#each outOfScope}}
+            <li class="flex items-start text-slate-500"><span class="text-red-400 mr-2">✗</span>{{this}}</li>
+            {{/each}}
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="mb-4">
+      <h2 class="text-sm font-bold text-indigo-800 uppercase tracking-wide mb-2 pb-1 border-b border-indigo-200">Stack technique</h2>
+      <div class="flex flex-wrap">
+        {{#each techStack}}
+        <span class="text-xs bg-slate-100 text-slate-700 border border-slate-200 px-2 py-1 rounded mr-2 mb-2">{{this}}</span>
+        {{/each}}
+      </div>
+    </div>
+    <div class="mb-4">
+      <h2 class="text-sm font-bold text-indigo-800 uppercase tracking-wide mb-2 pb-1 border-b border-indigo-200">Jalons</h2>
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr class="bg-indigo-50">
+            <th class="border border-indigo-100 px-3 py-1 text-left text-indigo-700">Jalon</th>
+            <th class="border border-indigo-100 px-3 py-1 text-left text-indigo-700">Description</th>
+            <th class="border border-indigo-100 px-3 py-1 text-left text-indigo-700">Échéance</th>
+            <th class="border border-indigo-100 px-3 py-1 text-center text-indigo-700">Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each milestones}}
+          <tr class="border-b border-slate-100">
+            <td class="border border-slate-100 px-3 py-1 font-semibold text-slate-800">{{name}}</td>
+            <td class="border border-slate-100 px-3 py-1 text-slate-600">{{description}}</td>
+            <td class="border border-slate-100 px-3 py-1 text-slate-600">{{dueDate}}</td>
+            <td class="border border-slate-100 px-3 py-1 text-center text-xs font-semibold {{#if isCompleted}}text-green-700{{else}}text-amber-600{{/if}}">{{status}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h2 class="text-sm font-bold text-indigo-800 uppercase tracking-wide mb-2 pb-1 border-b border-indigo-200">Risques identifiés</h2>
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr class="bg-indigo-50">
+            <th class="border border-indigo-100 px-3 py-1 text-left text-indigo-700">Risque</th>
+            <th class="border border-indigo-100 px-3 py-1 text-center text-indigo-700">Probabilité</th>
+            <th class="border border-indigo-100 px-3 py-1 text-center text-indigo-700">Impact</th>
+            <th class="border border-indigo-100 px-3 py-1 text-left text-indigo-700">Mitigation</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each risks}}
+          <tr class="border-b border-slate-100">
+            <td class="border border-slate-100 px-3 py-1 text-slate-700">{{description}}</td>
+            <td class="border border-slate-100 px-3 py-1 text-center text-slate-600">{{probability}}</td>
+            <td class="border border-slate-100 px-3 py-1 text-center text-slate-600">{{impact}}</td>
+            <td class="border border-slate-100 px-3 py-1 text-slate-600 text-xs">{{mitigation}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="px-6 py-3 bg-indigo-800 text-indigo-200 text-xs flex justify-between">
+    <span>{{projectName}} — {{projectCode}}</span>
+    <span>Confidentiel — usage interne</span>
+  </div>
+</div>`,
+    metadata: { colors: ['indigo-800', 'indigo-50', 'indigo-200', 'slate-700', 'slate-100'], style: 'analytical', complexity: 'complex' },
+    variables: ['projectName', 'projectCode', 'version', 'startDate', 'endDate', 'budget', 'projectManager', 'clientName', 'priority', 'context', 'inScope', 'outOfScope', 'techStack', 'milestones', 'risks'],
+  },
 ];
 
 /**
