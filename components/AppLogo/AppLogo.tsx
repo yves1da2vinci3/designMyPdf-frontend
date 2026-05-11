@@ -1,4 +1,4 @@
-import { Group } from '@mantine/core';
+import { Box } from '@mantine/core';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 
@@ -20,13 +20,17 @@ function Logo({ width, isWhite }: LogoProps) {
   };
 
   return (
-    <Group onClick={handleApLogoClick} visibleFrom="sm">
+    <Box
+      onClick={handleApLogoClick}
+      style={{ cursor: 'pointer', flexShrink: 0, lineHeight: 0 }}
+      title="Accueil"
+    >
       {isWhite ? (
-        <Image alt="logo_white" src={Images.logo_white} width={width} height={width} />
+        <Image alt="Design My PDF" src={Images.logo_white} width={width} height={width} />
       ) : (
-        <Image alt="logo" src={Images.logo_normal} width={width} height={width} />
+        <Image alt="Design My PDF" src={Images.logo_normal} width={width} height={width} />
       )}
-    </Group>
+    </Box>
   );
 }
 

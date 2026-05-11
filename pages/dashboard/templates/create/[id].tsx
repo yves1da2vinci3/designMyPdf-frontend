@@ -137,7 +137,6 @@ const CreateTemplate: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [promptDrawerOpened, { open: openPromptDrawer, close: closePromptDrawer }] =
     useDisclosure(false);
-  const [isPublishing, setIsPublishing] = useState(false);
   const [files, setFiles] = useState<FileWithPath[]>([]);
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<
@@ -494,25 +493,9 @@ const CreateTemplate: React.FC = () => {
     }
   };
 
-  const publishToMarketplace = async (): Promise<void> => {
-    try {
-      setIsPublishing(true);
-      await templateApi.publishToMarketplace({
-        templateId: Number(template?.ID),
-        price: 499,
-        description: template?.description || '',
-        category: 'OTHER',
-        features: [],
-        coverImageURL: template?.preview || '',
-      });
-      notificationService.showSuccessNotification('Template published to marketplace successfully');
-    } catch (error: any) {
-      notificationService.showErrorNotification(
-        error?.message || 'Error publishing to marketplace',
-      );
-    } finally {
-      setIsPublishing(false);
-    }
+  const goToMarketplacePublishForm = (): void => {
+    if (!template?.ID) return;
+    router.push(`/marketplace/add?templateId=${template.ID}`);
   };
 
   const exportPdf = async (): Promise<void> => {
@@ -1587,8 +1570,7 @@ const CreateTemplate: React.FC = () => {
                 <Menu.Label>Marketplace</Menu.Label>
                 <Menu.Item
                   leftSection={<IconShoppingCart size={16} />}
-                  onClick={publishToMarketplace}
-                  disabled={isPublishing}
+                  onClick={goToMarketplacePublishForm}
                 >
                   Publish to Marketplace
                 </Menu.Item>

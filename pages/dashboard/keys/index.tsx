@@ -11,6 +11,7 @@ import {
   Group,
   Loader,
   Paper,
+  ScrollArea,
   SimpleGrid,
   Stack,
   Table,
@@ -226,8 +227,8 @@ export default function Keys() {
             Key={keyToUpdate}
           />
 
-          <Group justify="space-between" align="flex-start">
-            <Box>
+          <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+            <Box style={{ minWidth: 0 }}>
               <Title order={2} fw={700}>
                 API Keys
               </Title>
@@ -240,7 +241,7 @@ export default function Keys() {
             </Button>
           </Group>
 
-          <SimpleGrid cols={3}>
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
             <Card withBorder radius="md" p="lg" shadow="xs">
               <Group justify="space-between" mb="xs">
                 <Text
@@ -317,69 +318,71 @@ export default function Keys() {
           </SimpleGrid>
 
           <Paper withBorder radius="md" shadow="xs" style={{ overflow: 'hidden' }}>
-            <Table highlightOnHover>
-              <Table.Thead style={{ backgroundColor: '#f8f9fa' }}>
-                <Table.Tr>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Name
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Created Date
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Last Used
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Status
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                      textAlign: 'right',
-                    }}
-                  >
-                    Actions
-                  </Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>{rows}</Table.Tbody>
-            </Table>
+            <ScrollArea type="scroll" offsetScrollbars="x" scrollbarSize={8}>
+              <Table highlightOnHover style={{ minWidth: 640 }}>
+                <Table.Thead style={{ backgroundColor: '#f8f9fa' }}>
+                  <Table.Tr>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Name
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Created Date
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Last Used
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Status
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                        textAlign: 'right',
+                      }}
+                    >
+                      Actions
+                    </Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>{rows}</Table.Tbody>
+              </Table>
+            </ScrollArea>
           </Paper>
 
           <Alert

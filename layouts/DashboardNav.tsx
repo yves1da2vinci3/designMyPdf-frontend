@@ -1,6 +1,5 @@
 import { authApi } from '@/api/authApi';
-import Logo from '@/components/AppLogo/AppLogo';
-import { ActionIcon, Avatar, Box, Button, Code, Group, Text, Tooltip } from '@mantine/core';
+import { ActionIcon, Avatar, Box, Button, Group, Text, Tooltip } from '@mantine/core';
 import {
   IconInfoCircle,
   IconKey,
@@ -15,7 +14,7 @@ import {
   IconWaveSawTool,
 } from '@tabler/icons-react';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import classes from './DashboardNav.module.scss';
 
 const data = [
@@ -31,12 +30,29 @@ const data = [
 interface DashboardNavProps {
   onToggleDesktop: () => void;
   desktopOpened: boolean;
+  /** Fermer le drawer / navbar mobile après navigation */
+  onMobileNavigate?: () => void;
 }
 
-function DashboardNav({ onToggleDesktop, desktopOpened }: DashboardNavProps) {
+function labelForPathname(pathname: string): string {
+  if (pathname.startsWith('/dashboard/templates')) return 'Templates';
+  if (pathname.startsWith('/dashboard/marketplace')) return 'Marketplace';
+  if (pathname.startsWith('/dashboard/backtrace')) return 'Logs';
+  if (pathname.startsWith('/dashboard/keys')) return 'Api Keys';
+  if (pathname.startsWith('/dashboard/account')) return 'Account';
+  if (pathname.startsWith('/documentation')) return 'Documentation API';
+  if (pathname.startsWith('/dashboard')) return 'Overview';
+  return 'Overview';
+}
+
+function DashboardNav({ onToggleDesktop, desktopOpened, onMobileNavigate }: DashboardNavProps) {
   const [active, setActive] = useState('Overview');
   const [isLogoutLoading, setIsLogoutLoading] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    setActive(labelForPathname(router.pathname));
+  }, [router.pathname]);
   const session = authApi.getUserSession();
   const userName = session?.userName ?? 'Guest';
   const userEmail = session?.email ?? '';
@@ -59,6 +75,12 @@ function DashboardNav({ onToggleDesktop, desktopOpened }: DashboardNavProps) {
   const navigate = (label: string, link: string) => {
     router.push(link);
     setActive(label);
+    onMobileNavigate?.();
+  };
+
+  const goNewTemplate = () => {
+    router.push('/dashboard/templates');
+    onMobileNavigate?.();
   };
 
   const links = data.map((item) => {
@@ -90,26 +112,12 @@ function DashboardNav({ onToggleDesktop, desktopOpened }: DashboardNavProps) {
   return (
     <nav className={classes.navbar}>
       <div className={classes.navbarMain}>
-        <Group className={classes.header} justify={desktopOpened ? 'space-between' : 'center'}>
-          {desktopOpened && <Logo isWhite width={80} />}
-          {desktopOpened && (
-            <Code fw={700} className={classes.version}>
-              v0.5.2
-            </Code>
-          )}
-          {!desktopOpened && (
-            <Code fw={700} className={classes.version} style={{ fontSize: 10 }}>
-              v0.5
-            </Code>
-          )}
-        </Group>
-
         {desktopOpened ? (
           <Button
             leftSection={<IconPlus size={16} />}
             fullWidth
             mb="md"
-            onClick={() => router.push('/dashboard/templates')}
+            onClick={goNewTemplate}
             style={{
               backgroundColor: 'rgba(255,255,255,0.15)',
               color: 'white',
@@ -123,7 +131,7 @@ function DashboardNav({ onToggleDesktop, desktopOpened }: DashboardNavProps) {
             <ActionIcon
               size="lg"
               mb="md"
-              onClick={() => router.push('/dashboard/templates')}
+              onClick={goNewTemplate}
               style={{
                 backgroundColor: 'rgba(255,255,255,0.15)',
                 color: 'white',

@@ -12,6 +12,7 @@ import {
   Loader,
   Pagination,
   Paper,
+  ScrollArea,
   SegmentedControl,
   SimpleGrid,
   Stack,
@@ -20,7 +21,7 @@ import {
   ThemeIcon,
   Title,
 } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import {
   IconAlertCircle,
   IconChartBar,
@@ -53,6 +54,7 @@ const PERIOD_DAYS: Record<string, number> = {
 };
 
 export default function Log() {
+  const isSmUp = useMediaQuery('(min-width: 36em)');
   const [fetchLogRequestStatus, setFetchLogRequestStatus] = useState(RequestStatus.NotStated);
   const [logs, setLogs] = useState<LogDTO[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -184,8 +186,8 @@ export default function Log() {
             />
           )}
 
-          <Group justify="space-between" align="flex-start">
-            <Box>
+          <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+            <Box style={{ minWidth: 0 }}>
               <Title order={2} fw={700}>
                 Backtrace Log
               </Title>
@@ -193,23 +195,27 @@ export default function Log() {
                 Monitor API requests and generation health in real-time.
               </Text>
             </Box>
-            <Group gap="sm">
+            <Stack gap="sm" style={{ flex: 1, minWidth: 0 }} align="stretch">
               <SegmentedControl
                 value={period}
                 onChange={setPeriod}
                 data={PERIOD_OPTIONS}
                 size="sm"
+                fullWidth={!isSmUp}
+                maw={isSmUp ? 520 : undefined}
               />
-              <Button variant="outline" leftSection={<IconFilter size={16} />} size="sm">
-                Filter
-              </Button>
-              <Button variant="outline" leftSection={<IconDownload size={16} />} size="sm">
-                Export CSV
-              </Button>
-            </Group>
+              <Group gap="sm" wrap="wrap">
+                <Button variant="outline" leftSection={<IconFilter size={16} />} size="sm">
+                  Filter
+                </Button>
+                <Button variant="outline" leftSection={<IconDownload size={16} />} size="sm">
+                  Export CSV
+                </Button>
+              </Group>
+            </Stack>
           </Group>
 
-          <SimpleGrid cols={4}>
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
             <Card withBorder radius="md" p="lg" shadow="xs">
               <Group justify="space-between" mb="xs">
                 <Text
@@ -308,82 +314,84 @@ export default function Log() {
           </SimpleGrid>
 
           <Paper withBorder radius="md" shadow="xs" style={{ overflow: 'hidden' }}>
-            <Table highlightOnHover>
-              <Table.Thead style={{ backgroundColor: '#f8f9fa' }}>
-                <Table.Tr>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    ID
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Date
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Template
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Status
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Response Time
-                  </Table.Th>
-                  <Table.Th
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#868e96',
-                    }}
-                  >
-                    Actions
-                  </Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>{rows}</Table.Tbody>
-            </Table>
+            <ScrollArea type="scroll" offsetScrollbars="x" scrollbarSize={8}>
+              <Table highlightOnHover style={{ minWidth: 720 }}>
+                <Table.Thead style={{ backgroundColor: '#f8f9fa' }}>
+                  <Table.Tr>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      ID
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Date
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Template
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Status
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Response Time
+                    </Table.Th>
+                    <Table.Th
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: '#868e96',
+                      }}
+                    >
+                      Actions
+                    </Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>{rows}</Table.Tbody>
+              </Table>
+            </ScrollArea>
           </Paper>
 
-          <Group justify="space-between" align="center">
+          <Group justify="space-between" align="center" wrap="wrap" gap="md">
             <Text size="sm" c="dimmed">
               Showing{' '}
               {filteredLogs.length === 0

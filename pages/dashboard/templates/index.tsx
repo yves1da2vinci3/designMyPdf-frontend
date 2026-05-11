@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import {
+  Anchor,
   Button,
   Group,
   Pagination,
@@ -16,12 +17,14 @@ import {
   Input,
   Flex,
   Tooltip,
+  Paper,
 } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { IconPlus, IconSearch, IconHelp } from '@tabler/icons-react';
+import { IconPlus, IconSearch, IconHelp, IconExternalLink } from '@tabler/icons-react';
 import DashboardLayout from '@/layouts/DashboardLayout';
+import { Links } from '@/constants/routes';
 import TemplateItem from '@/components/TemplateItem/TemplateItem';
 import AddTemplate from '@/modals/AddTemplate/AddTemplate';
 import NamespaceItem from '@/components/NamespaceItem/NamespaceItem';
@@ -35,6 +38,7 @@ import 'driver.js/dist/driver.css';
 
 function TemplatesPage() {
   const router = useRouter();
+  const isMdUp = useMediaQuery('(min-width: 62em)');
   const [addTemplateOpened, { open: openAddTemplate, close: closeAddTemplate }] =
     useDisclosure(false);
   const [addNamespaceOpened, { open: openAddNamespace, close: closeAddNamespace }] =
@@ -189,7 +193,17 @@ function TemplatesPage() {
           href="https://cdn.jsdelivr.net/npm/driver.js@1.3.5/dist/driver.css"
         />
       </Head>
-      <Stack h="98vh">
+      <Stack
+        gap={0}
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight:
+            'calc(100dvh - var(--app-shell-header-offset, 0px) - 2 * var(--mantine-spacing-md))',
+        }}
+      >
         <AddTemplate
           opened={addTemplateOpened}
           onClose={closeAddTemplate}
@@ -207,11 +221,13 @@ function TemplatesPage() {
         <Group
           p="md"
           justify="space-between"
+          wrap="wrap"
+          gap="md"
           style={{ borderBottom: '1px solid #eaeaea' }}
           id="templates-header"
-          align="center"
+          align="flex-start"
         >
-          <Box>
+          <Box style={{ minWidth: 0 }}>
             <Title order={2} fw={700}>
               Template Library
             </Title>
@@ -219,14 +235,14 @@ function TemplatesPage() {
               Manage and organize your PDF generation logic.
             </Text>
           </Box>
-          <Group>
+          <Group wrap="wrap" gap="sm" justify="flex-end" style={{ flex: '1 1 200px' }}>
             <Input
               id="search-templates"
               leftSection={<IconSearch size={16} />}
               placeholder="Search templates or folders..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.currentTarget.value)}
-              style={{ width: '260px' }}
+              style={{ width: '100%', maxWidth: 320, minWidth: 160 }}
             />
             <Button
               id="create-template-button"
@@ -254,17 +270,61 @@ function TemplatesPage() {
           </Group>
         </Group>
 
+        <Box px="md" pb="sm">
+          <Paper
+            radius="md"
+            p="md"
+            style={{
+              background: 'linear-gradient(135deg, #1a1b2e 0%, #16213e 100%)',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            <Box
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: 100,
+                height: 100,
+                background: 'radial-gradient(circle, rgba(34,139,230,0.3) 0%, transparent 70%)',
+              }}
+            />
+            <Text fw={700} size="sm" c="white" mb={4}>
+              Marketplace
+            </Text>
+            <Text size="xs" c="blue.3" mb="sm">
+              Catalogue public ou gestion de vos annonces.
+            </Text>
+            <Group gap="md">
+              <Anchor size="xs" fw={600} c="blue.4" href={Links.MARKETPLACE}>
+                Mes annonces <IconExternalLink size={10} style={{ verticalAlign: 'middle' }} />
+              </Anchor>
+              <Anchor size="xs" fw={600} c="blue.1" href="/marketplace">
+                Catalogue <IconExternalLink size={10} style={{ verticalAlign: 'middle' }} />
+              </Anchor>
+            </Group>
+          </Paper>
+        </Box>
+
         {/* Main content */}
-        <Flex style={{ flex: 1 }}>
+        <Flex
+          direction={{ base: 'column', md: 'row' }}
+          style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}
+        >
           {/* Sidebar */}
           <Box
             id="folders-section"
-            w={240}
+            w={{ base: '100%', md: 240 }}
+            miw={0}
             p="md"
             style={{
-              borderRight: '1px solid #eaeaea',
-              height: '100%',
+              borderRight: isMdUp ? '1px solid #eaeaea' : undefined,
+              borderBottom: isMdUp ? undefined : '1px solid #eaeaea',
+              height: isMdUp ? '100%' : undefined,
+              maxHeight: isMdUp ? undefined : 280,
               overflowY: 'auto',
+              flexShrink: 0,
             }}
           >
             <Text
@@ -364,7 +424,7 @@ function TemplatesPage() {
           </Box>
 
           {/* Main content area */}
-          <Box style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
+          <Box style={{ flex: 1, minWidth: 0, padding: '20px', overflowY: 'auto' }}>
             {/* Templates grid */}
             {fetchTemplatesRequestStatus === RequestStatus.InProgress ? (
               <Center style={{ height: '200px' }}>
@@ -388,7 +448,7 @@ function TemplatesPage() {
               <>
                 <Grid id="templates-grid" gutter="md">
                   {searchedTemplates.map((template) => (
-                    <Grid.Col key={template.ID} span={4}>
+                    <Grid.Col key={template.ID} span={{ base: 12, sm: 6, md: 4 }}>
                       <TemplateItem
                         DeleteTemplateFromClient={DeleteTemplateFromClient}
                         id={template?.ID}
