@@ -61,7 +61,7 @@ import {
   IconEye,
 } from '@tabler/icons-react';
 
-import { useMonaco } from '@monaco-editor/react';
+import { Editor } from '@monaco-editor/react';
 import IDE from './CodeEditor';
 import Preview from './Preview';
 import AddVariable from '@/modals/AddVariable/AddVariable';
@@ -141,8 +141,9 @@ const data = {
 const CreateTemplate: React.FC = () => {
   const params = useParams();
   const router = useRouter();
-  const monaco = useMonaco();
   const editorRef = useRef<any>(null);
+  /** Force Monaco remount after loading external HTML so model + editorRef stay in sync. */
+  const [editorSessionKey, setEditorSessionKey] = useState(0);
 
   const [isLoading, setIsLoading] = useState(RequestStatus.NotStated);
   const [template, setTemplate] = useState<TemplateDTO | null>(null);
@@ -236,6 +237,7 @@ const CreateTemplate: React.FC = () => {
   const handleTemplateSelect = (templateItem: ReferenceTemplate) => {
     // Charger le code HTML du template
     setCode(templateItem.code);
+    setEditorSessionKey((k) => k + 1);
 
     // Extraire les variables Handlebars du code
     const extractedVars = extractVariablesFromTemplate(templateItem.code);
@@ -271,6 +273,7 @@ const CreateTemplate: React.FC = () => {
     try {
       const full = await templateApi.getMarketplaceTemplate(String(tpl.ID));
       setCode(full.content || DEFAULT_TEMPLATE);
+      setEditorSessionKey((k) => k + 1);
       const extractedVars = extractVariablesFromTemplate(full.content || '');
       const defaultVariables = buildVariableStructure(extractedVars, full.content || '');
       const { rest, charts } = splitChartsFromVariables(defaultVariables);
@@ -330,12 +333,12 @@ const CreateTemplate: React.FC = () => {
     drop: (item: { varName: string; type: 'array' | 'object' | 'key-value' }) => {
       if (editorRef.current) {
         const position = editorRef.current.getPosition();
-        const range = new monaco.Range(
-          position.lineNumber,
-          position.column,
-          position.lineNumber,
-          position.column,
-        );
+        const range = {
+          startLineNumber: position.lineNumber,
+          startColumn: position.column,
+          endLineNumber: position.lineNumber,
+          endColumn: position.column,
+        };
         const id = { major: 1, minor: 1 }; // unique identifier for the op
         let text = '';
 
@@ -1364,20 +1367,42 @@ const CreateTemplate: React.FC = () => {
         opened={chartJsonModalOpened}
         onClose={closeChartJsonModal}
         title={chartEditId ? `Données Chart.js — ${chartEditId}` : 'Données graphique'}
-        size="lg"
+        size="90%"
         centered
+        styles={{
+          content: { maxWidth: 1120 },
+          body: { maxHeight: 'calc(100vh - 100px)' },
+        }}
       >
         <Stack gap="md">
           <Text size="xs" c="dimmed">
             Objet au format Chart.js : propriétés <code>labels</code> (sauf scatter/bubble) et{' '}
             <code>datasets</code> non vide.
           </Text>
-          <Textarea
-            value={chartEditJson}
-            onChange={(e) => setChartEditJson(e.currentTarget.value)}
-            minRows={12}
-            styles={{ input: { fontFamily: 'monospace', fontSize: 12 } }}
-          />
+          <Box
+            style={{
+              border: '1px solid #373A40',
+              borderRadius: 8,
+              overflow: 'hidden',
+            }}
+          >
+            <Editor
+              key={chartEditId ?? 'chart-json'}
+              height="clamp(380px, 62vh, 720px)"
+              language="json"
+              theme="vs-dark"
+              value={chartEditJson}
+              onChange={(v) => setChartEditJson(v ?? '')}
+              options={{
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                wordWrap: 'on',
+                fontSize: 13,
+                tabSize: 2,
+                automaticLayout: true,
+              }}
+            />
+          </Box>
           <Group justify="flex-end">
             <Button variant="default" onClick={closeChartJsonModal}>
               Annuler
@@ -1903,10 +1928,18 @@ const CreateTemplate: React.FC = () => {
                         <Box
                           key={type}
                           onClick={() => {
-                            if (editorRef.current) {
                               const editor = editorRef.current;
+                              if (!editor) {
+                                notificationService.showErrorNotification(
+                                  'Éditeur non prêt — réessayez dans une seconde.',
+                                );
+                                return;
+                              }
                               const model = editor.getModel();
-                              if (!model) return;
+                              if (!model) {
+                                notificationService.showErrorNotification('Modèle éditeur introuvable.');
+                                return;
+                              }
 
                               const lastLine = model.getLineCount();
                               const lastLineContent = model.getLineContent(lastLine);
@@ -1919,12 +1952,12 @@ const CreateTemplate: React.FC = () => {
                               }));
 
                               const text = `\n\n<!-- Chart Section -->
-<div class="w-full max-w-4xl mx-auto py-4">
+<div class="w-full py-4" style="display:flex;justify-content:center;align-items:center;">
   <canvas
     id="${chartId}"
     data-chart-type="${type}"
     data-chart-data='{{charts.${chartId}}}'
-    class="w-full aspect-[16/9]"
+    style="display:block;margin:0 auto;max-width:min(100%,42rem);width:100%;height:auto;"
   ></canvas>
 </div>`;
 
@@ -1933,12 +1966,12 @@ const CreateTemplate: React.FC = () => {
                                 column: lastLineContent.length + 1,
                               };
 
-                              const range = new monaco.Range(
-                                position.lineNumber,
-                                position.column,
-                                position.lineNumber,
-                                position.column,
-                              );
+                              const range = {
+                                startLineNumber: position.lineNumber,
+                                startColumn: position.column,
+                                endLineNumber: position.lineNumber,
+                                endColumn: position.column,
+                              };
 
                               const op = {
                                 identifier: { major: 1, minor: 1 },
@@ -1948,7 +1981,6 @@ const CreateTemplate: React.FC = () => {
                               };
 
                               editor.executeEdits('chart-insert', [op]);
-                            }
                           }}
                           style={{
                             backgroundColor: '#25262B',
@@ -1991,6 +2023,7 @@ const CreateTemplate: React.FC = () => {
           >
             <DndProvider backend={HTML5Backend}>
               <IDE
+                key={editorSessionKey}
                 onChange={(newCode) => {
                   setCode(newCode);
                   setTemplateContent(newCode);

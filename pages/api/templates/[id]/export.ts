@@ -68,8 +68,17 @@ function buildExportPageHtml(bodyInner: string, data: ExportTemplateDto, sampleT
                   check();
                 });
               }
+              function toChartJsType(raw) {
+                var t = String(raw == null ? '' : raw).trim();
+                var k = t.toLowerCase();
+                if (k === 'polararea') return 'polarArea';
+                return k;
+              }
               async function initCharts() {
-                await waitForTailwind();
+                await Promise.race([
+                  waitForTailwind(),
+                  new Promise(function(r) { setTimeout(r, 2000); }),
+                ]);
                 if (document.fonts && document.fonts.ready) {
                   await document.fonts.ready;
                 }
@@ -78,11 +87,12 @@ function buildExportPageHtml(bodyInner: string, data: ExportTemplateDto, sampleT
                 }
                 document.querySelectorAll('canvas[data-chart-type]').forEach(function(canvas) {
                   try {
-                    var type = canvas.getAttribute('data-chart-type');
+                    var typeRaw = canvas.getAttribute('data-chart-type');
                     var raw = canvas.getAttribute('data-chart-data');
-                    if (!type || !raw) return;
+                    if (!typeRaw || !raw) return;
+                    var type = toChartJsType(typeRaw);
                     var chartData = JSON.parse(raw);
-                    if (!isChartDataValidForType(chartData, type)) return;
+                    if (!isChartDataValidForType(chartData, typeRaw)) return;
                     new Chart(canvas, {
                       type: type,
                       data: chartData,
@@ -147,7 +157,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const htmlContent = buildExportPageHtml(templateContent, data, sampleText);
 
-      await page.setContent(htmlContent, { waitUntil: 'networkidle0', timeout: 45_000 });
+      await page.setContent(htmlContent, { waitUntil: 'load', timeout: 45_000 });
 
       const paperSizes = {
         a1: { width: 1684, height: 2384 },
@@ -166,7 +176,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await page.setViewport({ width, height, deviceScaleFactor: useRendered ? 2 : 1 });
 
       const hasCharts = /<canvas[^>]*data-chart-type/i.test(templateContent);
-      const postRenderMs = hasCharts ? 2200 : useRendered ? 1200 : 400;
+      const postRenderMs = hasCharts ? 4000 : useRendered ? 1200 : 400;
       await new Promise((r) => setTimeout(r, postRenderMs));
 
       let output: Buffer | Uint8Array;

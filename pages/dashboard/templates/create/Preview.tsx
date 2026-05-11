@@ -102,6 +102,12 @@ function Preview({
       const chartScript = `
         ${CHART_DATA_VALIDATION_SCRIPT_SNIPPET}
         (function() {
+          function toChartJsType(raw) {
+            var t = String(raw == null ? '' : raw).trim();
+            var k = t.toLowerCase();
+            if (k === 'polararea') return 'polarArea';
+            return k;
+          }
           function drawWarning(canvas, msg) {
             var ctx = canvas.getContext('2d');
             if (!ctx) return;
@@ -122,13 +128,15 @@ function Preview({
             var chartElements = document.querySelectorAll('canvas[data-chart-type]');
             chartElements.forEach(function(element) {
               try {
-                var type = element.getAttribute('data-chart-type');
+                var typeRaw = element.getAttribute('data-chart-type');
                 var rawData = element.getAttribute('data-chart-data');
 
-                if (!type || !rawData) {
+                if (!typeRaw || !rawData) {
                   drawWarning(element, 'Attributs manquants (data-chart-type / data-chart-data)');
                   return;
                 }
+
+                var type = toChartJsType(typeRaw);
 
                 var chartData;
                 try {
@@ -138,7 +146,7 @@ function Preview({
                   return;
                 }
 
-                if (!isChartDataValidForType(chartData, type)) {
+                if (!isChartDataValidForType(chartData, typeRaw)) {
                   drawWarning(element, 'Structure invalide — datasets requis ; labels non vides sauf scatter/bubble');
                   return;
                 }
