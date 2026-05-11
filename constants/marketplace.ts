@@ -12,7 +12,10 @@ export function validateMarketplaceListingInput(params: {
   title: string;
   category: string | null;
   description: string;
+  /** URL distante déjà enregistrée (pas blob:) */
   coverImageUrl: string;
+  /** Image choisie en local, upload Backblaze au submit */
+  hasPendingCoverFile?: boolean;
   featuresRaw: string;
 }): string[] {
   const errors: string[] = [];
@@ -27,7 +30,7 @@ export function validateMarketplaceListingInput(params: {
       `La description doit contenir au moins ${MIN_MARKETPLACE_DESCRIPTION_LENGTH} caractères (actuellement ${params.description.trim().length}).`,
     );
   }
-  if (!params.coverImageUrl.trim()) {
+  if (!params.coverImageUrl.trim() && !params.hasPendingCoverFile) {
     errors.push("L'image de couverture est obligatoire.");
   }
   const feats = params.featuresRaw

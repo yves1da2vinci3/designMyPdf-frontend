@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import {
   Box,
@@ -8,6 +8,7 @@ import {
   Group,
   Image,
   NumberInput,
+  ScrollArea,
   Select,
   Stack,
   Text,
@@ -20,6 +21,7 @@ import {
   Avatar,
   Center,
 } from '@mantine/core';
+import { useElementSize, useMediaQuery } from '@mantine/hooks';
 import { Dropzone, IMAGE_MIME_TYPE } from '@mantine/dropzone';
 import { notifications } from '@mantine/notifications';
 import {
@@ -46,9 +48,35 @@ export default function AddListingPage() {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState<number>(0);
   const [features, setFeatures] = useState('');
+  /** URL HTTPS après chargement template ou après upload au publish */
   const [coverImageUrl, setCoverImageUrl] = useState('');
+  /** Fichier choisi au drop — upload Backblaze uniquement au publish */
+  const [pendingCoverFile, setPendingCoverFile] = useState<File | null>(null);
+  /** Prévisualisation locale (Object URL) */
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [publishing, setPublishing] = useState(false);
+
+  const coverDisplaySrc = coverPreviewUrl || coverImageUrl;
+  const hasCoverVisual = Boolean(coverDisplaySrc);
+
+  const revokeCoverPreview = useCallback(() => {
+    setCoverPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setPendingCoverFile(null);
+  }, []);
+
+  const clearCover = useCallback(() => {
+    revokeCoverPreview();
+    setCoverImageUrl('');
+  }, [revokeCoverPreview]);
+
+  const isMdUp = useMediaQuery('(min-width: 62em)');
+  const { ref: formMeasureRef, height: formColumnHeight } = useElementSize();
+  const previewMaxHeight =
+    isMdUp && formColumnHeight > 0 ? formColumnHeight : undefined;
 
   const session = authApi.getUserSession();
   const userName = session?.userName ?? 'G';
@@ -74,27 +102,33 @@ export default function AddListingPage() {
         if (t.category) setCategory(t.category);
         if (t.price != null && t.price > 0) setPrice(t.price / 100);
         if (t.features?.length) setFeatures(t.features.join(', '));
-        if (t.cover_image_url) setCoverImageUrl(t.cover_image_url);
+        revokeCoverPreview();
+        setCoverImageUrl(t.cover_image_url || '');
       })
       .catch(() => {});
-  }, [router.isReady, router.query.templateId]);
+  }, [router.isReady, router.query.templateId, revokeCoverPreview]);
 
   const lockTemplateSelect = typeof router.query.templateId === 'string' && router.query.templateId.length > 0;
 
-  const handleImageDrop = async (files: File[]) => {
+  const handleImageDrop = (files: File[]) => {
     const file = files[0];
     if (!file) return;
-    setUploading(true);
-    try {
-      const { url } = await templateApi.uploadCoverImage(file);
-      setCoverImageUrl(url);
-      notifications.show({ title: 'Uploaded', message: 'Cover image uploaded', color: 'teal' });
-    } catch {
-      notifications.show({ title: 'Error', message: 'Failed to upload image', color: 'red' });
-    } finally {
-      setUploading(false);
-    }
+    setCoverPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+    setPendingCoverFile(file);
   };
+
+  useEffect(
+    () => () => {
+      setCoverPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+    },
+    [],
+  );
 
   const handlePublish = async () => {
     if (!selectedTemplateId) {
@@ -110,6 +144,7 @@ export default function AddListingPage() {
       category,
       description,
       coverImageUrl,
+      hasPendingCoverFile: !!pendingCoverFile,
       featuresRaw: features,
     });
     if (validationErrors.length > 0) {
@@ -123,6 +158,26 @@ export default function AddListingPage() {
     }
     setPublishing(true);
     try {
+      let finalCoverUrl = coverImageUrl.trim();
+      if (pendingCoverFile) {
+        setUploading(true);
+        try {
+          const { url } = await templateApi.uploadCoverImage(pendingCoverFile);
+          finalCoverUrl = url.trim();
+          setCoverImageUrl(finalCoverUrl);
+          revokeCoverPreview();
+        } catch {
+          notifications.show({
+            title: 'Erreur',
+            message: 'Échec du téléversement de la couverture.',
+            color: 'red',
+          });
+          return;
+        } finally {
+          setUploading(false);
+        }
+      }
+
       await templateApi.publishToMarketplace({
         templateId: Number(selectedTemplateId),
         name: title.trim(),
@@ -133,7 +188,7 @@ export default function AddListingPage() {
           .split(',')
           .map((f) => f.trim())
           .filter(Boolean),
-        coverImageURL: coverImageUrl.trim(),
+        coverImageURL: finalCoverUrl,
       });
       notifications.show({
         title: 'Publié',
@@ -166,56 +221,57 @@ export default function AddListingPage() {
     <Box style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
       {/* Header */}
       <Box
+        px={{ base: 16, sm: 24, md: 32 }}
         style={{
           backgroundColor: '#fff',
           borderBottom: '1px solid #e9ecef',
-          padding: '0 32px',
-          height: 56,
+          minHeight: 56,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
         }}
       >
-        <Group gap="xl">
-          <Group gap={6} style={{ cursor: 'pointer' }} onClick={() => router.push('/dashboard/')}>
-            <IconDiamondFilled size={18} color="#228be6" />
-            <Text fw={700} size="sm">
-              Design My PDF
-            </Text>
+        <Group justify="space-between" align="center" wrap="wrap" gap="md" w="100%" py="xs">
+          <Group gap="xl" wrap="wrap">
+            <Group gap={6} style={{ cursor: 'pointer' }} onClick={() => router.push('/dashboard/')}>
+              <IconDiamondFilled size={18} color="#228be6" />
+              <Text fw={700} size="sm">
+                Design My PDF
+              </Text>
+            </Group>
+            <Group gap={0} wrap="wrap">
+              <Anchor size="sm" c="dimmed" onClick={() => router.push('/marketplace')}>
+                Marketplace
+              </Anchor>
+              <Anchor
+                size="sm"
+                fw={600}
+                c="blue"
+                ml={{ base: 'md', sm: 'lg' }}
+                style={{ borderBottom: '2px solid #228be6', paddingBottom: 2 }}
+              >
+                Add Listing
+              </Anchor>
+            </Group>
           </Group>
-          <Group gap={0}>
-            <Anchor size="sm" c="dimmed" onClick={() => router.push('/marketplace')}>
-              Marketplace
-            </Anchor>
-            <Anchor
-              size="sm"
-              fw={600}
-              c="blue"
-              ml="lg"
-              style={{ borderBottom: '2px solid #228be6', paddingBottom: 2 }}
-            >
-              Add Listing
-            </Anchor>
+          <Group gap="sm" wrap="wrap">
+            <Button size="xs" onClick={() => router.push('/dashboard/templates')}>
+              Create New
+            </Button>
+            <ActionIcon variant="subtle" color="gray">
+              <IconBell size={18} />
+            </ActionIcon>
+            <ActionIcon variant="subtle" color="gray">
+              <IconSettings size={18} />
+            </ActionIcon>
+            <Avatar size={32} radius="xl" color="blue" variant="filled">
+              {initials}
+            </Avatar>
           </Group>
-        </Group>
-        <Group gap="sm">
-          <Button size="xs" onClick={() => router.push('/dashboard/templates')}>
-            Create New
-          </Button>
-          <ActionIcon variant="subtle" color="gray">
-            <IconBell size={18} />
-          </ActionIcon>
-          <ActionIcon variant="subtle" color="gray">
-            <IconSettings size={18} />
-          </ActionIcon>
-          <Avatar size={32} radius="xl" color="blue" variant="filled">
-            {initials}
-          </Avatar>
         </Group>
       </Box>
 
       {/* Content */}
-      <Box px={48} py={32}>
+      <Box px={{ base: 16, sm: 32, lg: 48 }} py={{ base: 20, md: 32 }}>
         <Title order={3} fw={700} mb={4}>
           Create New Marketplace Listing
         </Title>
@@ -223,13 +279,14 @@ export default function AddListingPage() {
           Configure your document template details and technical specifications for the marketplace.
         </Text>
 
-        <Grid gutter="xl">
+        <Grid gutter="xl" align="flex-start">
           {/* Form */}
-          <Grid.Col span={8}>
-            <Card withBorder radius="md" p="xl" shadow="xs">
+          <Grid.Col span={{ base: 12, md: 8 }}>
+            <Box ref={formMeasureRef}>
+              <Card withBorder radius="md" p="xl" shadow="xs">
               <Stack gap="md">
                 <Grid gutter="md">
-                  <Grid.Col span={6}>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
                     <TextInput
                       label="Template Title"
                       placeholder="e.g. Modern Professional Invoice"
@@ -238,7 +295,7 @@ export default function AddListingPage() {
                       required
                     />
                   </Grid.Col>
-                  <Grid.Col span={6}>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
                     <Select
                       label="Category"
                       placeholder="Select category"
@@ -276,7 +333,7 @@ export default function AddListingPage() {
                 />
 
                 <Grid gutter="md">
-                  <Grid.Col span={6}>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
                     <NumberInput
                       label="Price ($)"
                       placeholder="0.00"
@@ -287,7 +344,7 @@ export default function AddListingPage() {
                       prefix="$ "
                     />
                   </Grid.Col>
-                  <Grid.Col span={6}>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
                     <TextInput
                       label="Features (comma separated)"
                       placeholder="Auto-pagination, Dynamic Tables, SVG support..."
@@ -304,10 +361,29 @@ export default function AddListingPage() {
                   <Text size="sm" fw={500} mb={6}>
                     Template Preview Thumbnail
                   </Text>
-                  {coverImageUrl ? (
+                  {hasCoverVisual ? (
                     <Box style={{ position: 'relative' }}>
-                      <Image src={coverImageUrl} radius="md" h={180} fit="cover" alt="Cover" />
-                      <Button size="xs" variant="light" mt={8} onClick={() => setCoverImageUrl('')}>
+                      <Box
+                        h={200}
+                        w="100%"
+                        pos="relative"
+                        style={{
+                          overflow: 'hidden',
+                          borderRadius: 8,
+                          border: '1px solid #e9ecef',
+                          backgroundColor: '#f8f9fa',
+                        }}
+                      >
+                        <Image
+                          src={coverDisplaySrc}
+                          alt="Cover"
+                          fit="cover"
+                          w="100%"
+                          h="100%"
+                          style={{ objectFit: 'cover' }}
+                        />
+                      </Box>
+                      <Button size="xs" variant="light" mt={8} onClick={clearCover}>
                         Remove image
                       </Button>
                     </Box>
@@ -316,7 +392,7 @@ export default function AddListingPage() {
                       onDrop={handleImageDrop}
                       accept={IMAGE_MIME_TYPE}
                       maxSize={10 * 1024 * 1024}
-                      loading={uploading}
+                      loading={false}
                       style={{
                         border: '1.5px dashed #ced4da',
                         borderRadius: 8,
@@ -355,7 +431,7 @@ export default function AddListingPage() {
                     Discard Draft
                   </Button>
                   <Button
-                    loading={publishing}
+                    loading={publishing || uploading}
                     rightSection={<span>▷</span>}
                     onClick={handlePublish}
                   >
@@ -364,10 +440,17 @@ export default function AddListingPage() {
                 </Group>
               </Box>
             </Card>
+            </Box>
           </Grid.Col>
 
           {/* Live preview */}
-          <Grid.Col span={4}>
+          <Grid.Col span={{ base: 12, md: 4 }}>
+            <ScrollArea
+              type="auto"
+              scrollbarSize={8}
+              style={{ maxHeight: previewMaxHeight }}
+              offsetScrollbars="y"
+            >
             <Stack gap="md">
               <Box>
                 <Text
@@ -381,8 +464,24 @@ export default function AddListingPage() {
                   REAL-TIME PREVIEW
                 </Text>
                 <Card withBorder radius="md" shadow="xs" p={0} style={{ overflow: 'hidden' }}>
-                  {coverImageUrl ? (
-                    <Image src={coverImageUrl} h={160} fit="cover" alt="preview" />
+                  {hasCoverVisual ? (
+                    <Box
+                      h={160}
+                      pos="relative"
+                      style={{
+                        overflow: 'hidden',
+                        backgroundColor: '#e9ecef',
+                      }}
+                    >
+                      <Image
+                        src={coverDisplaySrc}
+                        alt="preview"
+                        fit="cover"
+                        w="100%"
+                        h="100%"
+                        style={{ objectFit: 'cover' }}
+                      />
+                    </Box>
                   ) : (
                     <Box
                       h={160}
@@ -480,6 +579,7 @@ export default function AddListingPage() {
                 </Stack>
               </Card>
             </Stack>
+            </ScrollArea>
           </Grid.Col>
         </Grid>
       </Box>

@@ -104,8 +104,8 @@ export default function Overview() {
 
   return (
     <Stack gap="xl">
-      <Group justify="space-between" align="flex-start">
-        <Box>
+      <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+        <Box style={{ minWidth: 0 }}>
           <Title order={2} fw={700}>
             Overview
           </Title>
@@ -113,15 +113,22 @@ export default function Overview() {
             Track your generation performance in real-time.
           </Text>
         </Box>
-        <Group gap="xs">
-          <SegmentedControl value={period} onChange={setPeriod} data={PERIOD_OPTIONS} size="sm" />
+        <Group gap="xs" wrap="wrap" style={{ flex: '1 1 auto', justifyContent: 'flex-end' }}>
+          <SegmentedControl
+            value={period}
+            onChange={setPeriod}
+            data={PERIOD_OPTIONS}
+            size="sm"
+            fullWidth
+            maw={{ base: '100%', sm: 420 }}
+          />
           <Button variant="light" size="sm" px="xs">
             <IconCalendar size={16} />
           </Button>
         </Group>
       </Group>
 
-      <SimpleGrid cols={4}>
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
         <Card withBorder radius="md" p="lg" shadow="xs">
           <Group justify="space-between" mb="xs">
             <ThemeIcon size="md" variant="light" color="blue" radius="md">
@@ -222,7 +229,7 @@ export default function Overview() {
         </Center>
       ) : (
         <Grid gutter="xl">
-          <Grid.Col span={8}>
+          <Grid.Col span={{ base: 12, md: 8 }}>
             <Card withBorder radius="md" shadow="xs" p="lg">
               <Box mb="md">
                 <Text fw={600} size="sm">
@@ -243,7 +250,7 @@ export default function Overview() {
             </Card>
 
             <Grid mt="xl" gutter="md">
-              <Grid.Col span={6}>
+              <Grid.Col span={{ base: 12, sm: 6 }}>
                 <Card withBorder radius="md" shadow="xs" p="lg" style={{ minHeight: 160 }}>
                   <Group justify="space-between" mb="sm">
                     <Text fw={600} size="sm">
@@ -267,7 +274,7 @@ export default function Overview() {
                   </Button>
                 </Card>
               </Grid.Col>
-              <Grid.Col span={6}>
+              <Grid.Col span={{ base: 12, sm: 6 }}>
                 <Card withBorder radius="md" shadow="xs" p="lg" style={{ minHeight: 160 }}>
                   <Group justify="space-between" mb="sm">
                     <Text fw={600} size="sm">
@@ -300,7 +307,7 @@ export default function Overview() {
             </Grid>
           </Grid.Col>
 
-          <Grid.Col span={4}>
+          <Grid.Col span={{ base: 12, md: 4 }}>
             <Stack gap="md">
               <Card withBorder radius="md" shadow="xs" p="lg">
                 <Text fw={600} size="sm" mb="md">

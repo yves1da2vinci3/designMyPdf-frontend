@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import {
   Alert,
@@ -45,8 +45,26 @@ export default function EditMarketplaceListingPage() {
   const [price, setPrice] = useState<number>(0);
   const [features, setFeatures] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState('');
+  const [pendingCoverFile, setPendingCoverFile] = useState<File | null>(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
   const [isPublished, setIsPublished] = useState(true);
   const [uploading, setUploading] = useState(false);
+
+  const coverDisplaySrc = coverPreviewUrl || coverImageUrl;
+  const hasCoverVisual = Boolean(coverDisplaySrc);
+
+  const revokeCoverPreview = useCallback(() => {
+    setCoverPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setPendingCoverFile(null);
+  }, []);
+
+  const clearCover = useCallback(() => {
+    revokeCoverPreview();
+    setCoverImageUrl('');
+  }, [revokeCoverPreview]);
 
   useEffect(() => {
     if (!router.isReady || !templateId) return;
@@ -67,6 +85,7 @@ export default function EditMarketplaceListingPage() {
         setCategory(t.category || null);
         setPrice(t.price != null && t.price > 0 ? t.price / 100 : 0);
         setFeatures(t.features?.length ? t.features.join(', ') : '');
+        revokeCoverPreview();
         setCoverImageUrl(t.cover_image_url || '');
         setIsPublished(!!t.is_published);
       } catch {
@@ -78,21 +97,26 @@ export default function EditMarketplaceListingPage() {
     return () => {
       cancelled = true;
     };
-  }, [router.isReady, templateId]);
+  }, [router.isReady, templateId, revokeCoverPreview]);
 
-  const handleImageDrop = async (files: File[]) => {
+  useEffect(
+    () => () => {
+      setCoverPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+    },
+    [],
+  );
+
+  const handleImageDrop = (files: File[]) => {
     const file = files[0];
     if (!file) return;
-    setUploading(true);
-    try {
-      const { url } = await templateApi.uploadCoverImage(file);
-      setCoverImageUrl(url);
-      notifications.show({ title: 'OK', message: 'Image de couverture mise à jour.', color: 'teal' });
-    } catch {
-      notifications.show({ title: 'Erreur', message: 'Échec du téléversement.', color: 'red' });
-    } finally {
-      setUploading(false);
-    }
+    setCoverPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+    setPendingCoverFile(file);
   };
 
   const handleSave = async () => {
@@ -102,6 +126,7 @@ export default function EditMarketplaceListingPage() {
       category,
       description,
       coverImageUrl,
+      hasPendingCoverFile: !!pendingCoverFile,
       featuresRaw: features,
     });
     if (validationErrors.length > 0) {
@@ -115,6 +140,26 @@ export default function EditMarketplaceListingPage() {
     }
     setSaving(true);
     try {
+      let finalCoverUrl = coverImageUrl.trim();
+      if (pendingCoverFile) {
+        setUploading(true);
+        try {
+          const { url } = await templateApi.uploadCoverImage(pendingCoverFile);
+          finalCoverUrl = url.trim();
+          setCoverImageUrl(finalCoverUrl);
+          revokeCoverPreview();
+        } catch {
+          notifications.show({
+            title: 'Erreur',
+            message: 'Échec du téléversement de la couverture.',
+            color: 'red',
+          });
+          return;
+        } finally {
+          setUploading(false);
+        }
+      }
+
       await templateApi.updateMarketplaceListing(template.ID, {
         name: title.trim(),
         price: Math.round(price * 100),
@@ -124,7 +169,7 @@ export default function EditMarketplaceListingPage() {
           .split(',')
           .map((f) => f.trim())
           .filter(Boolean),
-        coverImageURL: coverImageUrl.trim(),
+        coverImageURL: finalCoverUrl,
         isPublished,
       });
       notifications.show({
@@ -180,8 +225,8 @@ export default function EditMarketplaceListingPage() {
 
   return (
     <Stack gap="lg">
-      <Group justify="space-between">
-        <Box>
+      <Group justify="space-between" wrap="wrap" gap="md">
+        <Box style={{ minWidth: 0 }}>
           <Title order={2}>Modifier l’annonce</Title>
           <Text c="dimmed" size="sm" mt={4}>
             Template #{template.ID} — {template.name}
@@ -195,7 +240,7 @@ export default function EditMarketplaceListingPage() {
       <Card withBorder p="lg">
         <Stack gap="md">
           <Grid gutter="md">
-            <Grid.Col span={6}>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
               <TextInput
                 label="Titre"
                 value={title}
@@ -203,7 +248,7 @@ export default function EditMarketplaceListingPage() {
                 required
               />
             </Grid.Col>
-            <Grid.Col span={6}>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
               <Select
                 label="Catégorie"
                 data={[...MARKETPLACE_CATEGORIES]}
@@ -224,7 +269,7 @@ export default function EditMarketplaceListingPage() {
           />
 
           <Grid gutter="md">
-            <Grid.Col span={6}>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
               <NumberInput
                 label="Prix ($)"
                 value={price}
@@ -234,7 +279,7 @@ export default function EditMarketplaceListingPage() {
                 prefix="$ "
               />
             </Grid.Col>
-            <Grid.Col span={6}>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
               <TextInput
                 label="Fonctionnalités (virgules)"
                 value={features}
@@ -255,10 +300,29 @@ export default function EditMarketplaceListingPage() {
             <Text size="sm" fw={500} mb={6}>
               Image de couverture (obligatoire)
             </Text>
-            {coverImageUrl ? (
+            {hasCoverVisual ? (
               <Box>
-                <Image src={coverImageUrl} radius="md" h={180} fit="cover" alt="" />
-                <Button size="xs" variant="light" mt={8} onClick={() => setCoverImageUrl('')}>
+                <Box
+                  h={200}
+                  w="100%"
+                  pos="relative"
+                  style={{
+                    overflow: 'hidden',
+                    borderRadius: 8,
+                    border: '1px solid #e9ecef',
+                    backgroundColor: '#f8f9fa',
+                  }}
+                >
+                  <Image
+                    src={coverDisplaySrc}
+                    alt=""
+                    fit="cover"
+                    w="100%"
+                    h="100%"
+                    style={{ objectFit: 'cover' }}
+                  />
+                </Box>
+                <Button size="xs" variant="light" mt={8} onClick={clearCover}>
                   Retirer
                 </Button>
               </Box>
@@ -267,7 +331,7 @@ export default function EditMarketplaceListingPage() {
                 onDrop={handleImageDrop}
                 accept={IMAGE_MIME_TYPE}
                 maxSize={10 * 1024 * 1024}
-                loading={uploading}
+                loading={false}
                 style={{
                   border: '1.5px dashed #ced4da',
                   borderRadius: 8,
@@ -294,7 +358,7 @@ export default function EditMarketplaceListingPage() {
           </Box>
 
           <Group justify="flex-end">
-            <Button loading={saving} onClick={handleSave}>
+            <Button loading={saving || uploading} onClick={handleSave}>
               Enregistrer
             </Button>
           </Group>

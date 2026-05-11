@@ -9,6 +9,7 @@ import {
   Group,
   Image,
   Loader,
+  ScrollArea,
   SimpleGrid,
   Stack,
   Table,
@@ -196,8 +197,8 @@ export default function PublisherDashboard() {
   return (
     <Stack gap="xl">
       {/* Header */}
-      <Group justify="space-between" align="flex-start">
-        <Box>
+      <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
+        <Box style={{ minWidth: 0 }}>
           <Title order={2} fw={700}>
             My Marketplace Listings
           </Title>
@@ -214,7 +215,7 @@ export default function PublisherDashboard() {
       </Group>
 
       {/* Stat cards */}
-      <SimpleGrid cols={3}>
+      <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
         <Card withBorder radius="md" p="lg" shadow="xs">
           <Group justify="space-between" mb="xs">
             <ThemeIcon size="md" variant="light" color="blue" radius="md">
@@ -309,21 +310,23 @@ export default function PublisherDashboard() {
         </Card>
       ) : (
         <Card withBorder radius="md" shadow="xs" p={0}>
-          <Table striped highlightOnHover>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th style={{ width: 60 }}>Cover</Table.Th>
-                <Table.Th>Name</Table.Th>
-                <Table.Th>Category</Table.Th>
-                <Table.Th>Price</Table.Th>
-                <Table.Th>Uses</Table.Th>
-                <Table.Th>Revenue</Table.Th>
-                <Table.Th>Status</Table.Th>
-                <Table.Th>Actions</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>{rows}</Table.Tbody>
-          </Table>
+          <ScrollArea type="scroll" offsetScrollbars="x" scrollbarSize={8}>
+            <Table striped highlightOnHover layout="fixed" style={{ minWidth: 720 }}>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th style={{ width: 60 }}>Cover</Table.Th>
+                  <Table.Th>Name</Table.Th>
+                  <Table.Th>Category</Table.Th>
+                  <Table.Th>Price</Table.Th>
+                  <Table.Th>Uses</Table.Th>
+                  <Table.Th>Revenue</Table.Th>
+                  <Table.Th>Status</Table.Th>
+                  <Table.Th>Actions</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>{rows}</Table.Tbody>
+            </Table>
+          </ScrollArea>
         </Card>
       )}
     </Stack>

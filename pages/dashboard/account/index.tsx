@@ -18,7 +18,7 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useDisclosure } from '@mantine/hooks';
+import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { IconFolderFilled, IconUserCircle } from '@tabler/icons-react';
 import { authApi, updateUserDTO } from '@/api/authApi';
 import { CreateNamespaceDto, NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
@@ -33,6 +33,8 @@ const NAMESPACE_TAB_NAME = 'namespace';
 export default function Account() {
   const theme = useMantineTheme();
   const router = useRouter();
+  const isMdUp = useMediaQuery('(min-width: 62em)');
+  const sidebarDividerStyle = isMdUp ? { borderRight: '1px solid #e9ecef' as const } : {};
 
   const iconStyle = { width: rem(20), height: rem(20) };
   const iconStyleSelected = { width: rem(20), height: rem(20), color: 'white' };
@@ -182,7 +184,7 @@ export default function Account() {
           <Stack gap="xl">
             <Card withBorder radius="md" shadow="xs" p={0} style={{ overflow: 'hidden' }}>
               <Grid gutter={0}>
-                <Grid.Col span={4} p="xl" style={{ borderRight: '1px solid #e9ecef' }}>
+                <Grid.Col span={{ base: 12, md: 4 }} p="xl" style={sidebarDividerStyle}>
                   <Title order={5} mb={8}>
                     User Profile
                   </Title>
@@ -190,7 +192,7 @@ export default function Account() {
                     Update your username and public contact email address.
                   </Text>
                 </Grid.Col>
-                <Grid.Col span={8} p="xl">
+                <Grid.Col span={{ base: 12, md: 8 }} p="xl">
                   <form onSubmit={profileForm.onSubmit(handleProfileSubmit)}>
                     <Stack gap="md">
                       <TextInput
@@ -221,7 +223,7 @@ export default function Account() {
 
             <Card withBorder radius="md" shadow="xs" p={0} style={{ overflow: 'hidden' }}>
               <Grid gutter={0}>
-                <Grid.Col span={4} p="xl" style={{ borderRight: '1px solid #e9ecef' }}>
+                <Grid.Col span={{ base: 12, md: 4 }} p="xl" style={sidebarDividerStyle}>
                   <Title order={5} mb={8}>
                     Security
                   </Title>
@@ -229,7 +231,7 @@ export default function Account() {
                     Change your password to keep your account secure.
                   </Text>
                 </Grid.Col>
-                <Grid.Col span={8} p="xl">
+                <Grid.Col span={{ base: 12, md: 8 }} p="xl">
                   <form onSubmit={passwordForm.onSubmit(handlePasswordSubmit)}>
                     <Stack gap="md">
                       <PasswordInput
@@ -238,14 +240,14 @@ export default function Account() {
                         {...passwordForm.getInputProps('currentPassword')}
                       />
                       <Grid gutter="md">
-                        <Grid.Col span={6}>
+                        <Grid.Col span={{ base: 12, sm: 6 }}>
                           <PasswordInput
                             label="New Password"
                             placeholder="••••••••"
                             {...passwordForm.getInputProps('newPassword')}
                           />
                         </Grid.Col>
-                        <Grid.Col span={6}>
+                        <Grid.Col span={{ base: 12, sm: 6 }}>
                           <PasswordInput
                             label="Confirm Password"
                             placeholder="••••••••"
@@ -275,8 +277,8 @@ export default function Account() {
           />
 
           <Stack gap="lg">
-            <Group justify="space-between" align="center">
-              <Box>
+            <Group justify="space-between" align="center" wrap="wrap" gap="md">
+              <Box style={{ minWidth: 0 }}>
                 <Title order={4}>Folders (Namespaces)</Title>
                 <Text size="sm" c="dimmed">
                   Organize your templates into separate namespaces.
@@ -285,7 +287,7 @@ export default function Account() {
               <Button onClick={openAddNamespace}>New Folder</Button>
             </Group>
 
-            <Group>
+            <Group wrap="wrap">
               {fetchNamespacesRequestStatus === RequestStatus.Succeeded && namespaces.length > 0 ? (
                 namespaces.map((namespace) => (
                   <ManagedNamespaceItem
