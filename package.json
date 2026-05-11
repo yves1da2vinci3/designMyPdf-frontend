@@ -13,8 +13,8 @@
     "lint:stylelint": "stylelint '**/*.css' --cache",
     "jest": "jest",
     "jest:watch": "jest --watch",
-    "prettier:check": "prettier --check \"**/*.{ts,tsx}\"",
-    "prettier:write": "prettier --write \"**/*.{ts,tsx}\"",
+    "prettier:check": "node ./node_modules/prettier/bin/prettier.cjs --check \"**/*.{ts,tsx}\"",
+    "prettier:write": "node ./node_modules/prettier/bin/prettier.cjs --write \"**/*.{ts,tsx}\"",
     "test": "npm run prettier:check && npm run lint && npm run typecheck && npm run jest"
   },
   "dependencies": {

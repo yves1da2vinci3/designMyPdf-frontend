@@ -66,6 +66,9 @@ import IDE from './CodeEditor';
 import Preview from './Preview';
 import AddVariable from '@/modals/AddVariable/AddVariable';
 import VariableBadge from '@/components/VariableBadge/VariableBadge';
+import ExportPdfProgress, {
+  type ExportPdfProgressStep,
+} from '@/components/ExportPdfProgress/ExportPdfProgress';
 import { DEFAULT_TEMPLATE } from '@/constants/template';
 import { DEFAULT_FONT, fonts } from '@/constants/fonts';
 import { RequestStatus } from '@/api/request-status.enum';
@@ -189,6 +192,12 @@ const CreateTemplate: React.FC = () => {
   const [chartEditJson, setChartEditJson] = useState('');
   const chartFileInputRef = useRef<HTMLInputElement>(null);
   const chartImportTargetIdRef = useRef<string | null>(null);
+
+  const [exportPdfProgress, setExportPdfProgress] = useState<{
+    opened: boolean;
+    activeStep: ExportPdfProgressStep;
+    error: string | null;
+  } | null>(null);
 
   const mergedTemplateData = useMemo(
     () => ({ ...variables, charts: chartDatasets }),
@@ -588,9 +597,16 @@ const CreateTemplate: React.FC = () => {
   };
 
   const exportPdf = async (): Promise<void> => {
-    try {
-      if (!template) return;
+    if (!template) return;
+    const yieldPaint = () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
 
+    setExportPdfProgress({ opened: true, activeStep: 0, error: null });
+    await yieldPaint();
+
+    try {
       const { default: Handlebars } = await import('handlebars');
       await import('../../../../utils/handlebarsHelpers');
 
@@ -598,6 +614,9 @@ const CreateTemplate: React.FC = () => {
       const compiledTemplate = Handlebars.compile(processedCode);
       let renderedContent = compiledTemplate(mergedTemplateData);
       renderedContent = replaceChartDataPlaceholders(renderedContent, mergedTemplateData);
+
+      setExportPdfProgress({ opened: true, activeStep: 1, error: null });
+      await yieldPaint();
 
       const exportId = String(template.uuid ?? template.ID);
       const blob = await templateApi.exportTemplate({
@@ -610,6 +629,9 @@ const CreateTemplate: React.FC = () => {
         renderedHtml: renderedContent,
       });
 
+      setExportPdfProgress({ opened: true, activeStep: 2, error: null });
+      await yieldPaint();
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -618,11 +640,17 @@ const CreateTemplate: React.FC = () => {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      notificationService.showSuccessNotification('PDF exporté');
-    } catch (error) {
-      notificationService.showErrorNotification(
-        'Failed to prepare document for export. Please try again.',
-      );
+
+      setExportPdfProgress({ opened: true, activeStep: 3, error: null });
+      window.setTimeout(() => {
+        setExportPdfProgress(null);
+      }, 2400);
+    } catch {
+      setExportPdfProgress({
+        opened: true,
+        activeStep: 0,
+        error: "L'export n'a pas pu aboutir. Réessayez dans un instant.",
+      });
     }
   };
 
@@ -729,7 +757,7 @@ const CreateTemplate: React.FC = () => {
   }, [isLoading, hasSeenTour, setHasSeenTour]);
 
   return (
-    <Stack style={{ overflow: 'hidden' }} gap={0}>
+    <Stack style={{ overflow: 'hidden', position: 'relative' }} gap={0}>
       <Head>
         <link
           rel="stylesheet"
@@ -743,6 +771,15 @@ const CreateTemplate: React.FC = () => {
         jsonContent={jsonContent}
         setJsonContent={setJsonContent}
       />
+
+      {exportPdfProgress ? (
+        <ExportPdfProgress
+          opened={exportPdfProgress.opened}
+          activeStep={exportPdfProgress.activeStep}
+          error={exportPdfProgress.error}
+          onDismiss={() => setExportPdfProgress(null)}
+        />
+      ) : null}
 
       {/* AI Prompt Drawer */}
       <Drawer
@@ -1054,7 +1091,9 @@ const CreateTemplate: React.FC = () => {
                 {(() => {
                   const q = templateSearch.toLowerCase();
                   const filtered = q
-                    ? REFERENCE_TEMPLATES.filter((t) => t.name.toLowerCase().includes(q) || t.type.toLowerCase().includes(q))
+                    ? REFERENCE_TEMPLATES.filter(
+                        (t) => t.name.toLowerCase().includes(q) || t.type.toLowerCase().includes(q),
+                      )
                     : REFERENCE_TEMPLATES;
 
                   const groups: Record<string, typeof filtered> = {};
@@ -1079,7 +1118,9 @@ const CreateTemplate: React.FC = () => {
                   if (filtered.length === 0) {
                     return (
                       <Center h={200}>
-                        <Text c="dimmed" size="sm">Aucun modèle trouvé</Text>
+                        <Text c="dimmed" size="sm">
+                          Aucun modèle trouvé
+                        </Text>
                       </Center>
                     );
                   }
@@ -1089,8 +1130,12 @@ const CreateTemplate: React.FC = () => {
                       {Object.entries(groups).map(([type, items]) => (
                         <Box key={type}>
                           <Group mb="sm">
-                            <Text size="sm" fw={600} c="white">{typeLabel[type] || type}</Text>
-                            <Badge size="sm" color={typeColor[type] || 'gray'}>{items.length}</Badge>
+                            <Text size="sm" fw={600} c="white">
+                              {typeLabel[type] || type}
+                            </Text>
+                            <Badge size="sm" color={typeColor[type] || 'gray'}>
+                              {items.length}
+                            </Badge>
                           </Group>
                           <SimpleGrid cols={2} spacing="sm">
                             {items.map((templateItem) => (
@@ -1101,7 +1146,10 @@ const CreateTemplate: React.FC = () => {
                                 withBorder
                                 styles={{
                                   root: {
-                                    borderColor: selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
+                                    borderColor:
+                                      selectedTemplateId === templateItem.id
+                                        ? '#3B82F6'
+                                        : '#373A40',
                                     backgroundColor: '#25262B',
                                     cursor: 'pointer',
                                   },
@@ -1109,11 +1157,19 @@ const CreateTemplate: React.FC = () => {
                                 onClick={() => handleTemplateSelect(templateItem)}
                               >
                                 <Group justify="space-between" wrap="nowrap">
-                                  <Text size="sm" fw={500} c="white" lineClamp={1} style={{ flex: 1 }}>
+                                  <Text
+                                    size="sm"
+                                    fw={500}
+                                    c="white"
+                                    lineClamp={1}
+                                    style={{ flex: 1 }}
+                                  >
                                     {templateItem.name}
                                   </Text>
                                   {selectedTemplateId === templateItem.id && (
-                                    <Badge size="xs" color="blue">✓</Badge>
+                                    <Badge size="xs" color="blue">
+                                      ✓
+                                    </Badge>
                                   )}
                                 </Group>
                                 <Text size="xs" c="dimmed" mt={4}>
@@ -1134,131 +1190,151 @@ const CreateTemplate: React.FC = () => {
             <Tabs.Panel value="marketplace">
               <ScrollArea h="calc(100vh - 200px)" mt="md">
                 {marketplaceLoading ? (
-                  <Center h={200}><Loader color="blue" /></Center>
-                ) : (() => {
-                  const q = templateSearch.toLowerCase();
-                  const filtered = q
-                    ? marketplaceTemplates.filter(
-                        (t) =>
-                          t.name?.toLowerCase().includes(q) ||
-                          t.category?.toLowerCase().includes(q) ||
-                          (t.description && t.description.toLowerCase().includes(q)),
-                      )
-                    : marketplaceTemplates;
+                  <Center h={200}>
+                    <Loader color="blue" />
+                  </Center>
+                ) : (
+                  (() => {
+                    const q = templateSearch.toLowerCase();
+                    const filtered = q
+                      ? marketplaceTemplates.filter(
+                          (t) =>
+                            t.name?.toLowerCase().includes(q) ||
+                            t.category?.toLowerCase().includes(q) ||
+                            (t.description && t.description.toLowerCase().includes(q)),
+                        )
+                      : marketplaceTemplates;
 
-                  if (!marketplaceLoaded) {
+                    if (!marketplaceLoaded) {
+                      return (
+                        <Center h={200}>
+                          <Text c="dimmed" size="sm">
+                            Ouvrez l'onglet pour charger les modèles
+                          </Text>
+                        </Center>
+                      );
+                    }
+
+                    if (filtered.length === 0) {
+                      return (
+                        <Center h={200}>
+                          <Text c="dimmed" size="sm">
+                            {q
+                              ? 'Aucun modèle trouvé'
+                              : 'Aucun modèle disponible sur le Marketplace'}
+                          </Text>
+                        </Center>
+                      );
+                    }
+
                     return (
-                      <Center h={200}>
-                        <Text c="dimmed" size="sm">Ouvrez l'onglet pour charger les modèles</Text>
-                      </Center>
-                    );
-                  }
-
-                  if (filtered.length === 0) {
-                    return (
-                      <Center h={200}>
-                        <Text c="dimmed" size="sm">
-                          {q ? 'Aucun modèle trouvé' : 'Aucun modèle disponible sur le Marketplace'}
-                        </Text>
-                      </Center>
-                    );
-                  }
-
-                  return (
-                    <Stack gap="xs" maw={300} mx="auto">
-                      {filtered.map((tpl) => {
-                        const isFree = !tpl.price || tpl.price === 0;
-                        const cover = tpl.cover_image_url?.trim();
-                        return (
-                          <Card
-                            key={tpl.ID}
-                            padding={0}
-                            radius="md"
-                            withBorder
-                            styles={{
-                              root: {
-                                borderColor: selectedTemplateId === String(tpl.ID) ? '#3B82F6' : '#373A40',
-                                backgroundColor: '#25262B',
-                                cursor: isFree ? 'pointer' : 'default',
-                                opacity: isFree ? 1 : 0.7,
-                                overflow: 'hidden',
-                                maxWidth: '100%',
-                              },
-                            }}
-                            onClick={() => isFree && handleMarketplaceSelect(tpl)}
-                          >
-                            <Box
-                              pos="relative"
-                              h={56}
-                              style={{ overflow: 'hidden' }}
+                      <Stack gap="xs" maw={300} mx="auto">
+                        {filtered.map((tpl) => {
+                          const isFree = !tpl.price || tpl.price === 0;
+                          const cover = tpl.cover_image_url?.trim();
+                          return (
+                            <Card
+                              key={tpl.ID}
+                              padding={0}
+                              radius="md"
+                              withBorder
+                              styles={{
+                                root: {
+                                  borderColor:
+                                    selectedTemplateId === String(tpl.ID) ? '#3B82F6' : '#373A40',
+                                  backgroundColor: '#25262B',
+                                  cursor: isFree ? 'pointer' : 'default',
+                                  opacity: isFree ? 1 : 0.7,
+                                  overflow: 'hidden',
+                                  maxWidth: '100%',
+                                },
+                              }}
+                              onClick={() => isFree && handleMarketplaceSelect(tpl)}
                             >
-                              {cover ? (
-                                <>
-                                  <Image
-                                    src={cover}
-                                    alt={tpl.name || 'Cover'}
-                                    h={56}
-                                    w="100%"
-                                    fit="cover"
-                                    fallbackSrc="https://placehold.co/400x200?text=Template"
-                                  />
-                                  <ActionIcon
-                                    size="sm"
-                                    variant="filled"
-                                    color="dark"
-                                    radius="md"
-                                    aria-label="Aperçu de la couverture"
-                                    style={{
-                                      position: 'absolute',
-                                      bottom: 6,
-                                      right: 6,
-                                      boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
-                                    }}
-                                    onClick={(ev) => {
-                                      ev.stopPropagation();
-                                      setCoverPreviewUrl(cover);
-                                    }}
-                                  >
-                                    <IconEye size={16} />
-                                  </ActionIcon>
-                                </>
-                              ) : (
-                                <Box
-                                  h="100%"
-                                  style={{
-                                    background: 'linear-gradient(135deg, #373A40 0%, #1A1B1E 100%)',
-                                  }}
-                                />
-                              )}
-                            </Box>
-                            <Box p="xs">
-                              <Group justify="space-between" wrap="nowrap" gap={6} mb={4}>
-                                <Text size="xs" fw={600} c="white" lineClamp={1} style={{ flex: 1 }}>
-                                  {tpl.name}
-                                </Text>
-                                {isFree ? (
-                                  <Badge size="xs" color="green">Gratuit</Badge>
+                              <Box pos="relative" h={56} style={{ overflow: 'hidden' }}>
+                                {cover ? (
+                                  <>
+                                    <Image
+                                      src={cover}
+                                      alt={tpl.name || 'Cover'}
+                                      h={56}
+                                      w="100%"
+                                      fit="cover"
+                                      fallbackSrc="https://placehold.co/400x200?text=Template"
+                                    />
+                                    <ActionIcon
+                                      size="sm"
+                                      variant="filled"
+                                      color="dark"
+                                      radius="md"
+                                      aria-label="Aperçu de la couverture"
+                                      style={{
+                                        position: 'absolute',
+                                        bottom: 6,
+                                        right: 6,
+                                        boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
+                                      }}
+                                      onClick={(ev) => {
+                                        ev.stopPropagation();
+                                        setCoverPreviewUrl(cover);
+                                      }}
+                                    >
+                                      <IconEye size={16} />
+                                    </ActionIcon>
+                                  </>
                                 ) : (
-                                  <Badge size="xs" color="orange" leftSection={<IconLock size={10} />}>
-                                    {tpl.price}€
-                                  </Badge>
+                                  <Box
+                                    h="100%"
+                                    style={{
+                                      background:
+                                        'linear-gradient(135deg, #373A40 0%, #1A1B1E 100%)',
+                                    }}
+                                  />
                                 )}
-                              </Group>
-                              {tpl.description?.trim() ? (
-                                <Text size="xs" c="dimmed" lineClamp={2} mb={4}>
-                                  {tpl.description.trim()}
-                                </Text>
-                              ) : null}
-                              {tpl.category && (
-                                <Text size="xs" c="dimmed">{tpl.category}</Text>
-                              )}
-                            </Box>
-                          </Card>
-                        );
-                      })}
-                    </Stack>
-                  );
-                })()}
+                              </Box>
+                              <Box p="xs">
+                                <Group justify="space-between" wrap="nowrap" gap={6} mb={4}>
+                                  <Text
+                                    size="xs"
+                                    fw={600}
+                                    c="white"
+                                    lineClamp={1}
+                                    style={{ flex: 1 }}
+                                  >
+                                    {tpl.name}
+                                  </Text>
+                                  {isFree ? (
+                                    <Badge size="xs" color="green">
+                                      Gratuit
+                                    </Badge>
+                                  ) : (
+                                    <Badge
+                                      size="xs"
+                                      color="orange"
+                                      leftSection={<IconLock size={10} />}
+                                    >
+                                      {tpl.price}€
+                                    </Badge>
+                                  )}
+                                </Group>
+                                {tpl.description?.trim() ? (
+                                  <Text size="xs" c="dimmed" lineClamp={2} mb={4}>
+                                    {tpl.description.trim()}
+                                  </Text>
+                                ) : null}
+                                {tpl.category && (
+                                  <Text size="xs" c="dimmed">
+                                    {tpl.category}
+                                  </Text>
+                                )}
+                              </Box>
+                            </Card>
+                          );
+                        })}
+                      </Stack>
+                    );
+                  })()
+                )}
               </ScrollArea>
             </Tabs.Panel>
           </Tabs>
@@ -1312,14 +1388,13 @@ const CreateTemplate: React.FC = () => {
         <ScrollArea mah={480}>
           <Stack gap="sm">
             <Text size="xs" c="dimmed">
-              CSV / Excel (1re feuille) : 1re colonne = libellés, colonnes suivantes = séries numériques.
-              Scatter / bubble : JSON Chart.js recommandé.
+              CSV / Excel (1re feuille) : 1re colonne = libellés, colonnes suivantes = séries
+              numériques. Scatter / bubble : JSON Chart.js recommandé.
             </Text>
             {extractChartBindingsFromTemplate(code).map(({ chartId, chartType }) => {
               const raw = chartDatasets[chartId];
               const hasData = raw != null;
-              const valid =
-                hasData && isChartDataValidForType(raw, chartType ?? null);
+              const valid = hasData && isChartDataValidForType(raw, chartType ?? null);
               let statusLabel = 'Manquant';
               let statusColor: 'teal' | 'orange' | 'red' = 'orange';
               if (hasData && valid) {
@@ -1352,7 +1427,11 @@ const CreateTemplate: React.FC = () => {
                     <Button size="xs" variant="light" onClick={() => openChartJsonEditor(chartId)}>
                       Modifier JSON
                     </Button>
-                    <Button size="xs" variant="default" onClick={() => beginChartFileImport(chartId)}>
+                    <Button
+                      size="xs"
+                      variant="default"
+                      onClick={() => beginChartFileImport(chartId)}
+                    >
                       Importer fichier
                     </Button>
                   </Group>
@@ -1904,8 +1983,8 @@ const CreateTemplate: React.FC = () => {
                       Graphiques
                     </Text>
                     <Text size="xs" c="dimmed" mb="sm">
-                      Ajoutez un type ci-dessous. Les données sont séparées du JSON « variables » (panneau
-                      ci-dessous).
+                      Ajoutez un type ci-dessous. Les données sont séparées du JSON « variables »
+                      (panneau ci-dessous).
                     </Text>
                     {(() => {
                       const bindings = extractChartBindingsFromTemplate(code);
@@ -1928,30 +2007,32 @@ const CreateTemplate: React.FC = () => {
                         <Box
                           key={type}
                           onClick={() => {
-                              const editor = editorRef.current;
-                              if (!editor) {
-                                notificationService.showErrorNotification(
-                                  'Éditeur non prêt — réessayez dans une seconde.',
-                                );
-                                return;
-                              }
-                              const model = editor.getModel();
-                              if (!model) {
-                                notificationService.showErrorNotification('Modèle éditeur introuvable.');
-                                return;
-                              }
+                            const editor = editorRef.current;
+                            if (!editor) {
+                              notificationService.showErrorNotification(
+                                'Éditeur non prêt — réessayez dans une seconde.',
+                              );
+                              return;
+                            }
+                            const model = editor.getModel();
+                            if (!model) {
+                              notificationService.showErrorNotification(
+                                'Modèle éditeur introuvable.',
+                              );
+                              return;
+                            }
 
-                              const lastLine = model.getLineCount();
-                              const lastLineContent = model.getLineContent(lastLine);
-                              const chartId = `${type}Chart${Math.random().toString(36).substr(2, 9)}`;
-                              const chartData = generateChartData(type as keyof typeof CHART_TYPES);
+                            const lastLine = model.getLineCount();
+                            const lastLineContent = model.getLineContent(lastLine);
+                            const chartId = `${type}Chart${Math.random().toString(36).substr(2, 9)}`;
+                            const chartData = generateChartData(type as keyof typeof CHART_TYPES);
 
-                              setChartDatasets((prev) => ({
-                                ...prev,
-                                [chartId]: chartData,
-                              }));
+                            setChartDatasets((prev) => ({
+                              ...prev,
+                              [chartId]: chartData,
+                            }));
 
-                              const text = `\n\n<!-- Chart Section -->
+                            const text = `\n\n<!-- Chart Section -->
 <div class="w-full py-4" style="display:flex;justify-content:center;align-items:center;">
   <canvas
     id="${chartId}"
@@ -1961,26 +2042,26 @@ const CreateTemplate: React.FC = () => {
   ></canvas>
 </div>`;
 
-                              const position = {
-                                lineNumber: lastLine,
-                                column: lastLineContent.length + 1,
-                              };
+                            const position = {
+                              lineNumber: lastLine,
+                              column: lastLineContent.length + 1,
+                            };
 
-                              const range = {
-                                startLineNumber: position.lineNumber,
-                                startColumn: position.column,
-                                endLineNumber: position.lineNumber,
-                                endColumn: position.column,
-                              };
+                            const range = {
+                              startLineNumber: position.lineNumber,
+                              startColumn: position.column,
+                              endLineNumber: position.lineNumber,
+                              endColumn: position.column,
+                            };
 
-                              const op = {
-                                identifier: { major: 1, minor: 1 },
-                                range,
-                                text,
-                                forceMoveMarkers: true,
-                              };
+                            const op = {
+                              identifier: { major: 1, minor: 1 },
+                              range,
+                              text,
+                              forceMoveMarkers: true,
+                            };
 
-                              editor.executeEdits('chart-insert', [op]);
+                            editor.executeEdits('chart-insert', [op]);
                           }}
                           style={{
                             backgroundColor: '#25262B',

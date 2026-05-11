@@ -339,8 +339,14 @@ export async function exportPdfDocument({
         ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
         ctx.drawImage(
           fullCanvas,
-          0, sourceY, fullCanvas.width, sourceHeight,
-          0, 0, fullCanvas.width, sourceHeight,
+          0,
+          sourceY,
+          fullCanvas.width,
+          sourceHeight,
+          0,
+          0,
+          fullCanvas.width,
+          sourceHeight,
         );
       }
 
@@ -373,7 +379,7 @@ export async function exportPdfDocument({
     notifications.update({
       id: exportNotificationId,
       title: 'Échec export',
-      message: 'Impossible d\'exporter le document. Réessayez.',
+      message: "Impossible d'exporter le document. Réessayez.",
       color: 'red',
       loading: false,
       autoClose: 5000,

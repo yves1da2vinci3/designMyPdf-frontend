@@ -233,7 +233,14 @@ export function parseChartJsonFile(text: string): unknown {
 
 function parseChartGridRows(rows: string[][]): ParsedChartTabular {
   const data = rows
-    .map((r) => r.map((c) => String(c ?? '').trim().replace(/^"|"$/g, '').replace(/^'|'$/g, '')))
+    .map((r) =>
+      r.map((c) =>
+        String(c ?? '')
+          .trim()
+          .replace(/^"|"$/g, '')
+          .replace(/^'|'$/g, ''),
+      ),
+    )
     .filter((r) => r.some((c) => c.length > 0));
   if (data.length < 2) {
     throw new Error('Tableau : au moins une ligne d’en-tête et une ligne de données.');
