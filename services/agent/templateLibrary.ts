@@ -1208,7 +1208,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
   },
   {
     id: 'pitch-deck',
-    name: 'Pitch Deck d\'Entreprise',
+    name: "Pitch Deck d'Entreprise",
     type: 'other',
     code: `<div class="bg-white p-8">
   <header class="mb-8 pb-6 border-b-2 border-purple-600">

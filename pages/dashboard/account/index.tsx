@@ -1,23 +1,29 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import {
+  Box,
   Button,
+  Card,
+  Divider,
+  Grid,
   Group,
   LoadingOverlay,
+  PasswordInput,
   Stack,
   Tabs,
   Text,
+  TextInput,
   Title,
   rem,
   useMantineTheme,
 } from '@mantine/core';
+import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
-import { IconUserCircle, IconFolderFilled } from '@tabler/icons-react';
+import { IconFolderFilled, IconUserCircle } from '@tabler/icons-react';
 import { authApi, updateUserDTO } from '@/api/authApi';
 import { CreateNamespaceDto, NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
 import { RequestStatus } from '@/api/request-status.enum';
 import ManagedNamespaceItem from '@/components/ManageNamespaceItem/ManagedNamespaceItem';
-import ModifyUserForm from '@/forms/ModifyUser';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import AddNamespace from '@/modals/AddNamespace/AddNamespace';
 
@@ -100,6 +106,29 @@ export default function Account() {
     }
   };
 
+  const profileForm = useForm({
+    initialValues: { name: '', email: '' },
+  });
+
+  const passwordForm = useForm({
+    initialValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
+    validate: {
+      newPassword: (v: string) => (v.length < 6 ? 'At least 6 characters' : null),
+      confirmPassword: (
+        v: string,
+        vals: { newPassword: string; confirmPassword: string; currentPassword: string },
+      ) => (v !== vals.newPassword ? 'Passwords do not match' : null),
+    },
+  });
+
+  const handleProfileSubmit = (values: { name: string; email: string }) => {
+    updateUserHandler({ userName: values.name, password: '' });
+  };
+
+  const handlePasswordSubmit = (values: { currentPassword: string; newPassword: string }) => {
+    updateUserHandler({ userName: '', password: values.newPassword });
+  };
+
   return (
     <>
       <LoadingOverlay
@@ -108,12 +137,21 @@ export default function Account() {
           fetchNamespacesRequestStatus === RequestStatus.NotStated
         }
       />
+
+      <Box mb="xl">
+        <Title order={2} fw={700}>
+          Account Settings
+        </Title>
+        <Text c="dimmed" size="sm" mt={4}>
+          Manage your personal information and file organization.
+        </Text>
+      </Box>
+
       <Tabs
-        flex={1}
         onChange={(value) => setSelectedTabName(value)}
         defaultValue={selectedTabName || ACCOUNT_TAB_NAME}
       >
-        <Tabs.List>
+        <Tabs.List mb="xl">
           <Tabs.Tab
             value={ACCOUNT_TAB_NAME}
             style={() => (selectedTabName === ACCOUNT_TAB_NAME ? selectedStyle : notselectedStyle)}
@@ -136,29 +174,95 @@ export default function Account() {
               />
             }
           >
-            Namespaces
+            Folders (Namespaces)
           </Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value={ACCOUNT_TAB_NAME}>
-          <Stack
-            flex={1}
-            h="90vh"
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <ModifyUserForm
-              onSubmit={(values) =>
-                updateUserHandler({
-                  userName: values.name,
-                  password: values.password,
-                })
-              }
-              requestStatus={updateUserRequestStatus}
-            />
+          <Stack gap="xl">
+            <Card withBorder radius="md" shadow="xs" p={0} style={{ overflow: 'hidden' }}>
+              <Grid gutter={0}>
+                <Grid.Col span={4} p="xl" style={{ borderRight: '1px solid #e9ecef' }}>
+                  <Title order={5} mb={8}>
+                    User Profile
+                  </Title>
+                  <Text size="sm" c="dimmed">
+                    Update your username and public contact email address.
+                  </Text>
+                </Grid.Col>
+                <Grid.Col span={8} p="xl">
+                  <form onSubmit={profileForm.onSubmit(handleProfileSubmit)}>
+                    <Stack gap="md">
+                      <TextInput
+                        label="Username"
+                        placeholder="your_username"
+                        {...profileForm.getInputProps('name')}
+                      />
+                      <TextInput
+                        label="Contact Email"
+                        placeholder="you@example.com"
+                        {...profileForm.getInputProps('email')}
+                      />
+                      <Group justify="flex-end">
+                        <Button
+                          type="submit"
+                          loading={updateUserRequestStatus === RequestStatus.InProgress}
+                        >
+                          Save Changes
+                        </Button>
+                      </Group>
+                    </Stack>
+                  </form>
+                </Grid.Col>
+              </Grid>
+            </Card>
+
+            <Divider />
+
+            <Card withBorder radius="md" shadow="xs" p={0} style={{ overflow: 'hidden' }}>
+              <Grid gutter={0}>
+                <Grid.Col span={4} p="xl" style={{ borderRight: '1px solid #e9ecef' }}>
+                  <Title order={5} mb={8}>
+                    Security
+                  </Title>
+                  <Text size="sm" c="dimmed">
+                    Change your password to keep your account secure.
+                  </Text>
+                </Grid.Col>
+                <Grid.Col span={8} p="xl">
+                  <form onSubmit={passwordForm.onSubmit(handlePasswordSubmit)}>
+                    <Stack gap="md">
+                      <PasswordInput
+                        label="Current Password"
+                        placeholder="••••••••"
+                        {...passwordForm.getInputProps('currentPassword')}
+                      />
+                      <Grid gutter="md">
+                        <Grid.Col span={6}>
+                          <PasswordInput
+                            label="New Password"
+                            placeholder="••••••••"
+                            {...passwordForm.getInputProps('newPassword')}
+                          />
+                        </Grid.Col>
+                        <Grid.Col span={6}>
+                          <PasswordInput
+                            label="Confirm Password"
+                            placeholder="••••••••"
+                            {...passwordForm.getInputProps('confirmPassword')}
+                          />
+                        </Grid.Col>
+                      </Grid>
+                      <Group justify="flex-end">
+                        <Button variant="outline" type="submit">
+                          Update Password
+                        </Button>
+                      </Group>
+                    </Stack>
+                  </form>
+                </Grid.Col>
+              </Grid>
+            </Card>
           </Stack>
         </Tabs.Panel>
 
@@ -170,14 +274,17 @@ export default function Account() {
             addNamespaceRequestatus={addNamespaceRequestStatus}
           />
 
-          <Stack flex={1} h="90vh" mt={8}>
-            <Group px={12} style={{ borderBottom: 2, borderColor: 'red' }} justify="space-between">
-              <Title order={5}>Namespaces</Title>
-              <Button onClick={openAddNamespace}>create new nameSpace</Button>
+          <Stack gap="lg">
+            <Group justify="space-between" align="center">
+              <Box>
+                <Title order={4}>Folders (Namespaces)</Title>
+                <Text size="sm" c="dimmed">
+                  Organize your templates into separate namespaces.
+                </Text>
+              </Box>
+              <Button onClick={openAddNamespace}>New Folder</Button>
             </Group>
-            <Text mx={12} c="gray">
-              Separate your templates into namespace
-            </Text>
+
             <Group>
               {fetchNamespacesRequestStatus === RequestStatus.Succeeded && namespaces.length > 0 ? (
                 namespaces.map((namespace) => (
@@ -189,9 +296,9 @@ export default function Account() {
                   />
                 ))
               ) : fetchNamespacesRequestStatus === RequestStatus.Failed ? (
-                <Title>Failed to fetch namespaces</Title>
+                <Text c="red">Failed to fetch folders.</Text>
               ) : (
-                <Title>No Namespaces</Title>
+                <Text c="dimmed">No folders yet.</Text>
               )}
             </Group>
           </Stack>

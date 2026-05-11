@@ -18,6 +18,7 @@ export interface KeyDTO {
   key_count: number;
   key_count_used: number;
   created_at: string;
+  last_used_at?: string;
 }
 
 export const keyApi = {

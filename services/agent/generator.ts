@@ -26,9 +26,7 @@ export async function generateCode(
   processedImages?: ProcessedImage[],
 ): Promise<string> {
   // Récupérer le template de référence si disponible
-  const referenceTemplate = plan.selectedTemplate
-    ? getTemplateById(plan.selectedTemplate)
-    : null;
+  const referenceTemplate = plan.selectedTemplate ? getTemplateById(plan.selectedTemplate) : null;
 
   // Construire le contenu du message
   const content: Array<{ type: string; text?: string; image_url?: string }> = [];
@@ -42,22 +40,26 @@ export async function generateCode(
   // Construire le prompt de génération
   const generationPrompt = `You are an expert HTML/Tailwind CSS developer specialized in PDF template generation. Generate production-ready HTML code based on the provided plan.
 
-${processedImages && processedImages.length > 0 
-  ? `REFERENCE IMAGES: ${processedImages.length} image(s) provided for visual reference. Match the design as closely as possible.`
-  : ''}
+${
+  processedImages && processedImages.length > 0
+    ? `REFERENCE IMAGES: ${processedImages.length} image(s) provided for visual reference. Match the design as closely as possible.`
+    : ''
+}
 
 TEMPLATE PLAN:
 ${JSON.stringify(plan, null, 2)}
 
-${referenceTemplate 
-  ? `REFERENCE TEMPLATE (use as inspiration, but adapt to the plan):
+${
+  referenceTemplate
+    ? `REFERENCE TEMPLATE (use as inspiration, but adapt to the plan):
 \`\`\`html
 ${referenceTemplate.code}
 \`\`\`
 
 Variables used in reference: ${referenceTemplate.variables.join(', ')}
 `
-  : ''}
+    : ''
+}
 
 ${PDF_SURVIVAL_GUIDE}
 
@@ -74,11 +76,13 @@ CRITICAL REQUIREMENTS:
    - Conditional sections ({{#if condition}}...{{/if}})
 7. Follow the color palette exactly: ${Object.values(plan.colorPalette).join(', ')}
 8. Use the typography classes specified: ${Object.values(plan.typography).join(', ')}
-9. Structure the code according to the sections: ${plan.sections.map(s => s.name).join(', ')}
+9. Structure the code according to the sections: ${plan.sections.map((s) => s.name).join(', ')}
 10. Apply the style properties for each section
-${plan.imageAnalysis 
-  ? `11. Match the detected layout and components from image analysis: ${plan.imageAnalysis.components.join(', ')}`
-  : ''}
+${
+  plan.imageAnalysis
+    ? `11. Match the detected layout and components from image analysis: ${plan.imageAnalysis.components.join(', ')}`
+    : ''
+}
 
 OUTPUT FORMAT:
 - Start with <div class="...">

@@ -23,10 +23,7 @@ const model = new ChatAnthropic({
 /**
  * Révision et correction du code généré
  */
-export async function reviewAndCorrect(
-  code: string,
-  plan: TemplatePlan,
-): Promise<ReviewedCode> {
+export async function reviewAndCorrect(code: string, plan: TemplatePlan): Promise<ReviewedCode> {
   // Validation automatique des contraintes PDF
   const validation = validatePDFConstraints(code);
 

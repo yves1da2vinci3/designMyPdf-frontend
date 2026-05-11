@@ -7,7 +7,7 @@ export default function Document() {
       <Head>
         <ColorSchemeScript />
       </Head>
-      <body>
+      <body suppressHydrationWarning>
         <Main />
         <NextScript />
       </body>

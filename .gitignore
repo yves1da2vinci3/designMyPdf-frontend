@@ -42,6 +42,9 @@ build/Release
 node_modules/
 jspm_packages/
 
+# Projet Yarn 4 : ne pas committer le lock npm (évite conflit avec yarn.lock)
+package-lock.json
+
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 

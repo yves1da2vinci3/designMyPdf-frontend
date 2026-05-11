@@ -65,17 +65,38 @@ export interface TemplateDTO {
   uuid?: string;
   CreatedAt?: string;
   NamespaceID: number;
+  category?: string;
+  cover_image_url?: string;
+  is_marketplace?: boolean;
+  is_published?: boolean;
+  uses_count?: number;
 }
 
 export interface PublishToMarketplaceDto {
-  templateId: string;
+  templateId: number;
   price: number;
+  description: string;
+  category: string;
+  features: string[];
+  coverImageURL: string;
+}
+
+export interface MarketplaceListingDTO {
+  id: number;
   name: string;
   description: string;
-  preview: string;
-  content: string;
-  variables: any;
-  fonts: string[];
+  cover_image_url: string;
+  price: number;
+  is_marketplace: boolean;
+  is_published: boolean;
+  category: string;
+  features: string[];
+  uses_count: number;
+  revenue: number;
+}
+
+export interface CopyTemplateDto {
+  namespaceId: number;
 }
 
 export interface ExportTemplateDto {
@@ -152,31 +173,43 @@ export const templateApi = {
   },
 
   async publishToMarketplace(data: PublishToMarketplaceDto): Promise<TemplateDTO> {
-    const response = await fetch('/api/templates/marketplace/publish', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-    return response.json();
+    const res = await apiClient.post('/marketplace/publish', data);
+    return res.data.template;
   },
 
-  async getMarketplaceTemplates(): Promise<TemplateDTO[]> {
-    const response = await fetch('/api/templates/marketplace');
-    return response.json();
+  async getMarketplaceTemplates(category?: string): Promise<TemplateDTO[]> {
+    const params = category ? { category } : {};
+    const res = await apiClient.get('/marketplace', { params });
+    return res.data.templates || [];
   },
 
   async getMarketplaceTemplate(id: string): Promise<TemplateDTO> {
-    const response = await fetch(`/api/templates/marketplace/${id}`);
-    return response.json();
+    const res = await apiClient.get(`/marketplace/${id}`);
+    return res.data.template;
   },
 
-  async purchaseTemplate(id: string): Promise<TemplateDTO> {
-    const response = await fetch(`/api/templates/marketplace/${id}/purchase`, {
-      method: 'POST',
+  async purchaseTemplate(id: string): Promise<{ success: boolean; message: string }> {
+    const res = await apiClient.post(`/marketplace/${id}/purchase`);
+    return res.data;
+  },
+
+  async copyFreeTemplate(id: string, namespaceId: number): Promise<TemplateDTO> {
+    const res = await apiClient.post(`/marketplace/${id}/copy`, { namespaceId });
+    return res.data.template;
+  },
+
+  async uploadCoverImage(file: File): Promise<{ url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await apiClient.post('/upload/cover-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
-    return response.json();
+    return { url: res.data.url };
+  },
+
+  async getMyListings(): Promise<MarketplaceListingDTO[]> {
+    const res = await apiClient.get('/marketplace/my-listings');
+    return res.data.listings || [];
   },
 
   async exportTemplate(data: ExportTemplateDto): Promise<Blob> {

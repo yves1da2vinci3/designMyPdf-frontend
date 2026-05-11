@@ -36,14 +36,16 @@ export async function planTemplate(
   // Ajouter le prompt texte
   const planningPrompt = `You are an expert UI/UX designer and system architect. Your task is to analyze the user's request and create a detailed plan for generating a PDF template.
 
-${processedImages && processedImages.length > 0 
-  ? `IMAGES PROVIDED: The user has provided ${processedImages.length} image(s) for reference. Analyze these images carefully to extract:
+${
+  processedImages && processedImages.length > 0
+    ? `IMAGES PROVIDED: The user has provided ${processedImages.length} image(s) for reference. Analyze these images carefully to extract:
 - Visual structure and layout
 - Color palette and dominant colors
 - Typography hierarchy
 - UI components (headers, tables, cards, etc.)
 - Overall design style`
-  : ''}
+    : ''
+}
 
 USER REQUEST: ${userPrompt}
 
@@ -81,14 +83,16 @@ Your task is to create a structured plan in JSON format with the following struc
     "avoidSticky": true,
     "useExplicitWidths": true
   }
-${processedImages && processedImages.length > 0 
-  ? `,
+${
+  processedImages && processedImages.length > 0
+    ? `,
   "imageAnalysis": {
     "detectedColors": ["array of detected color names"],
     "layout": "description of layout structure",
     "components": ["list of detected UI components"]
   }`
-  : ''}
+    : ''
+}
 }
 
 IMPORTANT:
@@ -97,9 +101,11 @@ IMPORTANT:
 - Identify all sections needed (header, body, footer, etc.)
 - List all components that should be in each section
 - Always set pdfConstraints to true for all constraints
-${processedImages && processedImages.length > 0 
-  ? '- Extract exact colors and layout from the provided images'
-  : ''}
+${
+  processedImages && processedImages.length > 0
+    ? '- Extract exact colors and layout from the provided images'
+    : ''
+}
 
 Return ONLY valid JSON, no markdown, no explanations.`;
 
@@ -164,9 +170,17 @@ function createDefaultPlan(userPrompt: string): any {
   const lowerPrompt = userPrompt.toLowerCase();
   let documentType: 'invoice' | 'resume' | 'report' | 'other' = 'other';
 
-  if (lowerPrompt.includes('invoice') || lowerPrompt.includes('facture') || lowerPrompt.includes('bill')) {
+  if (
+    lowerPrompt.includes('invoice') ||
+    lowerPrompt.includes('facture') ||
+    lowerPrompt.includes('bill')
+  ) {
     documentType = 'invoice';
-  } else if (lowerPrompt.includes('resume') || lowerPrompt.includes('cv') || lowerPrompt.includes('curriculum')) {
+  } else if (
+    lowerPrompt.includes('resume') ||
+    lowerPrompt.includes('cv') ||
+    lowerPrompt.includes('curriculum')
+  ) {
     documentType = 'resume';
   } else if (lowerPrompt.includes('report') || lowerPrompt.includes('rapport')) {
     documentType = 'report';

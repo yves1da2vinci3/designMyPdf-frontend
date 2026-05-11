@@ -13,7 +13,6 @@ import {
   Box,
   Grid,
   ActionIcon,
-  Menu,
   Input,
   Flex,
   Tooltip,
@@ -21,14 +20,7 @@ import {
 import { useDisclosure } from '@mantine/hooks';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import {
-  IconPlus,
-  IconSearch,
-  IconDotsVertical,
-  IconFileText,
-  IconFolderPlus,
-  IconHelp,
-} from '@tabler/icons-react';
+import { IconPlus, IconSearch, IconHelp } from '@tabler/icons-react';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import TemplateItem from '@/components/TemplateItem/TemplateItem';
 import AddTemplate from '@/modals/AddTemplate/AddTemplate';
@@ -37,7 +29,7 @@ import AddNamespace from '@/modals/AddNamespace/AddNamespace';
 import { CreateTemplateDto, TemplateDTO, templateApi } from '@/api/templateApi';
 import { CreateNamespaceDto, NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
 import { RequestStatus } from '@/api/request-status.enum';
-import { manuallyStartTour, resetTour } from '@/utils/tourUtils';
+import { manuallyStartTour } from '@/utils/tourUtils';
 import { useLocalStorage } from '@/utils/useLocalStorage';
 import 'driver.js/dist/driver.css';
 
@@ -217,68 +209,48 @@ function TemplatesPage() {
           justify="space-between"
           style={{ borderBottom: '1px solid #eaeaea' }}
           id="templates-header"
+          align="center"
         >
+          <Box>
+            <Title order={2} fw={700}>
+              Template Library
+            </Title>
+            <Text size="sm" c="dimmed">
+              Manage and organize your PDF generation logic.
+            </Text>
+          </Box>
           <Group>
-            <Title order={2}>Templates</Title>
-            {showTourButton && (
-              <Tooltip label="Show guided tour">
-                <Button
-                  variant="subtle"
-                  size="sm"
-                  leftSection={<IconHelp size={16} />}
-                  onClick={() => {
-                    manuallyStartTour(() => {
-                      setHasSeenTour(true);
-                    }, 'dashboard');
-                  }}
-                >
-                  Help Tour
-                </Button>
-              </Tooltip>
-            )}
-          </Group>
-          <Group>
+            <Input
+              id="search-templates"
+              leftSection={<IconSearch size={16} />}
+              placeholder="Search templates or folders..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.currentTarget.value)}
+              style={{ width: '260px' }}
+            />
             <Button
               id="create-template-button"
               leftSection={<IconPlus size={16} />}
               onClick={openAddTemplate}
               variant="filled"
             >
-              New template
+              New Template
             </Button>
-            <Button
-              id="create-folder-button"
-              leftSection={<IconFolderPlus size={16} />}
-              onClick={openAddNamespace}
-              variant="outline"
-            >
-              New folder
-            </Button>
-            <Menu shadow="md" width={200} position="bottom-end">
-              <Menu.Target>
-                <ActionIcon variant="subtle" size="lg">
-                  <IconDotsVertical size={18} />
-                </ActionIcon>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Item onClick={() => router.push('/dashboard/account?tabName=namespace')}>
-                  Manage folders
-                </Menu.Item>
-                <Menu.Item
+            {showTourButton && (
+              <Tooltip label="Show guided tour">
+                <ActionIcon
+                  variant="subtle"
+                  size="lg"
                   onClick={() => {
-                    resetTour('dashboard');
-                    setHasSeenTour(false);
-                    setTimeout(() => {
-                      manuallyStartTour(() => {
-                        setHasSeenTour(true);
-                      }, 'dashboard');
-                    }, 500);
+                    manuallyStartTour(() => {
+                      setHasSeenTour(true);
+                    }, 'dashboard');
                   }}
                 >
-                  Reset & Show Tour
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
+                  <IconHelp size={18} />
+                </ActionIcon>
+              </Tooltip>
+            )}
           </Group>
         </Group>
 
@@ -287,7 +259,7 @@ function TemplatesPage() {
           {/* Sidebar */}
           <Box
             id="folders-section"
-            w={250}
+            w={240}
             p="md"
             style={{
               borderRight: '1px solid #eaeaea',
@@ -295,16 +267,45 @@ function TemplatesPage() {
               overflowY: 'auto',
             }}
           >
-            <Text fw={600} mb="md">
+            <Text
+              size="xs"
+              fw={700}
+              tt="uppercase"
+              style={{ letterSpacing: '0.05em' }}
+              c="dimmed"
+              mb="sm"
+            >
               Folders
             </Text>
-            <Stack>
+            <Stack gap={4} mb="xl">
               {fetchTemplatesRequestStatus === RequestStatus.InProgress ? (
                 <Center>
                   <Loader size="sm" />
                 </Center>
               ) : (
                 <>
+                  <Box
+                    px="sm"
+                    py={6}
+                    mb={4}
+                    style={{
+                      borderRadius: 6,
+                      backgroundColor: selectedNamespaceId === null ? '#e7f5ff' : 'transparent',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                    onClick={() => setSelectedNamespaceId(null)}
+                  >
+                    <Text
+                      size="sm"
+                      fw={selectedNamespaceId === null ? 600 : 400}
+                      c={selectedNamespaceId === null ? 'blue' : 'inherit'}
+                    >
+                      All Templates
+                    </Text>
+                  </Box>
                   {namespaces.map((namespace) => (
                     <NamespaceItem
                       key={namespace.ID}
@@ -315,25 +316,55 @@ function TemplatesPage() {
                       namespace={namespace}
                     />
                   ))}
+                  <Box
+                    px="sm"
+                    py={6}
+                    id="create-folder-button"
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                    onClick={openAddNamespace}
+                  >
+                    <Text size="sm" c="blue">
+                      + New Folder
+                    </Text>
+                  </Box>
                 </>
               )}
             </Stack>
+
+            <Text
+              size="xs"
+              fw={700}
+              tt="uppercase"
+              style={{ letterSpacing: '0.05em' }}
+              c="dimmed"
+              mb="sm"
+            >
+              Tags
+            </Text>
+            <Group gap={6}>
+              {['DRAFT', 'PROD', 'LEGACY'].map((tag) => (
+                <Box
+                  key={tag}
+                  px="sm"
+                  py={4}
+                  style={{
+                    borderRadius: 4,
+                    border: '1px solid #dee2e6',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: '#495057',
+                    cursor: 'pointer',
+                    letterSpacing: '0.03em',
+                  }}
+                >
+                  {tag}
+                </Box>
+              ))}
+            </Group>
           </Box>
 
           {/* Main content area */}
-          <Box style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
-            {/* Search and filters */}
-            <Group mb="md" justify="space-between">
-              <Input
-                id="search-templates"
-                leftSection={<IconSearch size={16} />}
-                placeholder="Search templates..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.currentTarget.value)}
-                style={{ width: '300px' }}
-              />
-            </Group>
-
+          <Box style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
             {/* Templates grid */}
             {fetchTemplatesRequestStatus === RequestStatus.InProgress ? (
               <Center style={{ height: '200px' }}>
@@ -341,7 +372,6 @@ function TemplatesPage() {
               </Center>
             ) : searchedTemplates.length === 0 ? (
               <Center style={{ height: '200px', flexDirection: 'column' }}>
-                <IconFileText size={48} color="#868e96" style={{ opacity: 0.5 }} />
                 <Text c="dimmed" mt="md">
                   {searchQuery ? 'No templates match your search' : 'No templates in this folder'}
                 </Text>
@@ -355,23 +385,29 @@ function TemplatesPage() {
                 </Button>
               </Center>
             ) : (
-              <Grid id="templates-grid" gutter="md">
-                {searchedTemplates.map((template) => (
-                  <Grid.Col key={template.ID} span={4}>
-                    <TemplateItem
-                      DeleteTemplateFromClient={DeleteTemplateFromClient}
-                      id={template?.ID}
-                      template={template}
-                    />
-                  </Grid.Col>
-                ))}
-              </Grid>
+              <>
+                <Grid id="templates-grid" gutter="md">
+                  {searchedTemplates.map((template) => (
+                    <Grid.Col key={template.ID} span={4}>
+                      <TemplateItem
+                        DeleteTemplateFromClient={DeleteTemplateFromClient}
+                        id={template?.ID}
+                        template={template}
+                      />
+                    </Grid.Col>
+                  ))}
+                </Grid>
+              </>
             )}
 
             {/* Pagination */}
             {searchedTemplates.length > 0 && (
-              <Group justify="flex-end" mt="xl">
-                <Pagination total={Math.ceil(searchedTemplates.length / 12)} />
+              <Group justify="space-between" mt="xl" align="center">
+                <Text size="sm" c="dimmed">
+                  Showing 1 to {Math.min(searchedTemplates.length, 12)} of{' '}
+                  {searchedTemplates.length} templates
+                </Text>
+                <Pagination total={Math.ceil(searchedTemplates.length / 12)} size="sm" />
               </Group>
             )}
           </Box>
