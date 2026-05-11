@@ -1,7 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Handlebars from 'handlebars';
 import '../../../../utils/handlebarsHelpers';
-import { processChartData, replaceChartDataPlaceholders } from '@/utils/chartUtils';
+import {
+  processChartData,
+  replaceChartDataPlaceholders,
+  CHART_DATA_VALIDATION_SCRIPT_SNIPPET,
+} from '@/utils/chartUtils';
 import { Switch, Tooltip } from '@mantine/core';
 
 // Define the FormatType directly in this file
@@ -96,6 +100,7 @@ function Preview({
 
       // Chart initialization script.
       const chartScript = `
+        ${CHART_DATA_VALIDATION_SCRIPT_SNIPPET}
         (function() {
           function drawWarning(canvas, msg) {
             var ctx = canvas.getContext('2d');
@@ -133,8 +138,8 @@ function Preview({
                   return;
                 }
 
-                if (!chartData || !chartData.labels || !Array.isArray(chartData.datasets) || chartData.datasets.length === 0) {
-                  drawWarning(element, 'Structure invalide — attendu: { labels, datasets }');
+                if (!isChartDataValidForType(chartData, type)) {
+                  drawWarning(element, 'Structure invalide — datasets requis ; labels non vides sauf scatter/bubble');
                   return;
                 }
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import Head from 'next/head';
 import {
   Box,
@@ -24,6 +24,7 @@ import {
   Badge,
   TextInput,
   Tabs,
+  Modal,
 } from '@mantine/core';
 import { useRouter, useParams } from 'next/navigation';
 import { useDisclosure } from '@mantine/hooks';
@@ -57,6 +58,7 @@ import {
   IconCertificate,
   IconSearch,
   IconLock,
+  IconEye,
 } from '@tabler/icons-react';
 
 import { useMonaco } from '@monaco-editor/react';
@@ -75,6 +77,11 @@ import {
   generateChartData,
   processChartData,
   replaceChartDataPlaceholders,
+  extractChartBindingsFromTemplate,
+  parseChartJsonFile,
+  parseChartCsvWithPapa,
+  parseChartExcelFile,
+  isChartDataValidForType,
 } from '../../../../utils/chartUtils';
 import { DEFAULT_FORMAT } from '../../../../utils/paperUtils';
 import { manuallyStartTour } from '../../../../utils/tourUtils';
@@ -86,6 +93,19 @@ import {
 } from '@/services/agent/templateUtils';
 import type { ReferenceTemplate } from '@/services/agent/types';
 import 'driver.js/dist/driver.css';
+
+function splitChartsFromVariables(raw: Record<string, any> | null | undefined): {
+  rest: Record<string, any>;
+  charts: Record<string, unknown>;
+} {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { rest: {}, charts: {} };
+  }
+  const { charts, ...rest } = raw as Record<string, any> & { charts?: Record<string, unknown> };
+  const chartMap =
+    charts && typeof charts === 'object' && !Array.isArray(charts) ? { ...charts } : {};
+  return { rest: { ...rest }, charts: chartMap };
+}
 
 const data = {
   fromCompany: {
@@ -159,14 +179,33 @@ const CreateTemplate: React.FC = () => {
   const [marketplaceLoading, setMarketplaceLoading] = useState(false);
   const [marketplaceLoaded, setMarketplaceLoaded] = useState(false);
 
+  const [chartDatasets, setChartDatasets] = useState<Record<string, unknown>>({});
+  const [chartJsonModalOpened, { open: openChartJsonModal, close: closeChartJsonModal }] =
+    useDisclosure(false);
+  const [chartsHubOpened, { open: openChartsHub, close: closeChartsHub }] = useDisclosure(false);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+  const [chartEditId, setChartEditId] = useState<string | null>(null);
+  const [chartEditJson, setChartEditJson] = useState('');
+  const chartFileInputRef = useRef<HTMLInputElement>(null);
+  const chartImportTargetIdRef = useRef<string | null>(null);
+
+  const mergedTemplateData = useMemo(
+    () => ({ ...variables, charts: chartDatasets }),
+    [variables, chartDatasets],
+  );
+
   const fetchTemplate = async () => {
     try {
       setIsLoading(RequestStatus.InProgress);
       const fetchedTemplate = await templateApi.getTemplateById(params.id as string);
       setTemplate(fetchedTemplate);
       setCode(fetchedTemplate.content || DEFAULT_TEMPLATE);
-      setJsonContent(JSON.stringify(fetchedTemplate.variables || data, null, 2));
-      setVariables(fetchedTemplate.variables || data);
+      const { rest, charts } = splitChartsFromVariables(
+        (fetchedTemplate.variables as Record<string, any>) || data,
+      );
+      setChartDatasets(charts);
+      setVariables(rest);
+      setJsonContent(JSON.stringify(rest, null, 2));
       setFontsSelected(fetchedTemplate.fonts || [DEFAULT_FONT]);
       setIsLoading(RequestStatus.Succeeded);
     } catch (error) {
@@ -180,16 +219,18 @@ const CreateTemplate: React.FC = () => {
 
   useEffect(() => {
     try {
-      const parsedVariables = JSON.parse(jsonContent);
-      setVariables(parsedVariables);
+      const parsedVariables = JSON.parse(jsonContent) as Record<string, any>;
+      const { rest } = splitChartsFromVariables(parsedVariables);
+      setVariables(rest);
     } catch (error) {
       // Silently handle JSON parsing errors
     }
   }, [jsonContent]);
 
   const handleVariablesUpdate = (newVariables: any) => {
-    setVariables(newVariables);
-    setJsonContent(JSON.stringify(newVariables, null, 2));
+    const { rest } = splitChartsFromVariables(newVariables || {});
+    setVariables(rest);
+    setJsonContent(JSON.stringify(rest, null, 2));
   };
 
   const handleTemplateSelect = (templateItem: ReferenceTemplate) => {
@@ -201,9 +242,9 @@ const CreateTemplate: React.FC = () => {
 
     // Générer les variables par défaut avec des valeurs réalistes
     const defaultVariables = buildVariableStructure(extractedVars, templateItem.code);
-
-    // Mettre à jour les variables
-    handleVariablesUpdate(defaultVariables);
+    const { rest, charts } = splitChartsFromVariables(defaultVariables);
+    setChartDatasets(charts);
+    handleVariablesUpdate(rest);
     setSelectedTemplateId(templateItem.id);
     closeTemplateDrawer();
 
@@ -232,7 +273,9 @@ const CreateTemplate: React.FC = () => {
       setCode(full.content || DEFAULT_TEMPLATE);
       const extractedVars = extractVariablesFromTemplate(full.content || '');
       const defaultVariables = buildVariableStructure(extractedVars, full.content || '');
-      handleVariablesUpdate(defaultVariables);
+      const { rest, charts } = splitChartsFromVariables(defaultVariables);
+      setChartDatasets(charts);
+      handleVariablesUpdate(rest);
       setSelectedTemplateId(String(tpl.ID));
       closeTemplateDrawer();
       notificationService.showSuccessNotification(`Template "${tpl.name}" loaded successfully`);
@@ -243,8 +286,10 @@ const CreateTemplate: React.FC = () => {
 
   const mergeSuggestedVariables = () => {
     if (suggestedVariables) {
-      const mergedVariables = { ...variables, ...suggestedVariables };
-      handleVariablesUpdate(mergedVariables);
+      const mergedPayload = { ...variables, ...suggestedVariables };
+      const { rest, charts } = splitChartsFromVariables(mergedPayload);
+      setChartDatasets((prev) => ({ ...prev, ...charts }));
+      handleVariablesUpdate(rest);
       setSuggestedVariables(null);
     }
   };
@@ -272,7 +317,7 @@ const CreateTemplate: React.FC = () => {
       await templateApi.updateTemplate(template?.ID as number, {
         ...template,
         content: code,
-        variables: JSON.parse(jsonContent),
+        variables: mergedTemplateData,
         fonts: fontsSelected,
       });
     } catch (error: any) {
@@ -480,7 +525,9 @@ const CreateTemplate: React.FC = () => {
         const responseData = await response.json();
         if (responseData.content) {
           if (responseData.suggestedVariables) {
-            handleVariablesUpdate(responseData.suggestedVariables);
+            const { rest, charts } = splitChartsFromVariables(responseData.suggestedVariables);
+            setChartDatasets((prev) => ({ ...prev, ...charts }));
+            handleVariablesUpdate(rest);
             setSuggestedVariables(responseData.suggestedVariables);
           }
           setCode(responseData.content);
@@ -516,7 +563,9 @@ const CreateTemplate: React.FC = () => {
         const generatedData = await response.json();
         if (generatedData.content) {
           if (generatedData.suggestedVariables) {
-            handleVariablesUpdate(generatedData.suggestedVariables);
+            const { rest, charts } = splitChartsFromVariables(generatedData.suggestedVariables);
+            setChartDatasets((prev) => ({ ...prev, ...charts }));
+            handleVariablesUpdate(rest);
             setSuggestedVariables(generatedData.suggestedVariables);
           }
           setCode(generatedData.content);
@@ -544,14 +593,14 @@ const CreateTemplate: React.FC = () => {
 
       const processedCode = processChartData(code);
       const compiledTemplate = Handlebars.compile(processedCode);
-      let renderedContent = compiledTemplate(variables);
-      renderedContent = replaceChartDataPlaceholders(renderedContent, variables);
+      let renderedContent = compiledTemplate(mergedTemplateData);
+      renderedContent = replaceChartDataPlaceholders(renderedContent, mergedTemplateData);
 
       const exportId = String(template.uuid ?? template.ID);
       const blob = await templateApi.exportTemplate({
         templateId: exportId,
         format: 'pdf',
-        variables,
+        variables: mergedTemplateData,
         paperSize: format,
         isLandscape: isLandScape,
         fonts: fontsSelected,
@@ -571,6 +620,59 @@ const CreateTemplate: React.FC = () => {
       notificationService.showErrorNotification(
         'Failed to prepare document for export. Please try again.',
       );
+    }
+  };
+
+  const openChartJsonEditor = (chartId: string) => {
+    setChartEditId(chartId);
+    setChartEditJson(JSON.stringify(chartDatasets[chartId] ?? {}, null, 2));
+    closeChartsHub();
+    openChartJsonModal();
+  };
+
+  const applyChartJsonEdit = () => {
+    if (!chartEditId) return;
+    try {
+      const parsed = parseChartJsonFile(chartEditJson) as unknown;
+      setChartDatasets((prev) => ({ ...prev, [chartEditId]: parsed }));
+      closeChartJsonModal();
+      notificationService.showSuccessNotification('Données du graphique mises à jour');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'JSON invalide';
+      notificationService.showErrorNotification(msg);
+    }
+  };
+
+  const beginChartFileImport = (chartId: string) => {
+    chartImportTargetIdRef.current = chartId;
+    closeChartsHub();
+    chartFileInputRef.current?.click();
+  };
+
+  const onChartFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const chartId = chartImportTargetIdRef.current;
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    chartImportTargetIdRef.current = null;
+    if (!chartId || !file) return;
+    try {
+      const lower = file.name.toLowerCase();
+      let payload: unknown;
+      if (lower.endsWith('.xlsx') || lower.endsWith('.xls')) {
+        const buf = await file.arrayBuffer();
+        payload = parseChartExcelFile(buf);
+      } else if (lower.endsWith('.csv') || lower.endsWith('.txt')) {
+        const text = await file.text();
+        payload = parseChartCsvWithPapa(text);
+      } else {
+        const text = await file.text();
+        payload = parseChartJsonFile(text);
+      }
+      setChartDatasets((prev) => ({ ...prev, [chartId]: payload }));
+      notificationService.showSuccessNotification('Données du graphique importées');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Import impossible';
+      notificationService.showErrorNotification(msg);
     }
   };
 
@@ -1036,7 +1138,8 @@ const CreateTemplate: React.FC = () => {
                     ? marketplaceTemplates.filter(
                         (t) =>
                           t.name?.toLowerCase().includes(q) ||
-                          t.category?.toLowerCase().includes(q),
+                          t.category?.toLowerCase().includes(q) ||
+                          (t.description && t.description.toLowerCase().includes(q)),
                       )
                     : marketplaceTemplates;
 
@@ -1059,7 +1162,7 @@ const CreateTemplate: React.FC = () => {
                   }
 
                   return (
-                    <SimpleGrid cols={2} spacing="sm">
+                    <Stack gap="xs" maw={300} mx="auto">
                       {filtered.map((tpl) => {
                         const isFree = !tpl.price || tpl.price === 0;
                         const cover = tpl.cover_image_url?.trim();
@@ -1076,29 +1179,58 @@ const CreateTemplate: React.FC = () => {
                                 cursor: isFree ? 'pointer' : 'default',
                                 opacity: isFree ? 1 : 0.7,
                                 overflow: 'hidden',
+                                maxWidth: '100%',
                               },
                             }}
                             onClick={() => isFree && handleMarketplaceSelect(tpl)}
                           >
-                            {cover ? (
-                              <Image
-                                src={cover}
-                                alt={tpl.name || 'Cover'}
-                                h={72}
-                                fit="cover"
-                                fallbackSrc="https://placehold.co/400x200?text=Template"
-                              />
-                            ) : (
-                              <Box
-                                h={72}
-                                style={{
-                                  background: 'linear-gradient(135deg, #373A40 0%, #1A1B1E 100%)',
-                                }}
-                              />
-                            )}
-                            <Box p="sm">
-                              <Group justify="space-between" wrap="nowrap" mb={4}>
-                                <Text size="sm" fw={500} c="white" lineClamp={1} style={{ flex: 1 }}>
+                            <Box
+                              pos="relative"
+                              h={56}
+                              style={{ overflow: 'hidden' }}
+                            >
+                              {cover ? (
+                                <>
+                                  <Image
+                                    src={cover}
+                                    alt={tpl.name || 'Cover'}
+                                    h={56}
+                                    w="100%"
+                                    fit="cover"
+                                    fallbackSrc="https://placehold.co/400x200?text=Template"
+                                  />
+                                  <ActionIcon
+                                    size="sm"
+                                    variant="filled"
+                                    color="dark"
+                                    radius="md"
+                                    aria-label="Aperçu de la couverture"
+                                    style={{
+                                      position: 'absolute',
+                                      bottom: 6,
+                                      right: 6,
+                                      boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
+                                    }}
+                                    onClick={(ev) => {
+                                      ev.stopPropagation();
+                                      setCoverPreviewUrl(cover);
+                                    }}
+                                  >
+                                    <IconEye size={16} />
+                                  </ActionIcon>
+                                </>
+                              ) : (
+                                <Box
+                                  h="100%"
+                                  style={{
+                                    background: 'linear-gradient(135deg, #373A40 0%, #1A1B1E 100%)',
+                                  }}
+                                />
+                              )}
+                            </Box>
+                            <Box p="xs">
+                              <Group justify="space-between" wrap="nowrap" gap={6} mb={4}>
+                                <Text size="xs" fw={600} c="white" lineClamp={1} style={{ flex: 1 }}>
                                   {tpl.name}
                                 </Text>
                                 {isFree ? (
@@ -1109,6 +1241,11 @@ const CreateTemplate: React.FC = () => {
                                   </Badge>
                                 )}
                               </Group>
+                              {tpl.description?.trim() ? (
+                                <Text size="xs" c="dimmed" lineClamp={2} mb={4}>
+                                  {tpl.description.trim()}
+                                </Text>
+                              ) : null}
                               {tpl.category && (
                                 <Text size="xs" c="dimmed">{tpl.category}</Text>
                               )}
@@ -1116,7 +1253,7 @@ const CreateTemplate: React.FC = () => {
                           </Card>
                         );
                       })}
-                    </SimpleGrid>
+                    </Stack>
                   );
                 })()}
               </ScrollArea>
@@ -1124,6 +1261,131 @@ const CreateTemplate: React.FC = () => {
           </Tabs>
         </Box>
       </Drawer>
+
+      <input
+        ref={chartFileInputRef}
+        type="file"
+        accept=".json,.csv,.txt,.xlsx,.xls,application/json,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+        style={{ display: 'none' }}
+        onChange={onChartFileSelected}
+      />
+
+      <Modal
+        opened={coverPreviewUrl != null}
+        onClose={() => setCoverPreviewUrl(null)}
+        title="Aperçu"
+        fullScreen
+        styles={{
+          body: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#0d0d0f',
+            minHeight: '70vh',
+          },
+        }}
+      >
+        {coverPreviewUrl ? (
+          <Image
+            src={coverPreviewUrl}
+            alt="Couverture"
+            maw="100%"
+            mah="calc(100vh - 80px)"
+            w="auto"
+            h="auto"
+            fit="contain"
+            style={{ objectFit: 'contain' }}
+          />
+        ) : null}
+      </Modal>
+
+      <Modal
+        opened={chartsHubOpened}
+        onClose={closeChartsHub}
+        title="Données des graphiques"
+        size="md"
+        centered
+      >
+        <ScrollArea mah={480}>
+          <Stack gap="sm">
+            <Text size="xs" c="dimmed">
+              CSV / Excel (1re feuille) : 1re colonne = libellés, colonnes suivantes = séries numériques.
+              Scatter / bubble : JSON Chart.js recommandé.
+            </Text>
+            {extractChartBindingsFromTemplate(code).map(({ chartId, chartType }) => {
+              const raw = chartDatasets[chartId];
+              const hasData = raw != null;
+              const valid =
+                hasData && isChartDataValidForType(raw, chartType ?? null);
+              let statusLabel = 'Manquant';
+              let statusColor: 'teal' | 'orange' | 'red' = 'orange';
+              if (hasData && valid) {
+                statusLabel = 'OK';
+                statusColor = 'teal';
+              } else if (hasData && !valid) {
+                statusLabel = 'Invalide';
+                statusColor = 'red';
+              }
+              return (
+                <Box
+                  key={chartId}
+                  p="xs"
+                  style={{
+                    border: '1px solid #373A40',
+                    borderRadius: 8,
+                    background: '#25262B',
+                  }}
+                >
+                  <Group justify="space-between" wrap="nowrap" gap={6}>
+                    <Text size="xs" c="white" lineClamp={1} style={{ flex: 1 }}>
+                      {chartId}
+                      {chartType ? ` · ${chartType}` : ''}
+                    </Text>
+                    <Badge size="xs" color={statusColor}>
+                      {statusLabel}
+                    </Badge>
+                  </Group>
+                  <Group gap={6} mt={8}>
+                    <Button size="xs" variant="light" onClick={() => openChartJsonEditor(chartId)}>
+                      Modifier JSON
+                    </Button>
+                    <Button size="xs" variant="default" onClick={() => beginChartFileImport(chartId)}>
+                      Importer fichier
+                    </Button>
+                  </Group>
+                </Box>
+              );
+            })}
+          </Stack>
+        </ScrollArea>
+      </Modal>
+
+      <Modal
+        opened={chartJsonModalOpened}
+        onClose={closeChartJsonModal}
+        title={chartEditId ? `Données Chart.js — ${chartEditId}` : 'Données graphique'}
+        size="lg"
+        centered
+      >
+        <Stack gap="md">
+          <Text size="xs" c="dimmed">
+            Objet au format Chart.js : propriétés <code>labels</code> (sauf scatter/bubble) et{' '}
+            <code>datasets</code> non vide.
+          </Text>
+          <Textarea
+            value={chartEditJson}
+            onChange={(e) => setChartEditJson(e.currentTarget.value)}
+            minRows={12}
+            styles={{ input: { fontFamily: 'monospace', fontSize: 12 } }}
+          />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={closeChartJsonModal}>
+              Annuler
+            </Button>
+            <Button onClick={applyChartJsonEdit}>Appliquer</Button>
+          </Group>
+        </Stack>
+      </Modal>
 
       {/* NavBar */}
       <Group
@@ -1292,7 +1554,7 @@ const CreateTemplate: React.FC = () => {
           {/* Sidebar */}
           <Stack
             component={ScrollArea}
-            w={sidebarCollapsed ? '40px' : '18%'}
+            w={sidebarCollapsed ? '40px' : '22%'}
             p={sidebarCollapsed ? 'xs' : 'xl'}
             h="100%"
             bg="#1A1B1E"
@@ -1611,43 +1873,29 @@ const CreateTemplate: React.FC = () => {
                 </Box>
 
                 {/* Charts section */}
-                <Stack id="charts-section" h={300}>
+                <Stack id="charts-section" gap="sm" mah={520} style={{ overflow: 'auto' }}>
                   <Box p="xs">
-                    <Text size="sm" fw={600} c="white" mb="md" tt="uppercase">
-                      Charts
+                    <Text size="sm" fw={600} c="white" mb="xs" tt="uppercase">
+                      Graphiques
                     </Text>
                     <Text size="xs" c="dimmed" mb="sm">
-                      Click on a chart type to add it to your template
+                      Ajoutez un type ci-dessous. Les données sont séparées du JSON « variables » (panneau
+                      ci-dessous).
                     </Text>
-                    {/* Chart variable status */}
                     {(() => {
-                      const chartVarMatches = Array.from(code.matchAll(/data-chart-data='?\{\{(charts\.[^}]+)\}\}'?/g));
-                      if (chartVarMatches.length === 0) return null;
-                      const seen = new Set<string>();
-                      const expectedVars = chartVarMatches.map((m) => m[1]).filter((v) => { if (seen.has(v)) return false; seen.add(v); return true; });
-                      const chartsObj = variables?.charts || {};
-                      const missing = expectedVars.filter((v) => {
-                        const key = v.replace('charts.', '');
-                        return !chartsObj[key];
-                      });
+                      const bindings = extractChartBindingsFromTemplate(code);
+                      if (bindings.length === 0) return null;
                       return (
-                        <Box mb="sm" style={{ background: '#25262B', borderRadius: 6, padding: '8px 10px', border: '1px solid #373A40' }}>
-                          <Text size="xs" fw={600} c="dimmed" mb={4}>Variables graphique</Text>
-                          {expectedVars.map((v) => {
-                            const key = v.replace('charts.', '');
-                            const exists = !!chartsObj[key];
-                            return (
-                              <Text key={v} size="xs" c={exists ? 'teal.4' : 'orange.4'}>
-                                {exists ? '✓' : '⚠'} {`{{${v}}}`}
-                              </Text>
-                            );
-                          })}
-                          {missing.length > 0 && (
-                            <Text size="xs" c="orange.3" mt={4}>
-                              {missing.length} variable{missing.length > 1 ? 's' : ''} manquante{missing.length > 1 ? 's' : ''} dans les données
-                            </Text>
-                          )}
-                        </Box>
+                        <Button
+                          fullWidth
+                          size="xs"
+                          variant="light"
+                          leftSection={<IconChartDots size={14} />}
+                          onClick={openChartsHub}
+                          mb="md"
+                        >
+                          Gérer les données des graphiques ({bindings.length})
+                        </Button>
                       );
                     })()}
                     <SimpleGrid cols={2} spacing="xs">
@@ -1665,17 +1913,11 @@ const CreateTemplate: React.FC = () => {
                               const chartId = `${type}Chart${Math.random().toString(36).substr(2, 9)}`;
                               const chartData = generateChartData(type as keyof typeof CHART_TYPES);
 
-                              // Update variables with new chart data
-                              const updatedVariables = {
-                                ...variables,
-                                charts: {
-                                  ...(variables.charts || {}),
-                                  [chartId]: chartData,
-                                },
-                              };
-                              handleVariablesUpdate(updatedVariables);
+                              setChartDatasets((prev) => ({
+                                ...prev,
+                                [chartId]: chartData,
+                              }));
 
-                              // Insert chart canvas element at the end
                               const text = `\n\n<!-- Chart Section -->
 <div class="w-full max-w-4xl mx-auto py-4">
   <canvas
@@ -1739,7 +1981,7 @@ const CreateTemplate: React.FC = () => {
           <Box
             id="editor-container"
             style={{
-              width: sidebarCollapsed ? 'calc(60% - 20px)' : '50%',
+              width: sidebarCollapsed ? 'calc(61% - 20px)' : '46%',
               height: '100%',
               transition: 'width 0.3s ease',
               flexShrink: 0,
@@ -1765,7 +2007,7 @@ const CreateTemplate: React.FC = () => {
           <Box
             id="preview-container"
             style={{
-              width: sidebarCollapsed ? 'calc(40% - 20px)' : '32%',
+              width: sidebarCollapsed ? 'calc(39% - 20px)' : '30%',
               height: '100%',
               backgroundColor: '#1A1B1E',
               borderLeft: '1px solid #373A40',
@@ -1789,7 +2031,7 @@ const CreateTemplate: React.FC = () => {
               <Preview
                 format={format}
                 htmlContent={code}
-                data={variables}
+                data={mergedTemplateData}
                 isLandscape={isLandScape}
                 fonts={fontsSelected}
                 setTemplateContent={setTemplateContent}

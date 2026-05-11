@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import puppeteer from 'puppeteer';
 import { ExportTemplateDto, templateApi } from '@/api/templateApi';
+import { CHART_DATA_VALIDATION_SCRIPT_SNIPPET } from '@/utils/chartUtils';
 
 function buildExportPageHtml(bodyInner: string, data: ExportTemplateDto, sampleText: string): string {
   const fontLinks = data.fonts
@@ -51,6 +52,7 @@ function buildExportPageHtml(bodyInner: string, data: ExportTemplateDto, sampleT
             ${bodyInner}
           </div>
           <script>
+            ${CHART_DATA_VALIDATION_SCRIPT_SNIPPET}
             (function() {
               function waitForTailwind() {
                 return new Promise(function(resolve) {
@@ -80,6 +82,7 @@ function buildExportPageHtml(bodyInner: string, data: ExportTemplateDto, sampleT
                     var raw = canvas.getAttribute('data-chart-data');
                     if (!type || !raw) return;
                     var chartData = JSON.parse(raw);
+                    if (!isChartDataValidForType(chartData, type)) return;
                     new Chart(canvas, {
                       type: type,
                       data: chartData,
@@ -94,7 +97,7 @@ function buildExportPageHtml(bodyInner: string, data: ExportTemplateDto, sampleT
                     console.error(e);
                   }
                 });
-                await new Promise(function(r) { setTimeout(r, 400); });
+                await new Promise(function(r) { setTimeout(r, 500); });
               }
               if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', initCharts);
@@ -162,9 +165,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       await page.setViewport({ width, height, deviceScaleFactor: useRendered ? 2 : 1 });
 
-      if (useRendered) {
-        await new Promise((r) => setTimeout(r, 1200));
-      }
+      const hasCharts = /<canvas[^>]*data-chart-type/i.test(templateContent);
+      const postRenderMs = hasCharts ? 2200 : useRendered ? 1200 : 400;
+      await new Promise((r) => setTimeout(r, postRenderMs));
 
       let output: Buffer | Uint8Array;
       if (data.format === 'pdf') {
