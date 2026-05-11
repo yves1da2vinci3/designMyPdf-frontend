@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Modal, Button, Stack, Text, Group, Alert } from '@mantine/core';
 import { IconCurrencyDollar, IconCheck } from '@tabler/icons-react';
-import { templateApi, TemplateDTO } from '@/api/templateApi';
+import { templateApi, TemplateDTO, MarketplaceTemplateCard } from '@/api/templateApi';
 
 interface Props {
   opened: boolean;
   onClose: () => void;
-  template: TemplateDTO;
+  template: TemplateDTO | MarketplaceTemplateCard;
   onPurchased: () => void;
 }
 

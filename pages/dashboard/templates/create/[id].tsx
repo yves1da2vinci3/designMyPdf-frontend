@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import Head from 'next/head';
 import {
   Box,
@@ -22,6 +22,9 @@ import {
   Divider,
   Card,
   Badge,
+  TextInput,
+  Tabs,
+  Modal,
 } from '@mantine/core';
 import { useRouter, useParams } from 'next/navigation';
 import { useDisclosure } from '@mantine/hooks';
@@ -53,9 +56,12 @@ import {
   IconPresentation,
   IconReceipt,
   IconCertificate,
+  IconSearch,
+  IconLock,
+  IconEye,
 } from '@tabler/icons-react';
 
-import { useMonaco } from '@monaco-editor/react';
+import { Editor } from '@monaco-editor/react';
 import IDE from './CodeEditor';
 import Preview from './Preview';
 import AddVariable from '@/modals/AddVariable/AddVariable';
@@ -63,7 +69,7 @@ import VariableBadge from '@/components/VariableBadge/VariableBadge';
 import { DEFAULT_TEMPLATE } from '@/constants/template';
 import { DEFAULT_FONT, fonts } from '@/constants/fonts';
 import { RequestStatus } from '@/api/request-status.enum';
-import { TemplateDTO, templateApi } from '@/api/templateApi';
+import { TemplateDTO, templateApi, MarketplaceTemplateCard } from '@/api/templateApi';
 import notificationService from '@/services/NotificationService';
 import { FormatType } from '../../../../utils/types';
 import {
@@ -71,9 +77,13 @@ import {
   generateChartData,
   processChartData,
   replaceChartDataPlaceholders,
+  extractChartBindingsFromTemplate,
+  parseChartJsonFile,
+  parseChartCsvWithPapa,
+  parseChartExcelFile,
+  isChartDataValidForType,
 } from '../../../../utils/chartUtils';
-import { exportPdfDocument } from '../../../../utils/pdfUtils';
-import { DEFAULT_FORMAT, getPageDimensions } from '../../../../utils/paperUtils';
+import { DEFAULT_FORMAT } from '../../../../utils/paperUtils';
 import { manuallyStartTour } from '../../../../utils/tourUtils';
 import { useLocalStorage } from '../../../../utils/useLocalStorage';
 import { REFERENCE_TEMPLATES } from '@/services/agent/templateLibrary';
@@ -83,6 +93,19 @@ import {
 } from '@/services/agent/templateUtils';
 import type { ReferenceTemplate } from '@/services/agent/types';
 import 'driver.js/dist/driver.css';
+
+function splitChartsFromVariables(raw: Record<string, any> | null | undefined): {
+  rest: Record<string, any>;
+  charts: Record<string, unknown>;
+} {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { rest: {}, charts: {} };
+  }
+  const { charts, ...rest } = raw as Record<string, any> & { charts?: Record<string, unknown> };
+  const chartMap =
+    charts && typeof charts === 'object' && !Array.isArray(charts) ? { ...charts } : {};
+  return { rest: { ...rest }, charts: chartMap };
+}
 
 const data = {
   fromCompany: {
@@ -118,8 +141,9 @@ const data = {
 const CreateTemplate: React.FC = () => {
   const params = useParams();
   const router = useRouter();
-  const monaco = useMonaco();
   const editorRef = useRef<any>(null);
+  /** Force Monaco remount after loading external HTML so model + editorRef stay in sync. */
+  const [editorSessionKey, setEditorSessionKey] = useState(0);
 
   const [isLoading, setIsLoading] = useState(RequestStatus.NotStated);
   const [template, setTemplate] = useState<TemplateDTO | null>(null);
@@ -150,6 +174,26 @@ const CreateTemplate: React.FC = () => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [templateDrawerOpened, { open: openTemplateDrawer, close: closeTemplateDrawer }] =
     useDisclosure(false);
+  const [templateTab, setTemplateTab] = useState<string>('default');
+  const [templateSearch, setTemplateSearch] = useState('');
+  const [marketplaceTemplates, setMarketplaceTemplates] = useState<MarketplaceTemplateCard[]>([]);
+  const [marketplaceLoading, setMarketplaceLoading] = useState(false);
+  const [marketplaceLoaded, setMarketplaceLoaded] = useState(false);
+
+  const [chartDatasets, setChartDatasets] = useState<Record<string, unknown>>({});
+  const [chartJsonModalOpened, { open: openChartJsonModal, close: closeChartJsonModal }] =
+    useDisclosure(false);
+  const [chartsHubOpened, { open: openChartsHub, close: closeChartsHub }] = useDisclosure(false);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+  const [chartEditId, setChartEditId] = useState<string | null>(null);
+  const [chartEditJson, setChartEditJson] = useState('');
+  const chartFileInputRef = useRef<HTMLInputElement>(null);
+  const chartImportTargetIdRef = useRef<string | null>(null);
+
+  const mergedTemplateData = useMemo(
+    () => ({ ...variables, charts: chartDatasets }),
+    [variables, chartDatasets],
+  );
 
   const fetchTemplate = async () => {
     try {
@@ -157,8 +201,12 @@ const CreateTemplate: React.FC = () => {
       const fetchedTemplate = await templateApi.getTemplateById(params.id as string);
       setTemplate(fetchedTemplate);
       setCode(fetchedTemplate.content || DEFAULT_TEMPLATE);
-      setJsonContent(JSON.stringify(fetchedTemplate.variables || data, null, 2));
-      setVariables(fetchedTemplate.variables || data);
+      const { rest, charts } = splitChartsFromVariables(
+        (fetchedTemplate.variables as Record<string, any>) || data,
+      );
+      setChartDatasets(charts);
+      setVariables(rest);
+      setJsonContent(JSON.stringify(rest, null, 2));
       setFontsSelected(fetchedTemplate.fonts || [DEFAULT_FONT]);
       setIsLoading(RequestStatus.Succeeded);
     } catch (error) {
@@ -172,30 +220,33 @@ const CreateTemplate: React.FC = () => {
 
   useEffect(() => {
     try {
-      const parsedVariables = JSON.parse(jsonContent);
-      setVariables(parsedVariables);
+      const parsedVariables = JSON.parse(jsonContent) as Record<string, any>;
+      const { rest } = splitChartsFromVariables(parsedVariables);
+      setVariables(rest);
     } catch (error) {
       // Silently handle JSON parsing errors
     }
   }, [jsonContent]);
 
   const handleVariablesUpdate = (newVariables: any) => {
-    setVariables(newVariables);
-    setJsonContent(JSON.stringify(newVariables, null, 2));
+    const { rest } = splitChartsFromVariables(newVariables || {});
+    setVariables(rest);
+    setJsonContent(JSON.stringify(rest, null, 2));
   };
 
   const handleTemplateSelect = (templateItem: ReferenceTemplate) => {
     // Charger le code HTML du template
     setCode(templateItem.code);
+    setEditorSessionKey((k) => k + 1);
 
     // Extraire les variables Handlebars du code
     const extractedVars = extractVariablesFromTemplate(templateItem.code);
 
     // Générer les variables par défaut avec des valeurs réalistes
     const defaultVariables = buildVariableStructure(extractedVars, templateItem.code);
-
-    // Mettre à jour les variables
-    handleVariablesUpdate(defaultVariables);
+    const { rest, charts } = splitChartsFromVariables(defaultVariables);
+    setChartDatasets(charts);
+    handleVariablesUpdate(rest);
     setSelectedTemplateId(templateItem.id);
     closeTemplateDrawer();
 
@@ -204,10 +255,44 @@ const CreateTemplate: React.FC = () => {
     );
   };
 
+  const loadMarketplaceTemplates = async () => {
+    if (marketplaceLoaded) return;
+    setMarketplaceLoading(true);
+    try {
+      const results = await templateApi.getMarketplaceTemplates();
+      setMarketplaceTemplates(results);
+      setMarketplaceLoaded(true);
+    } catch {
+      // Silently handle
+    } finally {
+      setMarketplaceLoading(false);
+    }
+  };
+
+  const handleMarketplaceSelect = async (tpl: MarketplaceTemplateCard) => {
+    try {
+      const full = await templateApi.getMarketplaceTemplate(String(tpl.ID));
+      setCode(full.content || DEFAULT_TEMPLATE);
+      setEditorSessionKey((k) => k + 1);
+      const extractedVars = extractVariablesFromTemplate(full.content || '');
+      const defaultVariables = buildVariableStructure(extractedVars, full.content || '');
+      const { rest, charts } = splitChartsFromVariables(defaultVariables);
+      setChartDatasets(charts);
+      handleVariablesUpdate(rest);
+      setSelectedTemplateId(String(tpl.ID));
+      closeTemplateDrawer();
+      notificationService.showSuccessNotification(`Template "${tpl.name}" loaded successfully`);
+    } catch {
+      notificationService.showErrorNotification('Failed to load marketplace template');
+    }
+  };
+
   const mergeSuggestedVariables = () => {
     if (suggestedVariables) {
-      const mergedVariables = { ...variables, ...suggestedVariables };
-      handleVariablesUpdate(mergedVariables);
+      const mergedPayload = { ...variables, ...suggestedVariables };
+      const { rest, charts } = splitChartsFromVariables(mergedPayload);
+      setChartDatasets((prev) => ({ ...prev, ...charts }));
+      handleVariablesUpdate(rest);
       setSuggestedVariables(null);
     }
   };
@@ -235,7 +320,7 @@ const CreateTemplate: React.FC = () => {
       await templateApi.updateTemplate(template?.ID as number, {
         ...template,
         content: code,
-        variables: JSON.parse(jsonContent),
+        variables: mergedTemplateData,
         fonts: fontsSelected,
       });
     } catch (error: any) {
@@ -248,12 +333,12 @@ const CreateTemplate: React.FC = () => {
     drop: (item: { varName: string; type: 'array' | 'object' | 'key-value' }) => {
       if (editorRef.current) {
         const position = editorRef.current.getPosition();
-        const range = new monaco.Range(
-          position.lineNumber,
-          position.column,
-          position.lineNumber,
-          position.column,
-        );
+        const range = {
+          startLineNumber: position.lineNumber,
+          startColumn: position.column,
+          endLineNumber: position.lineNumber,
+          endColumn: position.column,
+        };
         const id = { major: 1, minor: 1 }; // unique identifier for the op
         let text = '';
 
@@ -443,7 +528,9 @@ const CreateTemplate: React.FC = () => {
         const responseData = await response.json();
         if (responseData.content) {
           if (responseData.suggestedVariables) {
-            handleVariablesUpdate(responseData.suggestedVariables);
+            const { rest, charts } = splitChartsFromVariables(responseData.suggestedVariables);
+            setChartDatasets((prev) => ({ ...prev, ...charts }));
+            handleVariablesUpdate(rest);
             setSuggestedVariables(responseData.suggestedVariables);
           }
           setCode(responseData.content);
@@ -479,7 +566,9 @@ const CreateTemplate: React.FC = () => {
         const generatedData = await response.json();
         if (generatedData.content) {
           if (generatedData.suggestedVariables) {
-            handleVariablesUpdate(generatedData.suggestedVariables);
+            const { rest, charts } = splitChartsFromVariables(generatedData.suggestedVariables);
+            setChartDatasets((prev) => ({ ...prev, ...charts }));
+            handleVariablesUpdate(rest);
             setSuggestedVariables(generatedData.suggestedVariables);
           }
           setCode(generatedData.content);
@@ -502,36 +591,91 @@ const CreateTemplate: React.FC = () => {
     try {
       if (!template) return;
 
-      // Use Handlebars to render the template with variables
       const { default: Handlebars } = await import('handlebars');
       await import('../../../../utils/handlebarsHelpers');
 
-      // Process the template to handle chart data
       const processedCode = processChartData(code);
       const compiledTemplate = Handlebars.compile(processedCode);
-      let renderedContent = compiledTemplate(variables);
+      let renderedContent = compiledTemplate(mergedTemplateData);
+      renderedContent = replaceChartDataPlaceholders(renderedContent, mergedTemplateData);
 
-      // Replace chart data placeholders with actual data
-      renderedContent = replaceChartDataPlaceholders(renderedContent, variables);
-
-      // Get page dimensions based on format and orientation
-      const { width: pageWidth, height: pageHeight } = getPageDimensions(format, isLandScape);
-
-      // Call the extracted PDF export function
-      await exportPdfDocument({
-        template,
-        format,
-        isLandScape,
-        pageWidth,
-        pageHeight,
-        fontsSelected,
-        variables,
-        renderedContent,
+      const exportId = String(template.uuid ?? template.ID);
+      const blob = await templateApi.exportTemplate({
+        templateId: exportId,
+        format: 'pdf',
+        variables: mergedTemplateData,
+        paperSize: format,
+        isLandscape: isLandScape,
+        fonts: fontsSelected,
+        renderedHtml: renderedContent,
       });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(template.name || 'export').replace(/[^\w.-]+/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      notificationService.showSuccessNotification('PDF exporté');
     } catch (error) {
       notificationService.showErrorNotification(
         'Failed to prepare document for export. Please try again.',
       );
+    }
+  };
+
+  const openChartJsonEditor = (chartId: string) => {
+    setChartEditId(chartId);
+    setChartEditJson(JSON.stringify(chartDatasets[chartId] ?? {}, null, 2));
+    closeChartsHub();
+    openChartJsonModal();
+  };
+
+  const applyChartJsonEdit = () => {
+    if (!chartEditId) return;
+    try {
+      const parsed = parseChartJsonFile(chartEditJson) as unknown;
+      setChartDatasets((prev) => ({ ...prev, [chartEditId]: parsed }));
+      closeChartJsonModal();
+      notificationService.showSuccessNotification('Données du graphique mises à jour');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'JSON invalide';
+      notificationService.showErrorNotification(msg);
+    }
+  };
+
+  const beginChartFileImport = (chartId: string) => {
+    chartImportTargetIdRef.current = chartId;
+    closeChartsHub();
+    chartFileInputRef.current?.click();
+  };
+
+  const onChartFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const chartId = chartImportTargetIdRef.current;
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    chartImportTargetIdRef.current = null;
+    if (!chartId || !file) return;
+    try {
+      const lower = file.name.toLowerCase();
+      let payload: unknown;
+      if (lower.endsWith('.xlsx') || lower.endsWith('.xls')) {
+        const buf = await file.arrayBuffer();
+        payload = parseChartExcelFile(buf);
+      } else if (lower.endsWith('.csv') || lower.endsWith('.txt')) {
+        const text = await file.text();
+        payload = parseChartCsvWithPapa(text);
+      } else {
+        const text = await file.text();
+        payload = parseChartJsonFile(text);
+      }
+      setChartDatasets((prev) => ({ ...prev, [chartId]: payload }));
+      notificationService.showSuccessNotification('Données du graphique importées');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Import impossible';
+      notificationService.showErrorNotification(msg);
     }
   };
 
@@ -860,7 +1004,7 @@ const CreateTemplate: React.FC = () => {
       <Drawer
         opened={templateDrawerOpened}
         onClose={closeTemplateDrawer}
-        title="Choose a Template"
+        title="Choisir un modèle"
         position="right"
         size="lg"
         styles={{
@@ -874,569 +1018,399 @@ const CreateTemplate: React.FC = () => {
             backgroundColor: '#1A1B1E',
             color: 'white',
           },
-          close: {
-            color: 'white',
-            transition: 'all 0.2s ease',
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              transform: 'scale(1.1)',
-            },
+          close: { color: 'white' },
+        }}
+      >
+        <Box px="md" pt="md" pb="xs">
+          <TextInput
+            placeholder="Rechercher un modèle..."
+            leftSection={<IconSearch size={14} />}
+            value={templateSearch}
+            onChange={(e) => setTemplateSearch(e.currentTarget.value)}
+            styles={{
+              input: { backgroundColor: '#25262B', borderColor: '#373A40', color: 'white' },
+            }}
+            mb="sm"
+          />
+          <Tabs
+            value={templateTab}
+            onChange={(v) => {
+              setTemplateTab(v || 'default');
+              if (v === 'marketplace') loadMarketplaceTemplates();
+            }}
+            styles={{
+              tab: { color: '#909296' },
+              list: { borderColor: '#373A40' },
+            }}
+          >
+            <Tabs.List>
+              <Tabs.Tab value="default">Défaut ({REFERENCE_TEMPLATES.length})</Tabs.Tab>
+              <Tabs.Tab value="marketplace">Marketplace</Tabs.Tab>
+            </Tabs.List>
+
+            {/* ─── Default tab ─────────────────────────── */}
+            <Tabs.Panel value="default">
+              <ScrollArea h="calc(100vh - 200px)" mt="md">
+                {(() => {
+                  const q = templateSearch.toLowerCase();
+                  const filtered = q
+                    ? REFERENCE_TEMPLATES.filter((t) => t.name.toLowerCase().includes(q) || t.type.toLowerCase().includes(q))
+                    : REFERENCE_TEMPLATES;
+
+                  const groups: Record<string, typeof filtered> = {};
+                  filtered.forEach((t) => {
+                    if (!groups[t.type]) groups[t.type] = [];
+                    groups[t.type].push(t);
+                  });
+
+                  const typeLabel: Record<string, string> = {
+                    invoice: 'Factures',
+                    resume: 'CV',
+                    report: 'Rapports',
+                    other: 'Autres documents',
+                  };
+                  const typeColor: Record<string, string> = {
+                    invoice: 'blue',
+                    resume: 'green',
+                    report: 'violet',
+                    other: 'gray',
+                  };
+
+                  if (filtered.length === 0) {
+                    return (
+                      <Center h={200}>
+                        <Text c="dimmed" size="sm">Aucun modèle trouvé</Text>
+                      </Center>
+                    );
+                  }
+
+                  return (
+                    <Stack gap="xl">
+                      {Object.entries(groups).map(([type, items]) => (
+                        <Box key={type}>
+                          <Group mb="sm">
+                            <Text size="sm" fw={600} c="white">{typeLabel[type] || type}</Text>
+                            <Badge size="sm" color={typeColor[type] || 'gray'}>{items.length}</Badge>
+                          </Group>
+                          <SimpleGrid cols={2} spacing="sm">
+                            {items.map((templateItem) => (
+                              <Card
+                                key={templateItem.id}
+                                padding="sm"
+                                radius="md"
+                                withBorder
+                                styles={{
+                                  root: {
+                                    borderColor: selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
+                                    backgroundColor: '#25262B',
+                                    cursor: 'pointer',
+                                  },
+                                }}
+                                onClick={() => handleTemplateSelect(templateItem)}
+                              >
+                                <Group justify="space-between" wrap="nowrap">
+                                  <Text size="sm" fw={500} c="white" lineClamp={1} style={{ flex: 1 }}>
+                                    {templateItem.name}
+                                  </Text>
+                                  {selectedTemplateId === templateItem.id && (
+                                    <Badge size="xs" color="blue">✓</Badge>
+                                  )}
+                                </Group>
+                                <Text size="xs" c="dimmed" mt={4}>
+                                  {templateItem.metadata.style} · {templateItem.metadata.complexity}
+                                </Text>
+                              </Card>
+                            ))}
+                          </SimpleGrid>
+                        </Box>
+                      ))}
+                    </Stack>
+                  );
+                })()}
+              </ScrollArea>
+            </Tabs.Panel>
+
+            {/* ─── Marketplace tab ─────────────────────── */}
+            <Tabs.Panel value="marketplace">
+              <ScrollArea h="calc(100vh - 200px)" mt="md">
+                {marketplaceLoading ? (
+                  <Center h={200}><Loader color="blue" /></Center>
+                ) : (() => {
+                  const q = templateSearch.toLowerCase();
+                  const filtered = q
+                    ? marketplaceTemplates.filter(
+                        (t) =>
+                          t.name?.toLowerCase().includes(q) ||
+                          t.category?.toLowerCase().includes(q) ||
+                          (t.description && t.description.toLowerCase().includes(q)),
+                      )
+                    : marketplaceTemplates;
+
+                  if (!marketplaceLoaded) {
+                    return (
+                      <Center h={200}>
+                        <Text c="dimmed" size="sm">Ouvrez l'onglet pour charger les modèles</Text>
+                      </Center>
+                    );
+                  }
+
+                  if (filtered.length === 0) {
+                    return (
+                      <Center h={200}>
+                        <Text c="dimmed" size="sm">
+                          {q ? 'Aucun modèle trouvé' : 'Aucun modèle disponible sur le Marketplace'}
+                        </Text>
+                      </Center>
+                    );
+                  }
+
+                  return (
+                    <Stack gap="xs" maw={300} mx="auto">
+                      {filtered.map((tpl) => {
+                        const isFree = !tpl.price || tpl.price === 0;
+                        const cover = tpl.cover_image_url?.trim();
+                        return (
+                          <Card
+                            key={tpl.ID}
+                            padding={0}
+                            radius="md"
+                            withBorder
+                            styles={{
+                              root: {
+                                borderColor: selectedTemplateId === String(tpl.ID) ? '#3B82F6' : '#373A40',
+                                backgroundColor: '#25262B',
+                                cursor: isFree ? 'pointer' : 'default',
+                                opacity: isFree ? 1 : 0.7,
+                                overflow: 'hidden',
+                                maxWidth: '100%',
+                              },
+                            }}
+                            onClick={() => isFree && handleMarketplaceSelect(tpl)}
+                          >
+                            <Box
+                              pos="relative"
+                              h={56}
+                              style={{ overflow: 'hidden' }}
+                            >
+                              {cover ? (
+                                <>
+                                  <Image
+                                    src={cover}
+                                    alt={tpl.name || 'Cover'}
+                                    h={56}
+                                    w="100%"
+                                    fit="cover"
+                                    fallbackSrc="https://placehold.co/400x200?text=Template"
+                                  />
+                                  <ActionIcon
+                                    size="sm"
+                                    variant="filled"
+                                    color="dark"
+                                    radius="md"
+                                    aria-label="Aperçu de la couverture"
+                                    style={{
+                                      position: 'absolute',
+                                      bottom: 6,
+                                      right: 6,
+                                      boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
+                                    }}
+                                    onClick={(ev) => {
+                                      ev.stopPropagation();
+                                      setCoverPreviewUrl(cover);
+                                    }}
+                                  >
+                                    <IconEye size={16} />
+                                  </ActionIcon>
+                                </>
+                              ) : (
+                                <Box
+                                  h="100%"
+                                  style={{
+                                    background: 'linear-gradient(135deg, #373A40 0%, #1A1B1E 100%)',
+                                  }}
+                                />
+                              )}
+                            </Box>
+                            <Box p="xs">
+                              <Group justify="space-between" wrap="nowrap" gap={6} mb={4}>
+                                <Text size="xs" fw={600} c="white" lineClamp={1} style={{ flex: 1 }}>
+                                  {tpl.name}
+                                </Text>
+                                {isFree ? (
+                                  <Badge size="xs" color="green">Gratuit</Badge>
+                                ) : (
+                                  <Badge size="xs" color="orange" leftSection={<IconLock size={10} />}>
+                                    {tpl.price}€
+                                  </Badge>
+                                )}
+                              </Group>
+                              {tpl.description?.trim() ? (
+                                <Text size="xs" c="dimmed" lineClamp={2} mb={4}>
+                                  {tpl.description.trim()}
+                                </Text>
+                              ) : null}
+                              {tpl.category && (
+                                <Text size="xs" c="dimmed">{tpl.category}</Text>
+                              )}
+                            </Box>
+                          </Card>
+                        );
+                      })}
+                    </Stack>
+                  );
+                })()}
+              </ScrollArea>
+            </Tabs.Panel>
+          </Tabs>
+        </Box>
+      </Drawer>
+
+      <input
+        ref={chartFileInputRef}
+        type="file"
+        accept=".json,.csv,.txt,.xlsx,.xls,application/json,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+        style={{ display: 'none' }}
+        onChange={onChartFileSelected}
+      />
+
+      <Modal
+        opened={coverPreviewUrl != null}
+        onClose={() => setCoverPreviewUrl(null)}
+        title="Aperçu"
+        fullScreen
+        styles={{
+          body: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#0d0d0f',
+            minHeight: '70vh',
           },
         }}
       >
-        <ScrollArea h="calc(100vh - 80px)">
-          <Stack gap="xl" p="xl">
-            <Text size="sm" c="dimmed">
-              Select a template to start with. The template code and default variables will be
-              loaded automatically.
+        {coverPreviewUrl ? (
+          <Image
+            src={coverPreviewUrl}
+            alt="Couverture"
+            maw="100%"
+            mah="calc(100vh - 80px)"
+            w="auto"
+            h="auto"
+            fit="contain"
+            style={{ objectFit: 'contain' }}
+          />
+        ) : null}
+      </Modal>
+
+      <Modal
+        opened={chartsHubOpened}
+        onClose={closeChartsHub}
+        title="Données des graphiques"
+        size="md"
+        centered
+      >
+        <ScrollArea mah={480}>
+          <Stack gap="sm">
+            <Text size="xs" c="dimmed">
+              CSV / Excel (1re feuille) : 1re colonne = libellés, colonnes suivantes = séries numériques.
+              Scatter / bubble : JSON Chart.js recommandé.
             </Text>
-
-            {/* Helper function to get icon for template type */}
-            {(() => {
-              const getTypeIcon = (type: string) => {
-                switch (type) {
-                  case 'invoice':
-                    return <IconFileInvoice size={20} />;
-                  case 'resume':
-                    return <IconUser size={20} />;
-                  case 'report':
-                    return <IconReport size={20} />;
-                  default:
-                    return <IconFileText size={20} />;
-                }
-              };
-
-              const getTypeColor = (type: string) => {
-                switch (type) {
-                  case 'invoice':
-                    return 'blue';
-                  case 'resume':
-                    return 'green';
-                  case 'report':
-                    return 'purple';
-                  default:
-                    return 'gray';
-                }
-              };
-
-              const getTypeLabel = (type: string) => {
-                switch (type) {
-                  case 'invoice':
-                    return 'Invoices';
-                  case 'resume':
-                    return 'Resumes';
-                  case 'report':
-                    return 'Reports';
-                  default:
-                    return 'Other Documents';
-                }
-              };
-
-              // Group templates by type
-              const templatesByType = {
-                invoice: REFERENCE_TEMPLATES.filter((t) => t.type === 'invoice'),
-                resume: REFERENCE_TEMPLATES.filter((t) => t.type === 'resume'),
-                report: REFERENCE_TEMPLATES.filter((t) => t.type === 'report'),
-                other: REFERENCE_TEMPLATES.filter((t) => t.type === 'other'),
-              };
-
-              // Sub-categorize "other" templates
-              const otherTemplates = {
-                commercial: templatesByType.other.filter((t) =>
-                  ['proposal-business', 'quote-estimate', 'purchase-order'].includes(t.id),
-                ),
-                legal: templatesByType.other.filter((t) =>
-                  ['contract-agreement', 'nda-confidentiality'].includes(t.id),
-                ),
-                presentation: templatesByType.other.filter((t) =>
-                  ['presentation-slide', 'pitch-deck'].includes(t.id),
-                ),
-                administrative: templatesByType.other.filter((t) =>
-                  ['receipt-payment', 'delivery-note'].includes(t.id),
-                ),
-                certificate: templatesByType.other.filter((t) =>
-                  ['certificate-achievement'].includes(t.id),
-                ),
-              };
-
+            {extractChartBindingsFromTemplate(code).map(({ chartId, chartType }) => {
+              const raw = chartDatasets[chartId];
+              const hasData = raw != null;
+              const valid =
+                hasData && isChartDataValidForType(raw, chartType ?? null);
+              let statusLabel = 'Manquant';
+              let statusColor: 'teal' | 'orange' | 'red' = 'orange';
+              if (hasData && valid) {
+                statusLabel = 'OK';
+                statusColor = 'teal';
+              } else if (hasData && !valid) {
+                statusLabel = 'Invalide';
+                statusColor = 'red';
+              }
               return (
-                <>
-                  {/* Invoices */}
-                  {templatesByType.invoice.length > 0 && (
-                    <Box>
-                      <Group mb="md">
-                        {getTypeIcon('invoice')}
-                        <Text size="sm" fw={600} c="white">
-                          {getTypeLabel('invoice')}
-                        </Text>
-                        <Badge size="sm" color={getTypeColor('invoice')}>
-                          {templatesByType.invoice.length}
-                        </Badge>
-                      </Group>
-                      <SimpleGrid cols={2} spacing="md">
-                        {templatesByType.invoice.map((templateItem) => (
-                          <Card
-                            key={templateItem.id}
-                            padding="md"
-                            radius="md"
-                            withBorder
-                            styles={{
-                              root: {
-                                borderColor:
-                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
-                                backgroundColor: '#25262B',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  borderColor: '#3B82F6',
-                                  transform: 'translateY(-2px)',
-                                },
-                              },
-                            }}
-                            onClick={() => handleTemplateSelect(templateItem)}
-                          >
-                            <Stack gap="xs">
-                              <Group justify="space-between">
-                                <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {templateItem.name}
-                                </Text>
-                                {selectedTemplateId === templateItem.id && (
-                                  <Badge size="xs" color="blue">
-                                    Selected
-                                  </Badge>
-                                )}
-                              </Group>
-                              <Text size="xs" c="dimmed" lineClamp={2}>
-                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
-                              </Text>
-                              <Group gap="xs" mt="xs">
-                                {templateItem.metadata.colors.slice(0, 3).map((color, idx) => {
-                                  // Map Tailwind colors to hex values
-                                  const colorMap: Record<string, string> = {
-                                    'blue-600': '#2563eb',
-                                    'gray-900': '#111827',
-                                    'gray-600': '#4b5563',
-                                    'blue-50': '#eff6ff',
-                                    'indigo-600': '#4f46e5',
-                                    'purple-600': '#9333ea',
-                                    'green-600': '#16a34a',
-                                    'orange-600': '#ea580c',
-                                    'teal-600': '#0d9488',
-                                    'slate-900': '#0f172a',
-                                    'yellow-400': '#facc15',
-                                    'yellow-600': '#ca8a04',
-                                  };
-                                  const hexColor = colorMap[color] || '#6b7280';
-                                  return (
-                                    <Box
-                                      key={idx}
-                                      style={{
-                                        width: 12,
-                                        height: 12,
-                                        borderRadius: '50%',
-                                        backgroundColor: hexColor,
-                                      }}
-                                    />
-                                  );
-                                })}
-                              </Group>
-                            </Stack>
-                          </Card>
-                        ))}
-                      </SimpleGrid>
-                    </Box>
-                  )}
-
-                  {/* Resumes */}
-                  {templatesByType.resume.length > 0 && (
-                    <Box>
-                      <Group mb="md">
-                        {getTypeIcon('resume')}
-                        <Text size="sm" fw={600} c="white">
-                          {getTypeLabel('resume')}
-                        </Text>
-                        <Badge size="sm" color={getTypeColor('resume')}>
-                          {templatesByType.resume.length}
-                        </Badge>
-                      </Group>
-                      <SimpleGrid cols={2} spacing="md">
-                        {templatesByType.resume.map((templateItem) => (
-                          <Card
-                            key={templateItem.id}
-                            padding="md"
-                            radius="md"
-                            withBorder
-                            styles={{
-                              root: {
-                                borderColor:
-                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
-                                backgroundColor: '#25262B',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  borderColor: '#3B82F6',
-                                  transform: 'translateY(-2px)',
-                                },
-                              },
-                            }}
-                            onClick={() => handleTemplateSelect(templateItem)}
-                          >
-                            <Stack gap="xs">
-                              <Group justify="space-between">
-                                <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {templateItem.name}
-                                </Text>
-                                {selectedTemplateId === templateItem.id && (
-                                  <Badge size="xs" color="blue">
-                                    Selected
-                                  </Badge>
-                                )}
-                              </Group>
-                              <Text size="xs" c="dimmed" lineClamp={2}>
-                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
-                              </Text>
-                            </Stack>
-                          </Card>
-                        ))}
-                      </SimpleGrid>
-                    </Box>
-                  )}
-
-                  {/* Reports */}
-                  {templatesByType.report.length > 0 && (
-                    <Box>
-                      <Group mb="md">
-                        {getTypeIcon('report')}
-                        <Text size="sm" fw={600} c="white">
-                          {getTypeLabel('report')}
-                        </Text>
-                        <Badge size="sm" color={getTypeColor('report')}>
-                          {templatesByType.report.length}
-                        </Badge>
-                      </Group>
-                      <SimpleGrid cols={2} spacing="md">
-                        {templatesByType.report.map((templateItem) => (
-                          <Card
-                            key={templateItem.id}
-                            padding="md"
-                            radius="md"
-                            withBorder
-                            styles={{
-                              root: {
-                                borderColor:
-                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
-                                backgroundColor: '#25262B',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  borderColor: '#3B82F6',
-                                  transform: 'translateY(-2px)',
-                                },
-                              },
-                            }}
-                            onClick={() => handleTemplateSelect(templateItem)}
-                          >
-                            <Stack gap="xs">
-                              <Group justify="space-between">
-                                <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {templateItem.name}
-                                </Text>
-                                {selectedTemplateId === templateItem.id && (
-                                  <Badge size="xs" color="blue">
-                                    Selected
-                                  </Badge>
-                                )}
-                              </Group>
-                              <Text size="xs" c="dimmed" lineClamp={2}>
-                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
-                              </Text>
-                            </Stack>
-                          </Card>
-                        ))}
-                      </SimpleGrid>
-                    </Box>
-                  )}
-
-                  {/* Commercial Documents */}
-                  {otherTemplates.commercial.length > 0 && (
-                    <Box>
-                      <Group mb="md">
-                        <IconBriefcase size={20} />
-                        <Text size="sm" fw={600} c="white">
-                          Commercial Documents
-                        </Text>
-                        <Badge size="sm" color="teal">
-                          {otherTemplates.commercial.length}
-                        </Badge>
-                      </Group>
-                      <SimpleGrid cols={2} spacing="md">
-                        {otherTemplates.commercial.map((templateItem) => (
-                          <Card
-                            key={templateItem.id}
-                            padding="md"
-                            radius="md"
-                            withBorder
-                            styles={{
-                              root: {
-                                borderColor:
-                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
-                                backgroundColor: '#25262B',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  borderColor: '#3B82F6',
-                                  transform: 'translateY(-2px)',
-                                },
-                              },
-                            }}
-                            onClick={() => handleTemplateSelect(templateItem)}
-                          >
-                            <Stack gap="xs">
-                              <Group justify="space-between">
-                                <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {templateItem.name}
-                                </Text>
-                                {selectedTemplateId === templateItem.id && (
-                                  <Badge size="xs" color="blue">
-                                    Selected
-                                  </Badge>
-                                )}
-                              </Group>
-                              <Text size="xs" c="dimmed" lineClamp={2}>
-                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
-                              </Text>
-                            </Stack>
-                          </Card>
-                        ))}
-                      </SimpleGrid>
-                    </Box>
-                  )}
-
-                  {/* Legal Documents */}
-                  {otherTemplates.legal.length > 0 && (
-                    <Box>
-                      <Group mb="md">
-                        <IconGavel size={20} />
-                        <Text size="sm" fw={600} c="white">
-                          Legal Documents
-                        </Text>
-                        <Badge size="sm" color="orange">
-                          {otherTemplates.legal.length}
-                        </Badge>
-                      </Group>
-                      <SimpleGrid cols={2} spacing="md">
-                        {otherTemplates.legal.map((templateItem) => (
-                          <Card
-                            key={templateItem.id}
-                            padding="md"
-                            radius="md"
-                            withBorder
-                            styles={{
-                              root: {
-                                borderColor:
-                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
-                                backgroundColor: '#25262B',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  borderColor: '#3B82F6',
-                                  transform: 'translateY(-2px)',
-                                },
-                              },
-                            }}
-                            onClick={() => handleTemplateSelect(templateItem)}
-                          >
-                            <Stack gap="xs">
-                              <Group justify="space-between">
-                                <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {templateItem.name}
-                                </Text>
-                                {selectedTemplateId === templateItem.id && (
-                                  <Badge size="xs" color="blue">
-                                    Selected
-                                  </Badge>
-                                )}
-                              </Group>
-                              <Text size="xs" c="dimmed" lineClamp={2}>
-                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
-                              </Text>
-                            </Stack>
-                          </Card>
-                        ))}
-                      </SimpleGrid>
-                    </Box>
-                  )}
-
-                  {/* Presentation Documents */}
-                  {otherTemplates.presentation.length > 0 && (
-                    <Box>
-                      <Group mb="md">
-                        <IconPresentation size={20} />
-                        <Text size="sm" fw={600} c="white">
-                          Presentation Documents
-                        </Text>
-                        <Badge size="sm" color="pink">
-                          {otherTemplates.presentation.length}
-                        </Badge>
-                      </Group>
-                      <SimpleGrid cols={2} spacing="md">
-                        {otherTemplates.presentation.map((templateItem) => (
-                          <Card
-                            key={templateItem.id}
-                            padding="md"
-                            radius="md"
-                            withBorder
-                            styles={{
-                              root: {
-                                borderColor:
-                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
-                                backgroundColor: '#25262B',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  borderColor: '#3B82F6',
-                                  transform: 'translateY(-2px)',
-                                },
-                              },
-                            }}
-                            onClick={() => handleTemplateSelect(templateItem)}
-                          >
-                            <Stack gap="xs">
-                              <Group justify="space-between">
-                                <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {templateItem.name}
-                                </Text>
-                                {selectedTemplateId === templateItem.id && (
-                                  <Badge size="xs" color="blue">
-                                    Selected
-                                  </Badge>
-                                )}
-                              </Group>
-                              <Text size="xs" c="dimmed" lineClamp={2}>
-                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
-                              </Text>
-                            </Stack>
-                          </Card>
-                        ))}
-                      </SimpleGrid>
-                    </Box>
-                  )}
-
-                  {/* Administrative Documents */}
-                  {otherTemplates.administrative.length > 0 && (
-                    <Box>
-                      <Group mb="md">
-                        <IconReceipt size={20} />
-                        <Text size="sm" fw={600} c="white">
-                          Administrative Documents
-                        </Text>
-                        <Badge size="sm" color="cyan">
-                          {otherTemplates.administrative.length}
-                        </Badge>
-                      </Group>
-                      <SimpleGrid cols={2} spacing="md">
-                        {otherTemplates.administrative.map((templateItem) => (
-                          <Card
-                            key={templateItem.id}
-                            padding="md"
-                            radius="md"
-                            withBorder
-                            styles={{
-                              root: {
-                                borderColor:
-                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
-                                backgroundColor: '#25262B',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  borderColor: '#3B82F6',
-                                  transform: 'translateY(-2px)',
-                                },
-                              },
-                            }}
-                            onClick={() => handleTemplateSelect(templateItem)}
-                          >
-                            <Stack gap="xs">
-                              <Group justify="space-between">
-                                <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {templateItem.name}
-                                </Text>
-                                {selectedTemplateId === templateItem.id && (
-                                  <Badge size="xs" color="blue">
-                                    Selected
-                                  </Badge>
-                                )}
-                              </Group>
-                              <Text size="xs" c="dimmed" lineClamp={2}>
-                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
-                              </Text>
-                            </Stack>
-                          </Card>
-                        ))}
-                      </SimpleGrid>
-                    </Box>
-                  )}
-
-                  {/* Certificates */}
-                  {otherTemplates.certificate.length > 0 && (
-                    <Box>
-                      <Group mb="md">
-                        <IconCertificate size={20} />
-                        <Text size="sm" fw={600} c="white">
-                          Certificates
-                        </Text>
-                        <Badge size="sm" color="yellow">
-                          {otherTemplates.certificate.length}
-                        </Badge>
-                      </Group>
-                      <SimpleGrid cols={2} spacing="md">
-                        {otherTemplates.certificate.map((templateItem) => (
-                          <Card
-                            key={templateItem.id}
-                            padding="md"
-                            radius="md"
-                            withBorder
-                            styles={{
-                              root: {
-                                borderColor:
-                                  selectedTemplateId === templateItem.id ? '#3B82F6' : '#373A40',
-                                backgroundColor: '#25262B',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  borderColor: '#3B82F6',
-                                  transform: 'translateY(-2px)',
-                                },
-                              },
-                            }}
-                            onClick={() => handleTemplateSelect(templateItem)}
-                          >
-                            <Stack gap="xs">
-                              <Group justify="space-between">
-                                <Text size="sm" fw={500} c="white" lineClamp={1}>
-                                  {templateItem.name}
-                                </Text>
-                                {selectedTemplateId === templateItem.id && (
-                                  <Badge size="xs" color="blue">
-                                    Selected
-                                  </Badge>
-                                )}
-                              </Group>
-                              <Text size="xs" c="dimmed" lineClamp={2}>
-                                {templateItem.metadata.style} • {templateItem.metadata.complexity}
-                              </Text>
-                            </Stack>
-                          </Card>
-                        ))}
-                      </SimpleGrid>
-                    </Box>
-                  )}
-                </>
+                <Box
+                  key={chartId}
+                  p="xs"
+                  style={{
+                    border: '1px solid #373A40',
+                    borderRadius: 8,
+                    background: '#25262B',
+                  }}
+                >
+                  <Group justify="space-between" wrap="nowrap" gap={6}>
+                    <Text size="xs" c="white" lineClamp={1} style={{ flex: 1 }}>
+                      {chartId}
+                      {chartType ? ` · ${chartType}` : ''}
+                    </Text>
+                    <Badge size="xs" color={statusColor}>
+                      {statusLabel}
+                    </Badge>
+                  </Group>
+                  <Group gap={6} mt={8}>
+                    <Button size="xs" variant="light" onClick={() => openChartJsonEditor(chartId)}>
+                      Modifier JSON
+                    </Button>
+                    <Button size="xs" variant="default" onClick={() => beginChartFileImport(chartId)}>
+                      Importer fichier
+                    </Button>
+                  </Group>
+                </Box>
               );
-            })()}
+            })}
           </Stack>
         </ScrollArea>
-      </Drawer>
+      </Modal>
+
+      <Modal
+        opened={chartJsonModalOpened}
+        onClose={closeChartJsonModal}
+        title={chartEditId ? `Données Chart.js — ${chartEditId}` : 'Données graphique'}
+        size="90%"
+        centered
+        styles={{
+          content: { maxWidth: 1120 },
+          body: { maxHeight: 'calc(100vh - 100px)' },
+        }}
+      >
+        <Stack gap="md">
+          <Text size="xs" c="dimmed">
+            Objet au format Chart.js : propriétés <code>labels</code> (sauf scatter/bubble) et{' '}
+            <code>datasets</code> non vide.
+          </Text>
+          <Box
+            style={{
+              border: '1px solid #373A40',
+              borderRadius: 8,
+              overflow: 'hidden',
+            }}
+          >
+            <Editor
+              key={chartEditId ?? 'chart-json'}
+              height="clamp(380px, 62vh, 720px)"
+              language="json"
+              theme="vs-dark"
+              value={chartEditJson}
+              onChange={(v) => setChartEditJson(v ?? '')}
+              options={{
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                wordWrap: 'on',
+                fontSize: 13,
+                tabSize: 2,
+                automaticLayout: true,
+              }}
+            />
+          </Box>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={closeChartJsonModal}>
+              Annuler
+            </Button>
+            <Button onClick={applyChartJsonEdit}>Appliquer</Button>
+          </Group>
+        </Stack>
+      </Modal>
 
       {/* NavBar */}
       <Group
@@ -1605,7 +1579,7 @@ const CreateTemplate: React.FC = () => {
           {/* Sidebar */}
           <Stack
             component={ScrollArea}
-            w={sidebarCollapsed ? '40px' : '18%'}
+            w={sidebarCollapsed ? '40px' : '22%'}
             p={sidebarCollapsed ? 'xs' : 'xl'}
             h="100%"
             bg="#1A1B1E"
@@ -1924,47 +1898,66 @@ const CreateTemplate: React.FC = () => {
                 </Box>
 
                 {/* Charts section */}
-                <Stack id="charts-section" h={300}>
+                <Stack id="charts-section" gap="sm" mah={520} style={{ overflow: 'auto' }}>
                   <Box p="xs">
-                    <Text size="sm" fw={600} c="white" mb="md" tt="uppercase">
-                      Charts
+                    <Text size="sm" fw={600} c="white" mb="xs" tt="uppercase">
+                      Graphiques
                     </Text>
-                    <Text size="xs" c="dimmed" mb="md">
-                      Click on a chart type to add it to your template
+                    <Text size="xs" c="dimmed" mb="sm">
+                      Ajoutez un type ci-dessous. Les données sont séparées du JSON « variables » (panneau
+                      ci-dessous).
                     </Text>
+                    {(() => {
+                      const bindings = extractChartBindingsFromTemplate(code);
+                      if (bindings.length === 0) return null;
+                      return (
+                        <Button
+                          fullWidth
+                          size="xs"
+                          variant="light"
+                          leftSection={<IconChartDots size={14} />}
+                          onClick={openChartsHub}
+                          mb="md"
+                        >
+                          Gérer les données des graphiques ({bindings.length})
+                        </Button>
+                      );
+                    })()}
                     <SimpleGrid cols={2} spacing="xs">
                       {Object.entries(CHART_TYPES).map(([type, label]) => (
                         <Box
                           key={type}
                           onClick={() => {
-                            if (editorRef.current) {
                               const editor = editorRef.current;
+                              if (!editor) {
+                                notificationService.showErrorNotification(
+                                  'Éditeur non prêt — réessayez dans une seconde.',
+                                );
+                                return;
+                              }
                               const model = editor.getModel();
-                              if (!model) return;
+                              if (!model) {
+                                notificationService.showErrorNotification('Modèle éditeur introuvable.');
+                                return;
+                              }
 
                               const lastLine = model.getLineCount();
                               const lastLineContent = model.getLineContent(lastLine);
                               const chartId = `${type}Chart${Math.random().toString(36).substr(2, 9)}`;
                               const chartData = generateChartData(type as keyof typeof CHART_TYPES);
 
-                              // Update variables with new chart data
-                              const updatedVariables = {
-                                ...variables,
-                                charts: {
-                                  ...(variables.charts || {}),
-                                  [chartId]: chartData,
-                                },
-                              };
-                              handleVariablesUpdate(updatedVariables);
+                              setChartDatasets((prev) => ({
+                                ...prev,
+                                [chartId]: chartData,
+                              }));
 
-                              // Insert chart canvas element at the end
                               const text = `\n\n<!-- Chart Section -->
-<div class="w-full max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg mb-8">
-  <canvas 
+<div class="w-full py-4" style="display:flex;justify-content:center;align-items:center;">
+  <canvas
     id="${chartId}"
     data-chart-type="${type}"
-    data-chart-data='${JSON.stringify(chartData).replace(/'/g, '&apos;')}'
-    class="w-full aspect-[16/9]"
+    data-chart-data='{{charts.${chartId}}}'
+    style="display:block;margin:0 auto;max-width:min(100%,42rem);width:100%;height:auto;"
   ></canvas>
 </div>`;
 
@@ -1973,12 +1966,12 @@ const CreateTemplate: React.FC = () => {
                                 column: lastLineContent.length + 1,
                               };
 
-                              const range = new monaco.Range(
-                                position.lineNumber,
-                                position.column,
-                                position.lineNumber,
-                                position.column,
-                              );
+                              const range = {
+                                startLineNumber: position.lineNumber,
+                                startColumn: position.column,
+                                endLineNumber: position.lineNumber,
+                                endColumn: position.column,
+                              };
 
                               const op = {
                                 identifier: { major: 1, minor: 1 },
@@ -1988,7 +1981,6 @@ const CreateTemplate: React.FC = () => {
                               };
 
                               editor.executeEdits('chart-insert', [op]);
-                            }
                           }}
                           style={{
                             backgroundColor: '#25262B',
@@ -2021,7 +2013,7 @@ const CreateTemplate: React.FC = () => {
           <Box
             id="editor-container"
             style={{
-              width: sidebarCollapsed ? 'calc(60% - 20px)' : '50%',
+              width: sidebarCollapsed ? 'calc(61% - 20px)' : '46%',
               height: '100%',
               transition: 'width 0.3s ease',
               flexShrink: 0,
@@ -2031,6 +2023,7 @@ const CreateTemplate: React.FC = () => {
           >
             <DndProvider backend={HTML5Backend}>
               <IDE
+                key={editorSessionKey}
                 onChange={(newCode) => {
                   setCode(newCode);
                   setTemplateContent(newCode);
@@ -2047,7 +2040,7 @@ const CreateTemplate: React.FC = () => {
           <Box
             id="preview-container"
             style={{
-              width: sidebarCollapsed ? 'calc(40% - 20px)' : '32%',
+              width: sidebarCollapsed ? 'calc(39% - 20px)' : '30%',
               height: '100%',
               backgroundColor: '#1A1B1E',
               borderLeft: '1px solid #373A40',
@@ -2071,7 +2064,7 @@ const CreateTemplate: React.FC = () => {
               <Preview
                 format={format}
                 htmlContent={code}
-                data={variables}
+                data={mergedTemplateData}
                 isLandscape={isLandScape}
                 fonts={fontsSelected}
                 setTemplateContent={setTemplateContent}

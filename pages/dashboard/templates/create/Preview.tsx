@@ -1,6 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Handlebars from 'handlebars';
 import '../../../../utils/handlebarsHelpers';
+import {
+  processChartData,
+  replaceChartDataPlaceholders,
+  CHART_DATA_VALIDATION_SCRIPT_SNIPPET,
+} from '@/utils/chartUtils';
 import { Switch, Tooltip } from '@mantine/core';
 
 // Define the FormatType directly in this file
@@ -88,41 +93,68 @@ function Preview({
     }
 
     try {
-      // Compile the Handlebars template with provided data.
-      const template = Handlebars.compile(htmlContent);
+      const processedHtml = processChartData(htmlContent);
+      const template = Handlebars.compile(processedHtml);
       const rendered = template(data);
+      const finalHtml = replaceChartDataPlaceholders(rendered, data);
 
       // Chart initialization script.
       const chartScript = `
+        ${CHART_DATA_VALIDATION_SCRIPT_SNIPPET}
         (function() {
+          function toChartJsType(raw) {
+            var t = String(raw == null ? '' : raw).trim();
+            var k = t.toLowerCase();
+            if (k === 'polararea') return 'polarArea';
+            return k;
+          }
+          function drawWarning(canvas, msg) {
+            var ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            ctx.fillStyle = '#fef3c7';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#92400e';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText('⚠ ' + msg, 8, 24);
+            ctx.fillStyle = '#b45309';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('Vérifiez la variable charts.*', 8, 42);
+          }
+
           function initializeCharts() {
             if (!window.Chart) {
-              // Chart.js library not loaded
               return;
             }
             var chartElements = document.querySelectorAll('canvas[data-chart-type]');
             chartElements.forEach(function(element) {
               try {
-                var type = element.getAttribute('data-chart-type');
+                var typeRaw = element.getAttribute('data-chart-type');
                 var rawData = element.getAttribute('data-chart-data');
-                
-                if (!type || !rawData) {
-                  // Missing required chart attributes
+
+                if (!typeRaw || !rawData) {
+                  drawWarning(element, 'Attributs manquants (data-chart-type / data-chart-data)');
                   return;
                 }
 
+                var type = toChartJsType(typeRaw);
+
                 var chartData;
                 try {
-                  // The data is already JSON stringified in the attribute
                   chartData = JSON.parse(rawData);
                 } catch (e) {
-                  // Invalid chart data format
+                  drawWarning(element, 'JSON invalide dans data-chart-data');
+                  return;
+                }
+
+                if (!isChartDataValidForType(chartData, typeRaw)) {
+                  drawWarning(element, 'Structure invalide — datasets requis ; labels non vides sauf scatter/bubble');
                   return;
                 }
 
                 var defaultOptions = {
                   responsive: true,
                   maintainAspectRatio: true,
+                  animation: false,
                   plugins: {
                     legend: {
                       position: 'top',
@@ -149,20 +181,10 @@ function Preview({
                   }
                 };
 
-                // Add type-specific options
                 if (type === 'line' || type === 'bar') {
                   defaultOptions.scales = {
-                    y: {
-                      beginAtZero: true,
-                      grid: {
-                        drawBorder: false
-                      }
-                    },
-                    x: {
-                      grid: {
-                        display: false
-                      }
-                    }
+                    y: { beginAtZero: true, grid: { drawBorder: false } },
+                    x: { grid: { display: false } }
                   };
                 }
 
@@ -171,34 +193,25 @@ function Preview({
                   defaultOptions.radius = '90%';
                 }
 
-                // Create and render the chart
                 var chartInstance = new Chart(element, {
                   type: type,
                   data: chartData,
                   options: defaultOptions
                 });
 
-                // Store chart instance for cleanup
                 element.chart = chartInstance;
               } catch (error) {
-                var ctx = element.getContext('2d');
-                if (ctx) {
-                  ctx.fillStyle = '#FF4444';
-                  ctx.font = '14px Arial';
-                  ctx.fillText('Error loading chart', 10, 30);
-                }
+                drawWarning(element, 'Erreur de rendu : ' + (error && error.message ? error.message : 'inconnue'));
               }
             });
           }
 
-          // Initialize charts when DOM is ready
           if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initializeCharts);
           } else {
             initializeCharts();
           }
 
-          // Cleanup charts before unloading
           window.addEventListener('beforeunload', function() {
             var chartElements = document.querySelectorAll('canvas[data-chart-type]');
             chartElements.forEach(function(element) {
@@ -441,7 +454,7 @@ function Preview({
   </head>
   <body>
     <div class="content">
-      ${rendered}
+      ${finalHtml}
     </div>
     <script>
       ${chartScript}

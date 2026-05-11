@@ -14,7 +14,7 @@ import {
  * Modèle Claude configuré pour la révision
  */
 const model = new ChatAnthropic({
-  modelName: 'claude-3-haiku-20240307',
+  modelName: 'claude-haiku-4-5-20251001',
   temperature: 0.2, // Plus déterministe pour la correction
   maxTokens: 8192,
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',

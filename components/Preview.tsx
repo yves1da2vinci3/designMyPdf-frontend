@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Text } from '@mantine/core';
+import Handlebars from 'handlebars';
+import '@/utils/handlebarsHelpers';
+import { processChartData, replaceChartDataPlaceholders } from '@/utils/chartUtils';
 
 interface PreviewProps {
   format?: string;
@@ -36,6 +39,15 @@ function Preview({
   })();
 
   useEffect(() => {
+    let bodyHtml = htmlContent;
+    try {
+      const processed = processChartData(htmlContent);
+      const compiled = Handlebars.compile(processed);
+      bodyHtml = replaceChartDataPlaceholders(compiled(data || {}), data || {});
+    } catch {
+      bodyHtml = htmlContent;
+    }
+
     const fontLinks = fonts
       .map(
         (font) =>
@@ -213,7 +225,7 @@ function Preview({
         </head>
         <body>
           <div class="page-container" id="page-container">
-            ${htmlContent}
+            ${bodyHtml}
           </div>
           <script>${mainScript}</script>
         </body>

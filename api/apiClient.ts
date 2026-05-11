@@ -3,6 +3,18 @@ import { authApi } from './authApi';
 import notificationService from '@/services/NotificationService';
 import { AppConfig } from '@/utils/appConfig';
 
+/** Single in-flight refresh so parallel 401s do not race multiple refresh calls. */
+let refreshAccessTokenInFlight: Promise<void> | null = null;
+
+async function refreshAccessTokenDeduped(): Promise<void> {
+  if (!refreshAccessTokenInFlight) {
+    refreshAccessTokenInFlight = authApi.refreshAccessToken().finally(() => {
+      refreshAccessTokenInFlight = null;
+    });
+  }
+  return refreshAccessTokenInFlight;
+}
+
 const apiClient = axios.create({
   baseURL: AppConfig.apiBaseUrl,
   headers: {
@@ -39,7 +51,7 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true; // Mark the request as retried to prevent infinite loops
 
       try {
-        await authApi.refreshAccessToken();
+        await refreshAccessTokenDeduped();
         const accessToken = authApi.getUserSession()?.accessToken;
         if (accessToken) {
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;

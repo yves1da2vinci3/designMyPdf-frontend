@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Modal, Select, Button, Stack, Text, Group } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { templateApi, TemplateDTO } from '@/api/templateApi';
+import { templateApi, TemplateDTO, MarketplaceTemplateCard } from '@/api/templateApi';
 import { namespaceApi, NamespaceDTO } from '@/api/namespaceApi';
 
 interface Props {
   opened: boolean;
   onClose: () => void;
-  template: TemplateDTO;
+  template: TemplateDTO | MarketplaceTemplateCard;
 }
 
 export default function CopyTemplateModal({ opened, onClose, template }: Props) {
