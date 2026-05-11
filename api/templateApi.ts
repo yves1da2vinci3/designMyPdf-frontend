@@ -226,7 +226,14 @@ export const templateApi = {
     const formData = new FormData();
     formData.append('file', file);
     const res = await apiClient.post('/upload/cover-image', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      transformRequest: [
+        (data, headers) => {
+          if (data instanceof FormData) {
+            delete (headers as Record<string, unknown>)['Content-Type'];
+          }
+          return data;
+        },
+      ],
     });
     return { url: res.data.url };
   },

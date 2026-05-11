@@ -20,6 +20,7 @@ import {
 } from '@mantine/core';
 import { IconCheck, IconChevronLeft, IconShoppingCart, IconDownload } from '@tabler/icons-react';
 import { templateApi, TemplateDTO } from '@/api/templateApi';
+import Preview from '@/components/Preview';
 import CopyTemplateModal from '@/components/marketplace/CopyTemplateModal';
 import PurchaseModal from '@/components/marketplace/PurchaseModal';
 
@@ -96,10 +97,36 @@ export default function MarketplaceTemplateDetail() {
           {/* Left Column */}
           <Grid.Col span={8}>
             <Stack gap="xl">
-              {/* Cover image or preview */}
-              {template.preview && (
+              {/* Image de couverture marketplace si présente ; sinon vignette legacy ; sinon rendu du template auteur. */}
+              {template.cover_image_url?.trim() ? (
                 <Box style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e9ecef' }}>
-                  <Image src={template.preview} alt={template.name} radius="md" />
+                  <Image
+                    src={template.cover_image_url.trim()}
+                    alt={template.name || ''}
+                    radius="md"
+                  />
+                </Box>
+              ) : template.preview?.trim() ? (
+                <Box style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e9ecef' }}>
+                  <Image src={template.preview.trim()} alt={template.name || ''} radius="md" />
+                </Box>
+              ) : (
+                <Box
+                  style={{
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                    border: '1px solid #e9ecef',
+                    minHeight: 320,
+                    backgroundColor: '#fff',
+                  }}
+                >
+                  <Preview
+                    format="a4"
+                    htmlContent={template.content || ''}
+                    data={template.variables || {}}
+                    fonts={template.fonts || []}
+                    isLandscape={false}
+                  />
                 </Box>
               )}
 
