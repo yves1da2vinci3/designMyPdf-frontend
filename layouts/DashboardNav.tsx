@@ -1,11 +1,12 @@
 import { authApi } from '@/api/authApi';
 import Logo from '@/components/AppLogo/AppLogo';
-import { Box, Button, Code, Group } from '@mantine/core';
+import { Avatar, Box, Button, Code, Group, Text } from '@mantine/core';
 import {
   IconInfoCircle,
   IconKey,
   IconLogout,
   IconNotebook,
+  IconPlus,
   IconReceipt,
   IconUserCircle,
   IconWaveSawTool,
@@ -27,6 +28,12 @@ function DashboardNav() {
   const [active, setActive] = useState('Overview');
   const [isLogoutLoading, setIsLogoutLoading] = useState(false);
   const router = useRouter();
+  const session = authApi.getUserSession();
+  const userName = session?.userName ?? 'Guest';
+  const userEmail = session?.email ?? '';
+  const initials = userName.includes(' ')
+    ? (userName.split(' ')[0][0] + userName.split(' ')[1][0]).toUpperCase()
+    : userName.slice(0, 2).toUpperCase();
 
   const Logout = async () => {
     try {
@@ -39,10 +46,12 @@ function DashboardNav() {
       setIsLogoutLoading(false);
     }
   };
+
   const navigate = (label: string, link: string) => {
     router.push(link);
     setActive(label);
   };
+
   const links = data.map((item) => (
     <Box
       className={classes.link}
@@ -67,15 +76,38 @@ function DashboardNav() {
             v0.5.2
           </Code>
         </Group>
+
+        <Button
+          leftSection={<IconPlus size={16} />}
+          fullWidth
+          mb="md"
+          onClick={() => router.push('/dashboard/templates')}
+          style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}
+        >
+          New Template
+        </Button>
+
         {links}
       </div>
 
       <div className={classes.footer}>
+        <Group mb="sm" px="xs">
+          <Avatar size={36} radius="xl" color="blue" variant="filled">
+            {initials}
+          </Avatar>
+          <Box style={{ flex: 1, minWidth: 0 }}>
+            <Text size="sm" fw={600} c="white" lh={1.2} truncate>{userName}</Text>
+            <Text size="xs" c="blue.2" truncate>{userEmail}</Text>
+          </Box>
+        </Group>
         <Button
-          leftSection={<IconLogout />}
+          leftSection={<IconLogout size={16} />}
           className={classes.link}
           disabled={isLogoutLoading}
           loading={isLogoutLoading}
+          variant="subtle"
+          color="white"
+          fullWidth
           onClick={(event) => {
             event.preventDefault();
             Logout();
