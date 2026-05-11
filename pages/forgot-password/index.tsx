@@ -42,21 +42,24 @@ export default function ForgotPassword() {
   };
 
   return (
-    <Stack
-      style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}
-      gap={0}
-    >
+    <Stack style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }} gap={0}>
       {/* Top bar */}
-      <Box
-        px="xl"
-        py="md"
-        style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#fff' }}
-      >
-        <Text fw={700} size="md">Design My PDF</Text>
+      <Box px="xl" py="md" style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#fff' }}>
+        <Text fw={700} size="md">
+          Design My PDF
+        </Text>
       </Box>
 
       {/* Content */}
-      <Box style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 64 }}>
+      <Box
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          paddingTop: 64,
+        }}
+      >
         <Center mb="lg">
           <ThemeIcon size={64} radius="xl" variant="light" color="blue">
             <IconLockOpen size={30} />
@@ -93,11 +96,7 @@ export default function ForgotPassword() {
           </Paper>
 
           <Center mt="lg">
-            <Anchor
-              size="sm"
-              c="blue"
-              onClick={() => router.push(Links.LOGIN)}
-            >
+            <Anchor size="sm" c="blue" onClick={() => router.push(Links.LOGIN)}>
               <Group gap={4} align="center">
                 <IconArrowLeft size={14} />
                 <span>Back to login</span>
@@ -142,10 +141,16 @@ export default function ForgotPassword() {
           alignItems: 'center',
         }}
       >
-        <Text size="xs" c="dimmed">© 2024 Design My PDF Enterprise</Text>
+        <Text size="xs" c="dimmed">
+          © 2024 Design My PDF Enterprise
+        </Text>
         <Group gap="lg">
-          <Anchor size="xs" c="dimmed">Help</Anchor>
-          <Anchor size="xs" c="dimmed">Privacy</Anchor>
+          <Anchor size="xs" c="dimmed">
+            Help
+          </Anchor>
+          <Anchor size="xs" c="dimmed">
+            Privacy
+          </Anchor>
         </Group>
       </Box>
     </Stack>

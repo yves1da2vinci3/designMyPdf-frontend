@@ -36,8 +36,7 @@ async function fetchImageAsBase64(url: string): Promise<{ data: string; mimeType
     }
 
     const rawContentType = response.headers['content-type'];
-    const contentType =
-      typeof rawContentType === 'string' ? rawContentType : 'image/jpeg';
+    const contentType = typeof rawContentType === 'string' ? rawContentType : 'image/jpeg';
 
     if (!contentType.startsWith('image/')) {
       throw new Error(`Invalid content type: ${contentType}. Expected an image.`);

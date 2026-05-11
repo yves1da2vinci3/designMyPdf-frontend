@@ -109,12 +109,18 @@ export default function Keys() {
       <Table.Tr key={keyItem.id} style={{ transition: 'background 0.15s' }}>
         <Table.Td>
           <Box>
-            <Text fw={600} size="sm">{keyItem.name}</Text>
-            <Text size="xs" c="dimmed" ff="monospace">{maskKey(keyItem.value)}</Text>
+            <Text fw={600} size="sm">
+              {keyItem.name}
+            </Text>
+            <Text size="xs" c="dimmed" ff="monospace">
+              {maskKey(keyItem.value)}
+            </Text>
           </Box>
         </Table.Td>
         <Table.Td>
-          <Text size="sm" c="dimmed">{formatDate(keyItem.created_at)}</Text>
+          <Text size="sm" c="dimmed">
+            {formatDate(keyItem.created_at)}
+          </Text>
         </Table.Td>
         <Table.Td>
           <Text size="sm" c="dimmed">
@@ -122,7 +128,9 @@ export default function Keys() {
           </Text>
         </Table.Td>
         <Table.Td>
-          <Badge color="teal" variant="light" radius="sm" size="sm">ACTIVE</Badge>
+          <Badge color="teal" variant="light" radius="sm" size="sm">
+            ACTIVE
+          </Badge>
         </Table.Td>
         <Table.Td>
           <Group gap="xs" justify="flex-end">
@@ -220,7 +228,9 @@ export default function Keys() {
 
           <Group justify="space-between" align="flex-start">
             <Box>
-              <Title order={2} fw={700}>API Keys</Title>
+              <Title order={2} fw={700}>
+                API Keys
+              </Title>
               <Text c="dimmed" size="sm" mt={4}>
                 Manage your production and staging credentials for the PDF Engine.
               </Text>
@@ -233,18 +243,39 @@ export default function Keys() {
           <SimpleGrid cols={3}>
             <Card withBorder radius="md" p="lg" shadow="xs">
               <Group justify="space-between" mb="xs">
-                <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '0.05em' }}>Active Keys</Text>
+                <Text
+                  size="xs"
+                  tt="uppercase"
+                  fw={600}
+                  c="dimmed"
+                  style={{ letterSpacing: '0.05em' }}
+                >
+                  Active Keys
+                </Text>
                 <ThemeIcon size="sm" variant="light" color="blue" radius="xl">
                   <IconKey size={12} />
                 </ThemeIcon>
               </Group>
-              <Text fw={700} size="xl">{String(keys.length).padStart(2, '0')}</Text>
-              <Box mt="xs" style={{ height: 3, backgroundColor: '#228be6', borderRadius: 2, width: '40%' }} />
+              <Text fw={700} size="xl">
+                {String(keys.length).padStart(2, '0')}
+              </Text>
+              <Box
+                mt="xs"
+                style={{ height: 3, backgroundColor: '#228be6', borderRadius: 2, width: '40%' }}
+              />
             </Card>
 
             <Card withBorder radius="md" p="lg" shadow="xs">
               <Group justify="space-between" mb="xs">
-                <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '0.05em' }}>Total Requests (24H)</Text>
+                <Text
+                  size="xs"
+                  tt="uppercase"
+                  fw={600}
+                  c="dimmed"
+                  style={{ letterSpacing: '0.05em' }}
+                >
+                  Total Requests (24H)
+                </Text>
                 <ThemeIcon size="sm" variant="light" color="violet" radius="xl">
                   <IconChartBar size={12} />
                 </ThemeIcon>
@@ -252,19 +283,35 @@ export default function Keys() {
               <Text fw={700} size="xl">
                 {total24h === null ? '—' : total24h.toLocaleString()}
               </Text>
-              <Text size="xs" c="dimmed" mt={4}>Last 24 hours</Text>
+              <Text size="xs" c="dimmed" mt={4}>
+                Last 24 hours
+              </Text>
             </Card>
 
             <Card withBorder radius="md" p="lg" shadow="xs">
               <Group justify="space-between" mb="xs">
-                <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '0.05em' }}>Health Status</Text>
+                <Text
+                  size="xs"
+                  tt="uppercase"
+                  fw={600}
+                  c="dimmed"
+                  style={{ letterSpacing: '0.05em' }}
+                >
+                  Health Status
+                </Text>
                 <ThemeIcon size="sm" variant="light" color="teal" radius="xl">
                   <IconActivity size={12} />
                 </ThemeIcon>
               </Group>
               <Group gap="xs" align="center">
-                <Box w={8} h={8} style={{ borderRadius: '50%', backgroundColor: '#12b886', flexShrink: 0 }} />
-                <Text fw={700} size="lg">All Systems Up</Text>
+                <Box
+                  w={8}
+                  h={8}
+                  style={{ borderRadius: '50%', backgroundColor: '#12b886', flexShrink: 0 }}
+                />
+                <Text fw={700} size="lg">
+                  All Systems Up
+                </Text>
               </Group>
             </Card>
           </SimpleGrid>
@@ -273,11 +320,62 @@ export default function Keys() {
             <Table highlightOnHover>
               <Table.Thead style={{ backgroundColor: '#f8f9fa' }}>
                 <Table.Tr>
-                  <Table.Th style={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#868e96' }}>Name</Table.Th>
-                  <Table.Th style={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#868e96' }}>Created Date</Table.Th>
-                  <Table.Th style={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#868e96' }}>Last Used</Table.Th>
-                  <Table.Th style={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#868e96' }}>Status</Table.Th>
-                  <Table.Th style={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#868e96', textAlign: 'right' }}>Actions</Table.Th>
+                  <Table.Th
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 11,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: '#868e96',
+                    }}
+                  >
+                    Name
+                  </Table.Th>
+                  <Table.Th
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 11,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: '#868e96',
+                    }}
+                  >
+                    Created Date
+                  </Table.Th>
+                  <Table.Th
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 11,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: '#868e96',
+                    }}
+                  >
+                    Last Used
+                  </Table.Th>
+                  <Table.Th
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 11,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: '#868e96',
+                    }}
+                  >
+                    Status
+                  </Table.Th>
+                  <Table.Th
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 11,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: '#868e96',
+                      textAlign: 'right',
+                    }}
+                  >
+                    Actions
+                  </Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>{rows}</Table.Tbody>

@@ -114,7 +114,10 @@ export default function Account() {
     initialValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
     validate: {
       newPassword: (v: string) => (v.length < 6 ? 'At least 6 characters' : null),
-      confirmPassword: (v: string, vals: { newPassword: string; confirmPassword: string; currentPassword: string }) => (v !== vals.newPassword ? 'Passwords do not match' : null),
+      confirmPassword: (
+        v: string,
+        vals: { newPassword: string; confirmPassword: string; currentPassword: string },
+      ) => (v !== vals.newPassword ? 'Passwords do not match' : null),
     },
   });
 
@@ -136,8 +139,12 @@ export default function Account() {
       />
 
       <Box mb="xl">
-        <Title order={2} fw={700}>Account Settings</Title>
-        <Text c="dimmed" size="sm" mt={4}>Manage your personal information and file organization.</Text>
+        <Title order={2} fw={700}>
+          Account Settings
+        </Title>
+        <Text c="dimmed" size="sm" mt={4}>
+          Manage your personal information and file organization.
+        </Text>
       </Box>
 
       <Tabs
@@ -176,8 +183,12 @@ export default function Account() {
             <Card withBorder radius="md" shadow="xs" p={0} style={{ overflow: 'hidden' }}>
               <Grid gutter={0}>
                 <Grid.Col span={4} p="xl" style={{ borderRight: '1px solid #e9ecef' }}>
-                  <Title order={5} mb={8}>User Profile</Title>
-                  <Text size="sm" c="dimmed">Update your username and public contact email address.</Text>
+                  <Title order={5} mb={8}>
+                    User Profile
+                  </Title>
+                  <Text size="sm" c="dimmed">
+                    Update your username and public contact email address.
+                  </Text>
                 </Grid.Col>
                 <Grid.Col span={8} p="xl">
                   <form onSubmit={profileForm.onSubmit(handleProfileSubmit)}>
@@ -211,8 +222,12 @@ export default function Account() {
             <Card withBorder radius="md" shadow="xs" p={0} style={{ overflow: 'hidden' }}>
               <Grid gutter={0}>
                 <Grid.Col span={4} p="xl" style={{ borderRight: '1px solid #e9ecef' }}>
-                  <Title order={5} mb={8}>Security</Title>
-                  <Text size="sm" c="dimmed">Change your password to keep your account secure.</Text>
+                  <Title order={5} mb={8}>
+                    Security
+                  </Title>
+                  <Text size="sm" c="dimmed">
+                    Change your password to keep your account secure.
+                  </Text>
                 </Grid.Col>
                 <Grid.Col span={8} p="xl">
                   <form onSubmit={passwordForm.onSubmit(handlePasswordSubmit)}>
@@ -239,7 +254,9 @@ export default function Account() {
                         </Grid.Col>
                       </Grid>
                       <Group justify="flex-end">
-                        <Button variant="outline" type="submit">Update Password</Button>
+                        <Button variant="outline" type="submit">
+                          Update Password
+                        </Button>
                       </Group>
                     </Stack>
                   </form>
@@ -261,7 +278,9 @@ export default function Account() {
             <Group justify="space-between" align="center">
               <Box>
                 <Title order={4}>Folders (Namespaces)</Title>
-                <Text size="sm" c="dimmed">Organize your templates into separate namespaces.</Text>
+                <Text size="sm" c="dimmed">
+                  Organize your templates into separate namespaces.
+                </Text>
               </Box>
               <Button onClick={openAddNamespace}>New Folder</Button>
             </Group>

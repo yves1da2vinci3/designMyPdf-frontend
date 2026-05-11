@@ -79,7 +79,9 @@ export default function ResetPassword() {
             Your reset token has been verified successfully. You can now choose a new password.
           </Alert>
 
-          <Title order={3} fw={700} mb={4}>New Password</Title>
+          <Title order={3} fw={700} mb={4}>
+            New Password
+          </Title>
           <Text size="sm" c="dimmed" mb="xl">
             Please enter your new secure password to complete your account recovery.
           </Text>
@@ -144,8 +146,7 @@ export default function ResetPassword() {
           </form>
 
           <Text ta="center" size="xs" c="dimmed" mt="xl">
-            Need help?{' '}
-            <Anchor size="xs">Contact support</Anchor>
+            Need help? <Anchor size="xs">Contact support</Anchor>
           </Text>
         </Box>
       </Grid.Col>
@@ -191,13 +192,29 @@ export default function ResetPassword() {
           >
             <Box mb="md" style={{ display: 'flex', gap: 6 }}>
               {[1, 2, 3].map((i) => (
-                <Box key={i} h={6} style={{ flex: 1, backgroundColor: '#e9ecef', borderRadius: 3 }} />
+                <Box
+                  key={i}
+                  h={6}
+                  style={{ flex: 1, backgroundColor: '#e9ecef', borderRadius: 3 }}
+                />
               ))}
             </Box>
             <Box h={80} mb="md" style={{ backgroundColor: '#f1f3f5', borderRadius: 6 }} />
-            <Box h={10} mb={6} style={{ backgroundColor: '#e9ecef', borderRadius: 4, width: '80%' }} />
-            <Box h={10} mb={6} style={{ backgroundColor: '#e9ecef', borderRadius: 4, width: '60%' }} />
-            <Box h={32} mt="md" style={{ backgroundColor: '#228be6', borderRadius: 6, width: '50%' }} />
+            <Box
+              h={10}
+              mb={6}
+              style={{ backgroundColor: '#e9ecef', borderRadius: 4, width: '80%' }}
+            />
+            <Box
+              h={10}
+              mb={6}
+              style={{ backgroundColor: '#e9ecef', borderRadius: 4, width: '60%' }}
+            />
+            <Box
+              h={32}
+              mt="md"
+              style={{ backgroundColor: '#228be6', borderRadius: 6, width: '50%' }}
+            />
           </Box>
         </Box>
       </Grid.Col>

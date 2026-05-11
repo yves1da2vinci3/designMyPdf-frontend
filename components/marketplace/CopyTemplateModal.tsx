@@ -31,7 +31,11 @@ export default function CopyTemplateModal({ opened, onClose, template }: Props) 
     setLoading(true);
     try {
       await templateApi.copyFreeTemplate(String(template.ID), Number(selectedNamespaceId));
-      notifications.show({ title: 'Success', message: 'Template copied to your library!', color: 'teal' });
+      notifications.show({
+        title: 'Success',
+        message: 'Template copied to your library!',
+        color: 'teal',
+      });
       onClose();
       router.push('/dashboard/templates');
     } catch {
@@ -55,7 +59,9 @@ export default function CopyTemplateModal({ opened, onClose, template }: Props) 
           data={namespaces.map((ns) => ({ value: String(ns.ID), label: ns.name }))}
         />
         <Group justify="flex-end" mt="xs">
-          <Button variant="subtle" onClick={onClose}>Cancel</Button>
+          <Button variant="subtle" onClick={onClose}>
+            Cancel
+          </Button>
           <Button loading={loading} disabled={!selectedNamespaceId} onClick={handleCopy}>
             Copy to my templates
           </Button>

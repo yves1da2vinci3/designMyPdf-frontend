@@ -51,8 +51,7 @@ export default function PublisherDashboard() {
     }
   };
 
-  const isLoading =
-    status === RequestStatus.InProgress || status === RequestStatus.NotStated;
+  const isLoading = status === RequestStatus.InProgress || status === RequestStatus.NotStated;
 
   const totalListings = listings.length;
   const totalUses = listings.reduce((sum, l) => sum + (l.uses_count ?? 0), 0);
@@ -61,26 +60,44 @@ export default function PublisherDashboard() {
   const rows = listings.map((listing) => (
     <Table.Tr key={listing.id}>
       <Table.Td>
-        <Box w={48} h={36} style={{ borderRadius: 4, overflow: 'hidden', backgroundColor: '#e9ecef' }}>
+        <Box
+          w={48}
+          h={36}
+          style={{ borderRadius: 4, overflow: 'hidden', backgroundColor: '#e9ecef' }}
+        >
           {listing.cover_image_url ? (
             <Image src={listing.cover_image_url} h={36} w={48} fit="cover" alt="" />
           ) : (
-            <Center h={36}><Text size="xs" c="dimmed">IMG</Text></Center>
+            <Center h={36}>
+              <Text size="xs" c="dimmed">
+                IMG
+              </Text>
+            </Center>
           )}
         </Box>
       </Table.Td>
       <Table.Td>
-        <Text size="sm" fw={500} lineClamp={1}>{listing.name}</Text>
-        <Text size="xs" c="dimmed" lineClamp={1}>{listing.description || '—'}</Text>
+        <Text size="sm" fw={500} lineClamp={1}>
+          {listing.name}
+        </Text>
+        <Text size="xs" c="dimmed" lineClamp={1}>
+          {listing.description || '—'}
+        </Text>
       </Table.Td>
       <Table.Td>
-        <Badge size="xs" variant="outline" color="gray">{listing.category || '—'}</Badge>
+        <Badge size="xs" variant="outline" color="gray">
+          {listing.category || '—'}
+        </Badge>
       </Table.Td>
       <Table.Td>
         {(listing.price ?? 0) === 0 ? (
-          <Badge color="teal" variant="light" size="sm">Free</Badge>
+          <Badge color="teal" variant="light" size="sm">
+            Free
+          </Badge>
         ) : (
-          <Text size="sm" fw={600} c="blue">${((listing.price ?? 0) / 100).toFixed(2)}</Text>
+          <Text size="sm" fw={600} c="blue">
+            ${((listing.price ?? 0) / 100).toFixed(2)}
+          </Text>
         )}
       </Table.Td>
       <Table.Td>
@@ -93,9 +110,13 @@ export default function PublisherDashboard() {
       </Table.Td>
       <Table.Td>
         {listing.is_published ? (
-          <Badge color="teal" variant="light" size="sm">Published</Badge>
+          <Badge color="teal" variant="light" size="sm">
+            Published
+          </Badge>
         ) : (
-          <Badge color="gray" variant="light" size="sm">Draft</Badge>
+          <Badge color="gray" variant="light" size="sm">
+            Draft
+          </Badge>
         )}
       </Table.Td>
       <Table.Td>
@@ -124,7 +145,9 @@ export default function PublisherDashboard() {
       {/* Header */}
       <Group justify="space-between" align="flex-start">
         <Box>
-          <Title order={2} fw={700}>My Marketplace Listings</Title>
+          <Title order={2} fw={700}>
+            My Marketplace Listings
+          </Title>
           <Text c="dimmed" size="sm" mt={4}>
             Track your published templates, usage and revenue.
           </Text>
@@ -148,10 +171,19 @@ export default function PublisherDashboard() {
               <IconArrowUpRight size={10} /> Total
             </Badge>
           </Group>
-          <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '0.05em' }} mb={4}>
+          <Text
+            size="xs"
+            tt="uppercase"
+            fw={600}
+            c="dimmed"
+            style={{ letterSpacing: '0.05em' }}
+            mb={4}
+          >
             Total Listings
           </Text>
-          <Text fw={700} fz={26}>{isLoading ? '—' : totalListings}</Text>
+          <Text fw={700} fz={26}>
+            {isLoading ? '—' : totalListings}
+          </Text>
         </Card>
 
         <Card withBorder radius="md" p="lg" shadow="xs">
@@ -160,10 +192,19 @@ export default function PublisherDashboard() {
               <IconUsers size={16} />
             </ThemeIcon>
           </Group>
-          <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '0.05em' }} mb={4}>
+          <Text
+            size="xs"
+            tt="uppercase"
+            fw={600}
+            c="dimmed"
+            style={{ letterSpacing: '0.05em' }}
+            mb={4}
+          >
             Total Uses
           </Text>
-          <Text fw={700} fz={26}>{isLoading ? '—' : totalUses.toLocaleString()}</Text>
+          <Text fw={700} fz={26}>
+            {isLoading ? '—' : totalUses.toLocaleString()}
+          </Text>
         </Card>
 
         <Card withBorder radius="md" p="lg" shadow="xs">
@@ -172,7 +213,14 @@ export default function PublisherDashboard() {
               <IconCurrencyDollar size={16} />
             </ThemeIcon>
           </Group>
-          <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '0.05em' }} mb={4}>
+          <Text
+            size="xs"
+            tt="uppercase"
+            fw={600}
+            c="dimmed"
+            style={{ letterSpacing: '0.05em' }}
+            mb={4}
+          >
             Total Revenue
           </Text>
           <Text fw={700} fz={26}>
@@ -183,7 +231,9 @@ export default function PublisherDashboard() {
 
       {/* Listings table */}
       {isLoading ? (
-        <Center h={200}><Loader type="bars" size="lg" /></Center>
+        <Center h={200}>
+          <Loader type="bars" size="lg" />
+        </Center>
       ) : listings.length === 0 ? (
         <Card withBorder radius="md" p="xl" shadow="xs">
           <Center>
@@ -227,6 +277,4 @@ export default function PublisherDashboard() {
   );
 }
 
-PublisherDashboard.getLayout = (page: React.ReactNode) => (
-  <DashboardLayout>{page}</DashboardLayout>
-);
+PublisherDashboard.getLayout = (page: React.ReactNode) => <DashboardLayout>{page}</DashboardLayout>;

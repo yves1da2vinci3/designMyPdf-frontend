@@ -77,7 +77,10 @@ import { DEFAULT_FORMAT, getPageDimensions } from '../../../../utils/paperUtils'
 import { manuallyStartTour } from '../../../../utils/tourUtils';
 import { useLocalStorage } from '../../../../utils/useLocalStorage';
 import { REFERENCE_TEMPLATES } from '@/services/agent/templateLibrary';
-import { extractVariablesFromTemplate, buildVariableStructure } from '@/services/agent/templateUtils';
+import {
+  extractVariablesFromTemplate,
+  buildVariableStructure,
+} from '@/services/agent/templateUtils';
 import type { ReferenceTemplate } from '@/services/agent/types';
 import 'driver.js/dist/driver.css';
 
@@ -901,8 +904,8 @@ const CreateTemplate: React.FC = () => {
         <ScrollArea h="calc(100vh - 80px)">
           <Stack gap="xl" p="xl">
             <Text size="sm" c="dimmed">
-              Select a template to start with. The template code and default variables
-              will be loaded automatically.
+              Select a template to start with. The template code and default variables will be
+              loaded automatically.
             </Text>
 
             {/* Helper function to get icon for template type */}

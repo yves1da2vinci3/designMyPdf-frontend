@@ -58,7 +58,10 @@ export default function AddListingPage() {
   const initials = userName.slice(0, 2).toUpperCase();
 
   useEffect(() => {
-    templateApi.getTemplates().then(setTemplates).catch(() => {});
+    templateApi
+      .getTemplates()
+      .then(setTemplates)
+      .catch(() => {});
   }, []);
 
   const handleImageDrop = async (files: File[]) => {
@@ -92,10 +95,17 @@ export default function AddListingPage() {
         price: Math.round(price * 100),
         description,
         category: category!,
-        features: features.split(',').map((f) => f.trim()).filter(Boolean),
+        features: features
+          .split(',')
+          .map((f) => f.trim())
+          .filter(Boolean),
         coverImageURL: coverImageUrl,
       });
-      notifications.show({ title: 'Published!', message: 'Template is now live on the marketplace', color: 'teal' });
+      notifications.show({
+        title: 'Published!',
+        message: 'Template is now live on the marketplace',
+        color: 'teal',
+      });
       router.push('/marketplace');
     } catch {
       notifications.show({ title: 'Error', message: 'Failed to publish template', color: 'red' });
@@ -104,7 +114,10 @@ export default function AddListingPage() {
     }
   };
 
-  const featureBadges = features.split(',').map((f) => f.trim()).filter(Boolean);
+  const featureBadges = features
+    .split(',')
+    .map((f) => f.trim())
+    .filter(Boolean);
   const previewPrice = price > 0 ? `$${price.toFixed(2)}` : '$0.00';
 
   return (
@@ -124,7 +137,9 @@ export default function AddListingPage() {
         <Group gap="xl">
           <Group gap={6} style={{ cursor: 'pointer' }} onClick={() => router.push('/dashboard/')}>
             <IconDiamondFilled size={18} color="#228be6" />
-            <Text fw={700} size="sm">Design My PDF</Text>
+            <Text fw={700} size="sm">
+              Design My PDF
+            </Text>
           </Group>
           <Group gap={0}>
             <Anchor size="sm" c="dimmed" onClick={() => router.push('/marketplace')}>
@@ -142,16 +157,26 @@ export default function AddListingPage() {
           </Group>
         </Group>
         <Group gap="sm">
-          <Button size="xs" onClick={() => router.push('/dashboard/templates')}>Create New</Button>
-          <ActionIcon variant="subtle" color="gray"><IconBell size={18} /></ActionIcon>
-          <ActionIcon variant="subtle" color="gray"><IconSettings size={18} /></ActionIcon>
-          <Avatar size={32} radius="xl" color="blue" variant="filled">{initials}</Avatar>
+          <Button size="xs" onClick={() => router.push('/dashboard/templates')}>
+            Create New
+          </Button>
+          <ActionIcon variant="subtle" color="gray">
+            <IconBell size={18} />
+          </ActionIcon>
+          <ActionIcon variant="subtle" color="gray">
+            <IconSettings size={18} />
+          </ActionIcon>
+          <Avatar size={32} radius="xl" color="blue" variant="filled">
+            {initials}
+          </Avatar>
         </Group>
       </Box>
 
       {/* Content */}
       <Box px={48} py={32}>
-        <Title order={3} fw={700} mb={4}>Create New Marketplace Listing</Title>
+        <Title order={3} fw={700} mb={4}>
+          Create New Marketplace Listing
+        </Title>
         <Text c="dimmed" size="sm" mb={32}>
           Configure your document template details and technical specifications for the marketplace.
         </Text>
@@ -225,16 +250,13 @@ export default function AddListingPage() {
 
                 {/* Cover image dropzone */}
                 <Box>
-                  <Text size="sm" fw={500} mb={6}>Template Preview Thumbnail</Text>
+                  <Text size="sm" fw={500} mb={6}>
+                    Template Preview Thumbnail
+                  </Text>
                   {coverImageUrl ? (
                     <Box style={{ position: 'relative' }}>
                       <Image src={coverImageUrl} radius="md" h={180} fit="cover" alt="Cover" />
-                      <Button
-                        size="xs"
-                        variant="light"
-                        mt={8}
-                        onClick={() => setCoverImageUrl('')}
-                      >
+                      <Button size="xs" variant="light" mt={8} onClick={() => setCoverImageUrl('')}>
                         Remove image
                       </Button>
                     </Box>
@@ -254,11 +276,21 @@ export default function AddListingPage() {
                     >
                       <Center>
                         <Stack align="center" gap={8}>
-                          <Dropzone.Accept><IconUpload size={32} color="#228be6" /></Dropzone.Accept>
-                          <Dropzone.Reject><IconPhoto size={32} color="red" /></Dropzone.Reject>
-                          <Dropzone.Idle><IconPhoto size={32} color="#adb5bd" /></Dropzone.Idle>
-                          <Text fw={600} size="sm">Drop thumbnail here or click to browse</Text>
-                          <Text size="xs" c="dimmed">PNG or JPEG up to 10MB. Recommended ratio 4:3.</Text>
+                          <Dropzone.Accept>
+                            <IconUpload size={32} color="#228be6" />
+                          </Dropzone.Accept>
+                          <Dropzone.Reject>
+                            <IconPhoto size={32} color="red" />
+                          </Dropzone.Reject>
+                          <Dropzone.Idle>
+                            <IconPhoto size={32} color="#adb5bd" />
+                          </Dropzone.Idle>
+                          <Text fw={600} size="sm">
+                            Drop thumbnail here or click to browse
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            PNG or JPEG up to 10MB. Recommended ratio 4:3.
+                          </Text>
                         </Stack>
                       </Center>
                     </Dropzone>
@@ -287,7 +319,14 @@ export default function AddListingPage() {
           <Grid.Col span={4}>
             <Stack gap="md">
               <Box>
-                <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb="xs" style={{ letterSpacing: '0.05em' }}>
+                <Text
+                  size="xs"
+                  fw={700}
+                  tt="uppercase"
+                  c="dimmed"
+                  mb="xs"
+                  style={{ letterSpacing: '0.05em' }}
+                >
                   REAL-TIME PREVIEW
                 </Text>
                 <Card withBorder radius="md" shadow="xs" p={0} style={{ overflow: 'hidden' }}>
@@ -315,24 +354,35 @@ export default function AddListingPage() {
                             justifyContent: 'center',
                           }}
                         >
-                          <Text size="xs" c="dimmed" ta="center">PREVIEWING LAYOUT</Text>
+                          <Text size="xs" c="dimmed" ta="center">
+                            PREVIEWING LAYOUT
+                          </Text>
                         </Box>
                       </Stack>
                     </Box>
                   )}
                   <Box p="md">
                     <Group justify="space-between" mb={8}>
-                      <Badge color="gray" variant="light" size="xs">UNPUBLISHED</Badge>
-                      <Text fw={700} size="sm" c="blue">{previewPrice}</Text>
+                      <Badge color="gray" variant="light" size="xs">
+                        UNPUBLISHED
+                      </Badge>
+                      <Text fw={700} size="sm" c="blue">
+                        {previewPrice}
+                      </Text>
                     </Group>
-                    <Text fw={700} size="sm" mb={4}>{title || 'Document Title'}</Text>
+                    <Text fw={700} size="sm" mb={4}>
+                      {title || 'Document Title'}
+                    </Text>
                     <Text size="xs" c="dimmed" lineClamp={3}>
-                      {description || 'Template description will appear here as you type. Ensure your description highlights the technical benefits and ease of integration.'}
+                      {description ||
+                        'Template description will appear here as you type. Ensure your description highlights the technical benefits and ease of integration.'}
                     </Text>
                     {featureBadges.length > 0 && (
                       <Group gap={4} mt={8}>
                         {featureBadges.slice(0, 3).map((f) => (
-                          <Badge key={f} size="xs" variant="outline" color="gray">{f}</Badge>
+                          <Badge key={f} size="xs" variant="outline" color="gray">
+                            {f}
+                          </Badge>
                         ))}
                       </Group>
                     )}
@@ -342,10 +392,24 @@ export default function AddListingPage() {
 
               <Card withBorder radius="md" shadow="xs" p="md">
                 <Group gap={6} mb="sm">
-                  <Box w={16} h={16} style={{ borderRadius: '50%', backgroundColor: '#228be6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Text size="xs" c="white" fw={700}>✓</Text>
+                  <Box
+                    w={16}
+                    h={16}
+                    style={{
+                      borderRadius: '50%',
+                      backgroundColor: '#228be6',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text size="xs" c="white" fw={700}>
+                      ✓
+                    </Text>
                   </Box>
-                  <Text size="sm" fw={600} c="blue">Marketplace Guidelines</Text>
+                  <Text size="sm" fw={600} c="blue">
+                    Marketplace Guidelines
+                  </Text>
                 </Group>
                 <Stack gap={6}>
                   {[
@@ -354,8 +418,12 @@ export default function AddListingPage() {
                     'Payouts are processed 14 days after a successful transaction.',
                   ].map((g) => (
                     <Group key={g} gap={6} align="flex-start">
-                      <Text size="xs" c="dimmed">→</Text>
-                      <Text size="xs" c="dimmed">{g}</Text>
+                      <Text size="xs" c="dimmed">
+                        →
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        {g}
+                      </Text>
                     </Group>
                   ))}
                 </Stack>

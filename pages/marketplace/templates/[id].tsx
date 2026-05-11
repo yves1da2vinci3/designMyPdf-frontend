@@ -34,7 +34,8 @@ export default function MarketplaceTemplateDetail() {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    templateApi.getMarketplaceTemplate(String(id))
+    templateApi
+      .getMarketplaceTemplate(String(id))
       .then(setTemplate)
       .catch(() => setTemplate(null))
       .finally(() => setLoading(false));
@@ -105,15 +106,21 @@ export default function MarketplaceTemplateDetail() {
               {/* Description */}
               {template.description && (
                 <Box>
-                  <Text size="lg" fw={600} mb="sm">Description</Text>
-                  <Text c="dimmed" style={{ lineHeight: 1.6 }}>{template.description}</Text>
+                  <Text size="lg" fw={600} mb="sm">
+                    Description
+                  </Text>
+                  <Text c="dimmed" style={{ lineHeight: 1.6 }}>
+                    {template.description}
+                  </Text>
                 </Box>
               )}
 
               {/* Features */}
               {template.features && template.features.length > 0 && (
                 <Box>
-                  <Text size="lg" fw={600} mb="sm">Features</Text>
+                  <Text size="lg" fw={600} mb="sm">
+                    Features
+                  </Text>
                   <List
                     spacing="sm"
                     size="sm"
@@ -149,9 +156,19 @@ export default function MarketplaceTemplateDetail() {
             >
               <Stack gap="md">
                 <Group justify="space-between" align="center">
-                  <Text size="xl" fw={700}>{priceDisplay}</Text>
-                  {isFree && <Badge color="teal" variant="light">Free</Badge>}
-                  {!isFree && <Badge color="yellow" variant="light">PREMIUM</Badge>}
+                  <Text size="xl" fw={700}>
+                    {priceDisplay}
+                  </Text>
+                  {isFree && (
+                    <Badge color="teal" variant="light">
+                      Free
+                    </Badge>
+                  )}
+                  {!isFree && (
+                    <Badge color="yellow" variant="light">
+                      PREMIUM
+                    </Badge>
+                  )}
                 </Group>
 
                 <Divider />
@@ -160,8 +177,12 @@ export default function MarketplaceTemplateDetail() {
                   <Group>
                     <Avatar src={template.author.avatar} radius="xl" size="sm" />
                     <Box>
-                      <Text size="xs" c="dimmed">Created by</Text>
-                      <Text size="sm" fw={500}>{template.author.name}</Text>
+                      <Text size="xs" c="dimmed">
+                        Created by
+                      </Text>
+                      <Text size="sm" fw={500}>
+                        {template.author.name}
+                      </Text>
                     </Box>
                   </Group>
                 )}
@@ -169,14 +190,20 @@ export default function MarketplaceTemplateDetail() {
                 {template.rating !== undefined && (
                   <Group>
                     <Rating value={template.rating} readOnly color="yellow" size="sm" />
-                    <Text size="sm" c="dimmed">({template.reviewCount ?? 0} reviews)</Text>
+                    <Text size="sm" c="dimmed">
+                      ({template.reviewCount ?? 0} reviews)
+                    </Text>
                   </Group>
                 )}
 
                 {template.category && (
                   <Group>
-                    <Text size="xs" c="dimmed">Category:</Text>
-                    <Badge size="xs" variant="outline">{template.category}</Badge>
+                    <Text size="xs" c="dimmed">
+                      Category:
+                    </Text>
+                    <Badge size="xs" variant="outline">
+                      {template.category}
+                    </Badge>
                   </Group>
                 )}
 
@@ -190,7 +217,9 @@ export default function MarketplaceTemplateDetail() {
                 </Button>
 
                 <Text size="xs" c="dimmed" ta="center">
-                  {isFree ? 'Free · Copy to your workspace instantly' : 'Instant delivery · Lifetime access'}
+                  {isFree
+                    ? 'Free · Copy to your workspace instantly'
+                    : 'Instant delivery · Lifetime access'}
                 </Text>
               </Stack>
             </Box>

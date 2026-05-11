@@ -75,11 +75,7 @@ async function finalizerNode(state: AgentState): Promise<Partial<AgentState>> {
  * Condition de transition : décider si on corrige ou on finalise
  */
 function shouldCorrect(state: AgentState): string {
-  if (
-    state.corrections &&
-    state.corrections.length > 0 &&
-    state.iteration < state.maxIterations
-  ) {
+  if (state.corrections && state.corrections.length > 0 && state.iteration < state.maxIterations) {
     return 'correct';
   }
   return 'finalize';

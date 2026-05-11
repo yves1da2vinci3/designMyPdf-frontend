@@ -78,7 +78,9 @@ function DashboardNav({ onToggleDesktop, desktopOpened }: DashboardNavProps) {
       </Box>
     );
 
-    return desktopOpened ? linkEl : (
+    return desktopOpened ? (
+      linkEl
+    ) : (
       <Tooltip key={item.label} label={item.label} position="right" withArrow>
         {linkEl}
       </Tooltip>
@@ -88,10 +90,7 @@ function DashboardNav({ onToggleDesktop, desktopOpened }: DashboardNavProps) {
   return (
     <nav className={classes.navbar}>
       <div className={classes.navbarMain}>
-        <Group
-          className={classes.header}
-          justify={desktopOpened ? 'space-between' : 'center'}
-        >
+        <Group className={classes.header} justify={desktopOpened ? 'space-between' : 'center'}>
           {desktopOpened && <Logo isWhite width={80} />}
           {desktopOpened && (
             <Code fw={700} className={classes.version}>
@@ -111,7 +110,11 @@ function DashboardNav({ onToggleDesktop, desktopOpened }: DashboardNavProps) {
             fullWidth
             mb="md"
             onClick={() => router.push('/dashboard/templates')}
-            style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}
+            style={{
+              backgroundColor: 'rgba(255,255,255,0.15)',
+              color: 'white',
+              border: '1px solid rgba(255,255,255,0.3)',
+            }}
           >
             New Template
           </Button>
@@ -121,7 +124,13 @@ function DashboardNav({ onToggleDesktop, desktopOpened }: DashboardNavProps) {
               size="lg"
               mb="md"
               onClick={() => router.push('/dashboard/templates')}
-              style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', width: '100%', borderRadius: 6 }}
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.15)',
+                color: 'white',
+                border: '1px solid rgba(255,255,255,0.3)',
+                width: '100%',
+                borderRadius: 6,
+              }}
             >
               <IconPlus size={16} />
             </ActionIcon>
@@ -146,10 +155,11 @@ function DashboardNav({ onToggleDesktop, desktopOpened }: DashboardNavProps) {
               onClick={onToggleDesktop}
               visibleFrom="sm"
             >
-              {desktopOpened
-                ? <IconLayoutSidebarLeftCollapse size={16} />
-                : <IconLayoutSidebarLeftExpand size={16} />
-              }
+              {desktopOpened ? (
+                <IconLayoutSidebarLeftCollapse size={16} />
+              ) : (
+                <IconLayoutSidebarLeftExpand size={16} />
+              )}
             </ActionIcon>
           </Tooltip>
         </Group>
@@ -160,8 +170,12 @@ function DashboardNav({ onToggleDesktop, desktopOpened }: DashboardNavProps) {
               {initials}
             </Avatar>
             <Box style={{ flex: 1, minWidth: 0 }}>
-              <Text size="sm" fw={600} c="white" lh={1.2} truncate>{userName}</Text>
-              <Text size="xs" c="blue.2" truncate>{userEmail}</Text>
+              <Text size="sm" fw={600} c="white" lh={1.2} truncate>
+                {userName}
+              </Text>
+              <Text size="xs" c="blue.2" truncate>
+                {userEmail}
+              </Text>
             </Box>
           </Group>
         ) : (

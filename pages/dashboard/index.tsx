@@ -91,9 +91,7 @@ export default function Overview() {
 
   const errorCount = allLogs.filter((l) => l.status_code !== HttpStatusCode.Ok).length;
   const errorRate =
-    allLogs.length > 0
-      ? `${((errorCount / allLogs.length) * 100).toFixed(2)}%`
-      : '0.00%';
+    allLogs.length > 0 ? `${((errorCount / allLogs.length) * 100).toFixed(2)}%` : '0.00%';
 
   const chartData = LogsStats.map((s) => ({
     date: s.date,
@@ -108,16 +106,15 @@ export default function Overview() {
     <Stack gap="xl">
       <Group justify="space-between" align="flex-start">
         <Box>
-          <Title order={2} fw={700}>Overview</Title>
-          <Text c="dimmed" size="sm" mt={4}>Track your generation performance in real-time.</Text>
+          <Title order={2} fw={700}>
+            Overview
+          </Title>
+          <Text c="dimmed" size="sm" mt={4}>
+            Track your generation performance in real-time.
+          </Text>
         </Box>
         <Group gap="xs">
-          <SegmentedControl
-            value={period}
-            onChange={setPeriod}
-            data={PERIOD_OPTIONS}
-            size="sm"
-          />
+          <SegmentedControl value={period} onChange={setPeriod} data={PERIOD_OPTIONS} size="sm" />
           <Button variant="light" size="sm" px="xs">
             <IconCalendar size={16} />
           </Button>
@@ -130,10 +127,23 @@ export default function Overview() {
             <ThemeIcon size="md" variant="light" color="blue" radius="md">
               <IconReceipt size={16} />
             </ThemeIcon>
-            <Badge color="teal" variant="light" size="xs">+12%</Badge>
+            <Badge color="teal" variant="light" size="xs">
+              +12%
+            </Badge>
           </Group>
-          <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '0.05em' }} mb={4}>Total PDFs Generated</Text>
-          <Text fw={700} fz={26}>{isLoading ? '—' : totalGenerated.toLocaleString()}</Text>
+          <Text
+            size="xs"
+            tt="uppercase"
+            fw={600}
+            c="dimmed"
+            style={{ letterSpacing: '0.05em' }}
+            mb={4}
+          >
+            Total PDFs Generated
+          </Text>
+          <Text fw={700} fz={26}>
+            {isLoading ? '—' : totalGenerated.toLocaleString()}
+          </Text>
         </Card>
 
         <Card withBorder radius="md" p="lg" shadow="xs">
@@ -141,10 +151,23 @@ export default function Overview() {
             <ThemeIcon size="md" variant="light" color="cyan" radius="md">
               <IconClock size={16} />
             </ThemeIcon>
-            <Badge color="teal" variant="light" size="xs">-40ms</Badge>
+            <Badge color="teal" variant="light" size="xs">
+              -40ms
+            </Badge>
           </Group>
-          <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '0.05em' }} mb={4}>Avg Render Time</Text>
-          <Text fw={700} fz={26}>320ms</Text>
+          <Text
+            size="xs"
+            tt="uppercase"
+            fw={600}
+            c="dimmed"
+            style={{ letterSpacing: '0.05em' }}
+            mb={4}
+          >
+            Avg Render Time
+          </Text>
+          <Text fw={700} fz={26}>
+            320ms
+          </Text>
         </Card>
 
         <Card withBorder radius="md" p="lg" shadow="xs">
@@ -153,8 +176,19 @@ export default function Overview() {
               <IconAlertCircle size={16} />
             </ThemeIcon>
           </Group>
-          <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '0.05em' }} mb={4}>Error Rate</Text>
-          <Text fw={700} fz={26}>{isLoading ? '—' : errorRate}</Text>
+          <Text
+            size="xs"
+            tt="uppercase"
+            fw={600}
+            c="dimmed"
+            style={{ letterSpacing: '0.05em' }}
+            mb={4}
+          >
+            Error Rate
+          </Text>
+          <Text fw={700} fz={26}>
+            {isLoading ? '—' : errorRate}
+          </Text>
         </Card>
 
         <Card withBorder radius="md" p="lg" shadow="xs">
@@ -162,10 +196,23 @@ export default function Overview() {
             <ThemeIcon size="md" variant="light" color="grape" radius="md">
               <IconCurrencyDollar size={16} />
             </ThemeIcon>
-            <Text size="xs" c="dimmed">Budget</Text>
+            <Text size="xs" c="dimmed">
+              Budget
+            </Text>
           </Group>
-          <Text size="xs" tt="uppercase" fw={600} c="dimmed" style={{ letterSpacing: '0.05em' }} mb={4}>Estimated Cost</Text>
-          <Text fw={700} fz={26}>Free</Text>
+          <Text
+            size="xs"
+            tt="uppercase"
+            fw={600}
+            c="dimmed"
+            style={{ letterSpacing: '0.05em' }}
+            mb={4}
+          >
+            Estimated Cost
+          </Text>
+          <Text fw={700} fz={26}>
+            Free
+          </Text>
         </Card>
       </SimpleGrid>
 
@@ -178,17 +225,19 @@ export default function Overview() {
           <Grid.Col span={8}>
             <Card withBorder radius="md" shadow="xs" p="lg">
               <Box mb="md">
-                <Text fw={600} size="sm">Generation Activity</Text>
-                <Text size="xs" c="dimmed">Hourly volumes over the selected period</Text>
+                <Text fw={600} size="sm">
+                  Generation Activity
+                </Text>
+                <Text size="xs" c="dimmed">
+                  Hourly volumes over the selected period
+                </Text>
               </Box>
               <BarChart
                 h={300}
                 data={chartData}
                 withTooltip
                 dataKey="date"
-                series={[
-                  { name: 'Requests', color: 'blue.6' },
-                ]}
+                series={[{ name: 'Requests', color: 'blue.6' }]}
                 tickLine="y"
               />
             </Card>
@@ -197,7 +246,9 @@ export default function Overview() {
               <Grid.Col span={6}>
                 <Card withBorder radius="md" shadow="xs" p="lg" style={{ minHeight: 160 }}>
                   <Group justify="space-between" mb="sm">
-                    <Text fw={600} size="sm">Your Templates</Text>
+                    <Text fw={600} size="sm">
+                      Your Templates
+                    </Text>
                     <Anchor size="xs" onClick={() => router.push(Links.TEMPLATES)}>
                       View all →
                     </Anchor>
@@ -219,13 +270,17 @@ export default function Overview() {
               <Grid.Col span={6}>
                 <Card withBorder radius="md" shadow="xs" p="lg" style={{ minHeight: 160 }}>
                   <Group justify="space-between" mb="sm">
-                    <Text fw={600} size="sm">Error Log</Text>
+                    <Text fw={600} size="sm">
+                      Error Log
+                    </Text>
                     <Anchor size="xs" onClick={() => router.push(Links.LOGS)}>
                       View all →
                     </Anchor>
                   </Group>
                   {recentLogs.filter((l) => l.status_code !== HttpStatusCode.Ok).length === 0 ? (
-                    <Text size="xs" c="dimmed">No recent errors.</Text>
+                    <Text size="xs" c="dimmed">
+                      No recent errors.
+                    </Text>
                   ) : (
                     <Stack gap={6} mt={4}>
                       {recentLogs
@@ -233,7 +288,9 @@ export default function Overview() {
                         .map((l) => (
                           <Group key={l.id} gap={6}>
                             <IconAlertCircle size={12} color="red" />
-                            <Text size="xs" c="red">{l.status_code}: {l.error_message || 'Error'}</Text>
+                            <Text size="xs" c="red">
+                              {l.status_code}: {l.error_message || 'Error'}
+                            </Text>
                           </Group>
                         ))}
                     </Stack>
@@ -246,23 +303,33 @@ export default function Overview() {
           <Grid.Col span={4}>
             <Stack gap="md">
               <Card withBorder radius="md" shadow="xs" p="lg">
-                <Text fw={600} size="sm" mb="md">Plan Usage</Text>
+                <Text fw={600} size="sm" mb="md">
+                  Plan Usage
+                </Text>
                 <Stack gap="sm">
                   <Box>
                     <Group justify="space-between" mb={4}>
                       <Text size="xs">Generations</Text>
-                      <Text size="xs" fw={600}>82%</Text>
+                      <Text size="xs" fw={600}>
+                        82%
+                      </Text>
                     </Group>
                     <Progress value={82} color="blue" radius="xl" size="sm" />
-                    <Text size="xs" c="dimmed" mt={4}>41,000 / 50,000 requests</Text>
+                    <Text size="xs" c="dimmed" mt={4}>
+                      41,000 / 50,000 requests
+                    </Text>
                   </Box>
                   <Box>
                     <Group justify="space-between" mb={4}>
                       <Text size="xs">S3 Storage</Text>
-                      <Text size="xs" fw={600}>45%</Text>
+                      <Text size="xs" fw={600}>
+                        45%
+                      </Text>
                     </Group>
                     <Progress value={45} color="blue" radius="xl" size="sm" />
-                    <Text size="xs" c="dimmed" mt={4}>2.2 GB / 5 GB</Text>
+                    <Text size="xs" c="dimmed" mt={4}>
+                      2.2 GB / 5 GB
+                    </Text>
                   </Box>
                 </Stack>
                 <Button variant="outline" fullWidth mt="lg" size="xs">
@@ -271,21 +338,35 @@ export default function Overview() {
               </Card>
 
               <Card withBorder radius="md" shadow="xs" p="lg">
-                <Text fw={600} size="sm" mb="md">Infrastructure Status</Text>
+                <Text fw={600} size="sm" mb="md">
+                  Infrastructure Status
+                </Text>
                 <Stack gap="sm">
                   <Group justify="space-between">
                     <Group gap={8}>
-                      <Box w={8} h={8} style={{ borderRadius: '50%', backgroundColor: '#12b886' }} />
+                      <Box
+                        w={8}
+                        h={8}
+                        style={{ borderRadius: '50%', backgroundColor: '#12b886' }}
+                      />
                       <Text size="sm">PDF Engine API</Text>
                     </Group>
-                    <Badge color="teal" variant="light" size="xs">Stable</Badge>
+                    <Badge color="teal" variant="light" size="xs">
+                      Stable
+                    </Badge>
                   </Group>
                   <Group justify="space-between">
                     <Group gap={8}>
-                      <Box w={8} h={8} style={{ borderRadius: '50%', backgroundColor: '#12b886' }} />
+                      <Box
+                        w={8}
+                        h={8}
+                        style={{ borderRadius: '50%', backgroundColor: '#12b886' }}
+                      />
                       <Text size="sm">Template Renderer</Text>
                     </Group>
-                    <Badge color="teal" variant="light" size="xs">99.9%</Badge>
+                    <Badge color="teal" variant="light" size="xs">
+                      99.9%
+                    </Badge>
                   </Group>
                 </Stack>
               </Card>
@@ -309,8 +390,12 @@ export default function Overview() {
                     background: 'radial-gradient(circle, rgba(34,139,230,0.3) 0%, transparent 70%)',
                   }}
                 />
-                <Text fw={700} size="sm" c="white" mb={4}>Explore Marketplace</Text>
-                <Text size="xs" c="blue.3" mb="md">Discover premium templates.</Text>
+                <Text fw={700} size="sm" c="white" mb={4}>
+                  Explore Marketplace
+                </Text>
+                <Text size="xs" c="blue.3" mb="md">
+                  Discover premium templates.
+                </Text>
                 <Anchor size="xs" fw={600} c="blue.4" href="/marketplace">
                   Explore <IconExternalLink size={10} style={{ verticalAlign: 'middle' }} />
                 </Anchor>

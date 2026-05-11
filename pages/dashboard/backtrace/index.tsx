@@ -102,9 +102,7 @@ export default function Log() {
   const successCount = filteredLogs.filter((l) => l.status_code === HttpStatusCode.Ok).length;
   const errorCount = filteredLogs.filter((l) => l.status_code !== HttpStatusCode.Ok).length;
   const successRate =
-    filteredLogs.length > 0
-      ? ((successCount / filteredLogs.length) * 100).toFixed(1)
-      : '0.0';
+    filteredLogs.length > 0 ? ((successCount / filteredLogs.length) * 100).toFixed(1) : '0.0';
 
   const mockResponseTimes = useMemo(
     () => filteredLogs.map(() => Math.floor(Math.random() * 1200) + 41),
@@ -154,15 +152,12 @@ export default function Log() {
           </Badge>
         </Table.Td>
         <Table.Td>
-          <Text size="sm" c="dimmed">{mockResponseTimes[globalIdx] ?? 0}ms</Text>
+          <Text size="sm" c="dimmed">
+            {mockResponseTimes[globalIdx] ?? 0}ms
+          </Text>
         </Table.Td>
         <Table.Td>
-          <Anchor
-            size="sm"
-            fw={500}
-            onClick={() => viewLog(logItem)}
-            style={{ cursor: 'pointer' }}
-          >
+          <Anchor size="sm" fw={500} onClick={() => viewLog(logItem)} style={{ cursor: 'pointer' }}>
             View trace
           </Anchor>
         </Table.Td>
@@ -191,7 +186,9 @@ export default function Log() {
 
           <Group justify="space-between" align="flex-start">
             <Box>
-              <Title order={2} fw={700}>Backtrace Log</Title>
+              <Title order={2} fw={700}>
+                Backtrace Log
+              </Title>
               <Text c="dimmed" size="sm" mt={4}>
                 Monitor API requests and generation health in real-time.
               </Text>
@@ -229,7 +226,9 @@ export default function Log() {
                 </ThemeIcon>
               </Group>
               <Group gap={6} align="baseline">
-                <Text fw={700} size="xl">{filteredLogs.length.toLocaleString()}</Text>
+                <Text fw={700} size="xl">
+                  {filteredLogs.length.toLocaleString()}
+                </Text>
               </Group>
             </Card>
 
@@ -249,8 +248,12 @@ export default function Log() {
                 </ThemeIcon>
               </Group>
               <Group gap={6} align="baseline">
-                <Text fw={700} size="xl">{successRate}%</Text>
-                <Text size="xs" c="teal">Stable</Text>
+                <Text fw={700} size="xl">
+                  {successRate}%
+                </Text>
+                <Text size="xs" c="teal">
+                  Stable
+                </Text>
               </Group>
             </Card>
 
@@ -270,7 +273,9 @@ export default function Log() {
                 </ThemeIcon>
               </Group>
               <Group gap={6} align="baseline">
-                <Text fw={700} size="xl">428ms</Text>
+                <Text fw={700} size="xl">
+                  428ms
+                </Text>
               </Group>
             </Card>
 
@@ -290,9 +295,13 @@ export default function Log() {
                 </ThemeIcon>
               </Group>
               <Group gap={6} align="baseline">
-                <Text fw={700} size="xl">{errorCount}</Text>
+                <Text fw={700} size="xl">
+                  {errorCount}
+                </Text>
                 <Text size="xs" c="dimmed">
-                  {period === 'all' ? 'All time' : `Last ${PERIOD_OPTIONS.find(o => o.value === period)?.label ?? period}`}
+                  {period === 'all'
+                    ? 'All time'
+                    : `Last ${PERIOD_OPTIONS.find((o) => o.value === period)?.label ?? period}`}
                 </Text>
               </Group>
             </Card>
@@ -302,12 +311,72 @@ export default function Log() {
             <Table highlightOnHover>
               <Table.Thead style={{ backgroundColor: '#f8f9fa' }}>
                 <Table.Tr>
-                  <Table.Th style={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#868e96' }}>ID</Table.Th>
-                  <Table.Th style={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#868e96' }}>Date</Table.Th>
-                  <Table.Th style={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#868e96' }}>Template</Table.Th>
-                  <Table.Th style={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#868e96' }}>Status</Table.Th>
-                  <Table.Th style={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#868e96' }}>Response Time</Table.Th>
-                  <Table.Th style={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#868e96' }}>Actions</Table.Th>
+                  <Table.Th
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 11,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: '#868e96',
+                    }}
+                  >
+                    ID
+                  </Table.Th>
+                  <Table.Th
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 11,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: '#868e96',
+                    }}
+                  >
+                    Date
+                  </Table.Th>
+                  <Table.Th
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 11,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: '#868e96',
+                    }}
+                  >
+                    Template
+                  </Table.Th>
+                  <Table.Th
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 11,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: '#868e96',
+                    }}
+                  >
+                    Status
+                  </Table.Th>
+                  <Table.Th
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 11,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: '#868e96',
+                    }}
+                  >
+                    Response Time
+                  </Table.Th>
+                  <Table.Th
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 11,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: '#868e96',
+                    }}
+                  >
+                    Actions
+                  </Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>{rows}</Table.Tbody>
@@ -320,8 +389,7 @@ export default function Log() {
               {filteredLogs.length === 0
                 ? 0
                 : Math.min((currentPage - 1) * logsPerPage + 1, filteredLogs.length)}
-              –
-              {Math.min(currentPage * logsPerPage, filteredLogs.length)} of {filteredLogs.length}{' '}
+              –{Math.min(currentPage * logsPerPage, filteredLogs.length)} of {filteredLogs.length}{' '}
               entries
             </Text>
             <Pagination

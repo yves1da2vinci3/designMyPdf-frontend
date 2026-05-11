@@ -20,11 +20,7 @@ import {
 import { useDisclosure } from '@mantine/hooks';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import {
-  IconPlus,
-  IconSearch,
-  IconHelp,
-} from '@tabler/icons-react';
+import { IconPlus, IconSearch, IconHelp } from '@tabler/icons-react';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import TemplateItem from '@/components/TemplateItem/TemplateItem';
 import AddTemplate from '@/modals/AddTemplate/AddTemplate';
@@ -216,8 +212,12 @@ function TemplatesPage() {
           align="center"
         >
           <Box>
-            <Title order={2} fw={700}>Template Library</Title>
-            <Text size="sm" c="dimmed">Manage and organize your PDF generation logic.</Text>
+            <Title order={2} fw={700}>
+              Template Library
+            </Title>
+            <Text size="sm" c="dimmed">
+              Manage and organize your PDF generation logic.
+            </Text>
           </Box>
           <Group>
             <Input
@@ -298,7 +298,11 @@ function TemplatesPage() {
                     }}
                     onClick={() => setSelectedNamespaceId(null)}
                   >
-                    <Text size="sm" fw={selectedNamespaceId === null ? 600 : 400} c={selectedNamespaceId === null ? 'blue' : 'inherit'}>
+                    <Text
+                      size="sm"
+                      fw={selectedNamespaceId === null ? 600 : 400}
+                      c={selectedNamespaceId === null ? 'blue' : 'inherit'}
+                    >
                       All Templates
                     </Text>
                   </Box>
@@ -319,7 +323,9 @@ function TemplatesPage() {
                     style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
                     onClick={openAddNamespace}
                   >
-                    <Text size="sm" c="blue">+ New Folder</Text>
+                    <Text size="sm" c="blue">
+                      + New Folder
+                    </Text>
                   </Box>
                 </>
               )}

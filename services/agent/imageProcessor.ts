@@ -27,8 +27,7 @@ async function fetchImageAsBase64(url: string): Promise<{ data: string; mimeType
     }
 
     const rawContentType = response.headers['content-type'];
-    const contentType =
-      typeof rawContentType === 'string' ? rawContentType : 'image/jpeg';
+    const contentType = typeof rawContentType === 'string' ? rawContentType : 'image/jpeg';
 
     if (!contentType.startsWith('image/')) {
       throw new Error(`Invalid content type: ${contentType}. Expected an image.`);
@@ -45,9 +44,7 @@ async function fetchImageAsBase64(url: string): Promise<{ data: string; mimeType
  * Traite une liste d'URLs d'images et les convertit en format ProcessedImage
  * pour l'analyse visuelle avec Claude Vision
  */
-export async function processImagesForAnalysis(
-  imageUrls: string[],
-): Promise<ProcessedImage[]> {
+export async function processImagesForAnalysis(imageUrls: string[]): Promise<ProcessedImage[]> {
   const processedImages: ProcessedImage[] = [];
 
   for (const url of imageUrls) {

@@ -90,10 +90,14 @@ export default function Signup() {
         <Box style={{ width: '100%', maxWidth: 420 }}>
           <Group mb="xl" gap="xs">
             <IconDiamondFilled size={22} color="#228be6" />
-            <Text fw={700} size="lg">Design My PDF</Text>
+            <Text fw={700} size="lg">
+              Design My PDF
+            </Text>
           </Group>
 
-          <Title order={3} fw={700} mb={4}>Create your account</Title>
+          <Title order={3} fw={700} mb={4}>
+            Create your account
+          </Title>
           <Text size="sm" c="dimmed" mb="xl">
             Join Design My PDF and start creating professional documents.
           </Text>
@@ -122,9 +126,13 @@ export default function Signup() {
                 label={
                   <Text size="sm">
                     I agree to the{' '}
-                    <Anchor size="sm" href="#">Terms of Service</Anchor>
-                    {' '}and{' '}
-                    <Anchor size="sm" href="#">Privacy Policy</Anchor>
+                    <Anchor size="sm" href="#">
+                      Terms of Service
+                    </Anchor>{' '}
+                    and{' '}
+                    <Anchor size="sm" href="#">
+                      Privacy Policy
+                    </Anchor>
                   </Text>
                 }
               />
@@ -144,7 +152,7 @@ export default function Signup() {
           <Button
             variant="outline"
             fullWidth
-            leftSection={(
+            leftSection={
               <svg width="18" height="18" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
@@ -163,14 +171,16 @@ export default function Signup() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-            )}
+            }
           >
             Sign up with Google
           </Button>
 
           <Text ta="center" size="sm" c="dimmed" mt="xl">
             Already have an account?{' '}
-            <Anchor size="sm" onClick={() => router.push(Links.LOGIN)}>Sign in</Anchor>
+            <Anchor size="sm" onClick={() => router.push(Links.LOGIN)}>
+              Sign in
+            </Anchor>
           </Text>
         </Box>
       </Grid.Col>
@@ -199,13 +209,7 @@ export default function Signup() {
               padding: '4px 10px',
             }}
           >
-            <Text
-              size="xs"
-              fw={700}
-              tt="uppercase"
-              style={{ letterSpacing: '0.08em' }}
-              c="blue"
-            >
+            <Text size="xs" fw={700} tt="uppercase" style={{ letterSpacing: '0.08em' }} c="blue">
               ✦ Developer First
             </Text>
           </Box>
@@ -228,7 +232,9 @@ export default function Signup() {
           <Box w="50%" h={8} style={{ backgroundColor: '#dee2e6', borderRadius: 4 }} />
         </Box>
 
-        <Title order={3} fw={700} mb="xs">Generate PDFs with precision at scale.</Title>
+        <Title order={3} fw={700} mb="xs">
+          Generate PDFs with precision at scale.
+        </Title>
         <Text c="dimmed" mb="xl">
           Join 5,000+ developers and businesses automating their document workflows with our API and
           visual editor.
@@ -241,8 +247,12 @@ export default function Signup() {
                 <feat.icon size={18} />
               </ThemeIcon>
               <Box>
-                <Text fw={600} size="sm" mb={2}>{feat.title}</Text>
-                <Text size="xs" c="dimmed">{feat.desc}</Text>
+                <Text fw={600} size="sm" mb={2}>
+                  {feat.title}
+                </Text>
+                <Text size="xs" c="dimmed">
+                  {feat.desc}
+                </Text>
               </Box>
             </Group>
           ))}
@@ -257,9 +267,13 @@ export default function Signup() {
           }}
         >
           <Group mb="xs" gap={2}>
-            {Array(5).fill(null).map((_, i) => (
-              <Text key={i} c="yellow">★</Text>
-            ))}
+            {Array(5)
+              .fill(null)
+              .map((_, i) => (
+                <Text key={i} c="yellow">
+                  ★
+                </Text>
+              ))}
           </Group>
           <Text size="sm" fs="italic" mb="sm">
             &ldquo;The most robust PDF solution we&apos;ve used. The developer experience is
@@ -277,16 +291,15 @@ export default function Signup() {
                 justifyContent: 'center',
               }}
             >
-              <Text size="xs" fw={700} c="white">AR</Text>
+              <Text size="xs" fw={700} c="white">
+                AR
+              </Text>
             </Box>
             <Box>
-              <Text fw={600} size="sm">Alex Rivera</Text>
-              <Text
-                size="xs"
-                c="dimmed"
-                tt="uppercase"
-                style={{ letterSpacing: '0.05em' }}
-              >
+              <Text fw={600} size="sm">
+                Alex Rivera
+              </Text>
+              <Text size="xs" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
                 CTO at TechFlow
               </Text>
             </Box>

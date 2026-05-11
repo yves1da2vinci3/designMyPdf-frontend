@@ -39,13 +39,21 @@ export default function PurchaseModal({ opened, onClose, template, onPurchased }
         </Text>
         <Group gap={8} justify="center">
           <IconCheck size={14} color="teal" />
-          <Text size="xs" c="dimmed">Instant delivery</Text>
-          <Text size="xs" c="dimmed">·</Text>
+          <Text size="xs" c="dimmed">
+            Instant delivery
+          </Text>
+          <Text size="xs" c="dimmed">
+            ·
+          </Text>
           <IconCheck size={14} color="teal" />
-          <Text size="xs" c="dimmed">Lifetime access</Text>
+          <Text size="xs" c="dimmed">
+            Lifetime access
+          </Text>
         </Group>
         <Group justify="flex-end" mt="xs">
-          <Button variant="subtle" onClick={onClose}>Cancel</Button>
+          <Button variant="subtle" onClick={onClose}>
+            Cancel
+          </Button>
           <Button
             loading={loading}
             leftSection={<IconCurrencyDollar size={16} />}

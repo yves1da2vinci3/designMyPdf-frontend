@@ -97,7 +97,9 @@ export default function MarketplacePage() {
         <Group gap="xl">
           <Group gap={6} style={{ cursor: 'pointer' }} onClick={() => router.push('/dashboard/')}>
             <IconDiamondFilled size={18} color="#228be6" />
-            <Text fw={700} size="sm">Design My PDF</Text>
+            <Text fw={700} size="sm">
+              Design My PDF
+            </Text>
           </Group>
           <Group gap={0}>
             <Anchor
@@ -123,8 +125,12 @@ export default function MarketplacePage() {
             value={search}
             onChange={(e) => setSearch(e.currentTarget.value)}
           />
-          <ActionIcon variant="subtle" color="gray"><IconBell size={18} /></ActionIcon>
-          <ActionIcon variant="subtle" color="gray"><IconSettings size={18} /></ActionIcon>
+          <ActionIcon variant="subtle" color="gray">
+            <IconBell size={18} />
+          </ActionIcon>
+          <ActionIcon variant="subtle" color="gray">
+            <IconSettings size={18} />
+          </ActionIcon>
           <Avatar
             size={32}
             radius="xl"
@@ -173,7 +179,9 @@ export default function MarketplacePage() {
             ))}
           </Group>
           <Group gap={6}>
-            <Text size="xs" c="dimmed" fw={600} tt="uppercase" style={{ letterSpacing: '0.05em' }}>SORT BY:</Text>
+            <Text size="xs" c="dimmed" fw={600} tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+              SORT BY:
+            </Text>
             <Select
               size="xs"
               defaultValue="popular"
@@ -190,12 +198,21 @@ export default function MarketplacePage() {
 
         {/* Template grid */}
         {loading ? (
-          <Center h={300}><Loader size="lg" /></Center>
+          <Center h={300}>
+            <Loader size="lg" />
+          </Center>
         ) : filtered.length === 0 ? (
           <Center h={300}>
             <Stack align="center" gap="sm">
               <Text c="dimmed">No templates found.</Text>
-              <Button variant="light" size="sm" onClick={() => { setActiveCategory(''); setSearch(''); }}>
+              <Button
+                variant="light"
+                size="sm"
+                onClick={() => {
+                  setActiveCategory('');
+                  setSearch('');
+                }}
+              >
                 Clear filters
               </Button>
             </Stack>
@@ -203,14 +220,30 @@ export default function MarketplacePage() {
         ) : (
           <SimpleGrid cols={4} spacing="md">
             {filtered.map((template) => (
-              <Card key={template.ID} withBorder radius="md" p={0} shadow="xs" style={{ overflow: 'hidden' }}>
+              <Card
+                key={template.ID}
+                withBorder
+                radius="md"
+                p={0}
+                shadow="xs"
+                style={{ overflow: 'hidden' }}
+              >
                 {/* Cover image */}
-                <Box style={{ position: 'relative', height: 180, backgroundColor: '#e9ecef', overflow: 'hidden' }}>
+                <Box
+                  style={{
+                    position: 'relative',
+                    height: 180,
+                    backgroundColor: '#e9ecef',
+                    overflow: 'hidden',
+                  }}
+                >
                   {template.preview ? (
                     <Image src={template.preview} alt={template.name} h={180} fit="cover" />
                   ) : (
                     <Center h={180} style={{ backgroundColor: '#dee2e6' }}>
-                      <Text size="xs" c="dimmed">No preview</Text>
+                      <Text size="xs" c="dimmed">
+                        No preview
+                      </Text>
                     </Center>
                   )}
                   {(template.price ?? 0) > 0 && (
@@ -228,9 +261,13 @@ export default function MarketplacePage() {
 
                 <Box p="md">
                   <Group justify="space-between" align="flex-start" mb={4}>
-                    <Text fw={700} size="sm" lineClamp={1} style={{ flex: 1 }}>{template.name}</Text>
+                    <Text fw={700} size="sm" lineClamp={1} style={{ flex: 1 }}>
+                      {template.name}
+                    </Text>
                     <Text fw={700} size="sm" c="blue">
-                      {(template.price ?? 0) === 0 ? 'Free' : `$${((template.price ?? 0) / 100).toFixed(0)}`}
+                      {(template.price ?? 0) === 0
+                        ? 'Free'
+                        : `$${((template.price ?? 0) / 100).toFixed(0)}`}
                     </Text>
                   </Group>
                   <Text size="xs" c="dimmed" lineClamp={2} mb="md">
@@ -285,12 +322,18 @@ export default function MarketplacePage() {
         <Group justify="space-between">
           <Group gap={4}>
             <IconDiamondFilled size={14} color="#228be6" />
-            <Text size="xs" fw={700} c="blue">Design My PDF</Text>
-            <Text size="xs" c="dimmed">© 2024 Enterprise PDF Systems. All rights reserved.</Text>
+            <Text size="xs" fw={700} c="blue">
+              Design My PDF
+            </Text>
+            <Text size="xs" c="dimmed">
+              © 2024 Enterprise PDF Systems. All rights reserved.
+            </Text>
           </Group>
           <Group gap="lg">
             {['Privacy', 'Terms', 'Security', 'Documentation'].map((link) => (
-              <Anchor key={link} size="xs" c="dimmed">{link}</Anchor>
+              <Anchor key={link} size="xs" c="dimmed">
+                {link}
+              </Anchor>
             ))}
           </Group>
         </Group>
@@ -298,11 +341,7 @@ export default function MarketplacePage() {
 
       {/* Modals */}
       {copyTarget && (
-        <CopyTemplateModal
-          opened
-          onClose={() => setCopyTarget(null)}
-          template={copyTarget}
-        />
+        <CopyTemplateModal opened onClose={() => setCopyTarget(null)} template={copyTarget} />
       )}
       {purchaseTarget && (
         <PurchaseModal
