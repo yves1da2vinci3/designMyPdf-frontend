@@ -4,5 +4,6 @@ export const Links = {
   FORGOT_PASSWORD: '/forgot-password',
   DASHBOARD: '/dashboard',
   TEMPLATES: '/dashboard/templates',
+  MARKETPLACE: '/dashboard/marketplace',
   LOGS: '/dashboard/backtrace',
 } as const;

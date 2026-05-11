@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import {
+  Anchor,
   Button,
   Group,
   Pagination,
@@ -16,12 +17,14 @@ import {
   Input,
   Flex,
   Tooltip,
+  Paper,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { IconPlus, IconSearch, IconHelp } from '@tabler/icons-react';
+import { IconPlus, IconSearch, IconHelp, IconExternalLink } from '@tabler/icons-react';
 import DashboardLayout from '@/layouts/DashboardLayout';
+import { Links } from '@/constants/routes';
 import TemplateItem from '@/components/TemplateItem/TemplateItem';
 import AddTemplate from '@/modals/AddTemplate/AddTemplate';
 import NamespaceItem from '@/components/NamespaceItem/NamespaceItem';
@@ -253,6 +256,43 @@ function TemplatesPage() {
             )}
           </Group>
         </Group>
+
+        <Box px="md" pb="sm">
+          <Paper
+            radius="md"
+            p="md"
+            style={{
+              background: 'linear-gradient(135deg, #1a1b2e 0%, #16213e 100%)',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            <Box
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: 100,
+                height: 100,
+                background: 'radial-gradient(circle, rgba(34,139,230,0.3) 0%, transparent 70%)',
+              }}
+            />
+            <Text fw={700} size="sm" c="white" mb={4}>
+              Marketplace
+            </Text>
+            <Text size="xs" c="blue.3" mb="sm">
+              Catalogue public ou gestion de vos annonces.
+            </Text>
+            <Group gap="md">
+              <Anchor size="xs" fw={600} c="blue.4" href={Links.MARKETPLACE}>
+                Mes annonces <IconExternalLink size={10} style={{ verticalAlign: 'middle' }} />
+              </Anchor>
+              <Anchor size="xs" fw={600} c="blue.1" href="/marketplace">
+                Catalogue <IconExternalLink size={10} style={{ verticalAlign: 'middle' }} />
+              </Anchor>
+            </Group>
+          </Paper>
+        </Box>
 
         {/* Main content */}
         <Flex style={{ flex: 1 }}>

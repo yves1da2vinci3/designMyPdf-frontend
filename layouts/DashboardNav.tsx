@@ -15,7 +15,7 @@ import {
   IconWaveSawTool,
 } from '@tabler/icons-react';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import classes from './DashboardNav.module.scss';
 
 const data = [
@@ -33,10 +33,25 @@ interface DashboardNavProps {
   desktopOpened: boolean;
 }
 
+function labelForPathname(pathname: string): string {
+  if (pathname.startsWith('/dashboard/templates')) return 'Templates';
+  if (pathname.startsWith('/dashboard/marketplace')) return 'Marketplace';
+  if (pathname.startsWith('/dashboard/backtrace')) return 'Logs';
+  if (pathname.startsWith('/dashboard/keys')) return 'Api Keys';
+  if (pathname.startsWith('/dashboard/account')) return 'Account';
+  if (pathname.startsWith('/documentation')) return 'Documentation API';
+  if (pathname.startsWith('/dashboard')) return 'Overview';
+  return 'Overview';
+}
+
 function DashboardNav({ onToggleDesktop, desktopOpened }: DashboardNavProps) {
   const [active, setActive] = useState('Overview');
   const [isLogoutLoading, setIsLogoutLoading] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    setActive(labelForPathname(router.pathname));
+  }, [router.pathname]);
   const session = authApi.getUserSession();
   const userName = session?.userName ?? 'Guest';
   const userEmail = session?.email ?? '';

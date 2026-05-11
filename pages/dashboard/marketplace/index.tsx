@@ -26,7 +26,10 @@ import {
   IconEyeOff,
   IconArrowUpRight,
   IconPlus,
+  IconPencil,
 } from '@tabler/icons-react';
+import { modals } from '@mantine/modals';
+import { notifications } from '@mantine/notifications';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { templateApi, MarketplaceListingDTO } from '@/api/templateApi';
 import { RequestStatus } from '@/api/request-status.enum';
@@ -51,6 +54,40 @@ export default function PublisherDashboard() {
     }
   };
 
+  const handleUnpublish = (listing: MarketplaceListingDTO) => {
+    modals.openConfirmModal({
+      title: 'Retirer du marketplace public ?',
+      children: (
+        <Text size="sm">
+          L’annonce restera dans « Mes annonces » mais ne sera plus visible sur le catalogue public.
+        </Text>
+      ),
+      labels: { confirm: 'Retirer', cancel: 'Annuler' },
+      confirmProps: { color: 'orange' },
+      onConfirm: async () => {
+        try {
+          await templateApi.unpublishMarketplaceListing(listing.id);
+          notifications.show({
+            title: 'Mis à jour',
+            message: 'L’annonce n’est plus publiée.',
+            color: 'teal',
+          });
+          await fetchListings();
+        } catch (err: unknown) {
+          const msg =
+            err && typeof err === 'object' && 'response' in err
+              ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+              : undefined;
+          notifications.show({
+            title: 'Erreur',
+            message: msg || 'Impossible de retirer la publication.',
+            color: 'red',
+          });
+        }
+      },
+    });
+  };
+
   const isLoading = status === RequestStatus.InProgress || status === RequestStatus.NotStated;
 
   const totalListings = listings.length;
@@ -58,7 +95,7 @@ export default function PublisherDashboard() {
   const totalRevenue = listings.reduce((sum, l) => sum + (l.revenue ?? 0), 0);
 
   const rows = listings.map((listing) => (
-    <Table.Tr key={listing.id}>
+    <Table.Tr key={String(listing.id)}>
       <Table.Td>
         <Box
           w={48}
@@ -121,7 +158,16 @@ export default function PublisherDashboard() {
       </Table.Td>
       <Table.Td>
         <Group gap={4}>
-          <Tooltip label="View on marketplace">
+          <Tooltip label="Modifier l’annonce">
+            <ActionIcon
+              size="sm"
+              variant="subtle"
+              onClick={() => router.push(`/dashboard/marketplace/edit/${listing.id}`)}
+            >
+              <IconPencil size={14} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Voir sur le marketplace">
             <ActionIcon
               size="sm"
               variant="subtle"
@@ -130,11 +176,18 @@ export default function PublisherDashboard() {
               <IconExternalLink size={14} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Unpublish">
-            <ActionIcon size="sm" variant="subtle" color="red">
-              <IconEyeOff size={14} />
-            </ActionIcon>
-          </Tooltip>
+          {listing.is_published ? (
+            <Tooltip label="Retirer de la vitrine publique">
+              <ActionIcon
+                size="sm"
+                variant="subtle"
+                color="orange"
+                onClick={() => handleUnpublish(listing)}
+              >
+                <IconEyeOff size={14} />
+              </ActionIcon>
+            </Tooltip>
+          ) : null}
         </Group>
       </Table.Td>
     </Table.Tr>

@@ -31,14 +31,11 @@ import {
 } from '@tabler/icons-react';
 import { templateApi, TemplateDTO } from '@/api/templateApi';
 import { authApi } from '@/api/authApi';
-
-const CATEGORIES = [
-  { value: 'INVOICE', label: 'Invoice' },
-  { value: 'FINANCIAL REPORT', label: 'Financial Report' },
-  { value: 'MARKETING', label: 'Marketing' },
-  { value: 'LEGAL', label: 'Legal' },
-  { value: 'OTHER', label: 'Other' },
-];
+import {
+  MARKETPLACE_CATEGORIES,
+  MIN_MARKETPLACE_DESCRIPTION_LENGTH,
+  validateMarketplaceListingInput,
+} from '@/constants/marketplace';
 
 export default function AddListingPage() {
   const router = useRouter();
@@ -64,6 +61,26 @@ export default function AddListingPage() {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (!router.isReady) return;
+    const tid = router.query.templateId;
+    if (typeof tid !== 'string' || !tid) return;
+    setSelectedTemplateId(tid);
+    templateApi
+      .getTemplateById(tid)
+      .then((t) => {
+        setTitle(t.name || '');
+        if (t.description) setDescription(t.description);
+        if (t.category) setCategory(t.category);
+        if (t.price != null && t.price > 0) setPrice(t.price / 100);
+        if (t.features?.length) setFeatures(t.features.join(', '));
+        if (t.cover_image_url) setCoverImageUrl(t.cover_image_url);
+      })
+      .catch(() => {});
+  }, [router.isReady, router.query.templateId]);
+
+  const lockTemplateSelect = typeof router.query.templateId === 'string' && router.query.templateId.length > 0;
+
   const handleImageDrop = async (files: File[]) => {
     const file = files[0];
     if (!file) return;
@@ -81,34 +98,59 @@ export default function AddListingPage() {
 
   const handlePublish = async () => {
     if (!selectedTemplateId) {
-      notifications.show({ title: 'Error', message: 'Select a template to publish', color: 'red' });
+      notifications.show({
+        title: 'Champs manquants',
+        message: 'Sélectionnez un template à publier.',
+        color: 'red',
+      });
       return;
     }
-    if (!title || !category || !description) {
-      notifications.show({ title: 'Error', message: 'Fill in all required fields', color: 'red' });
+    const validationErrors = validateMarketplaceListingInput({
+      title,
+      category,
+      description,
+      coverImageUrl,
+      featuresRaw: features,
+    });
+    if (validationErrors.length > 0) {
+      notifications.show({
+        title: 'Formulaire incomplet',
+        message: validationErrors.join(' '),
+        color: 'red',
+        autoClose: 9000,
+      });
       return;
     }
     setPublishing(true);
     try {
       await templateApi.publishToMarketplace({
         templateId: Number(selectedTemplateId),
+        name: title.trim(),
         price: Math.round(price * 100),
-        description,
+        description: description.trim(),
         category: category!,
         features: features
           .split(',')
           .map((f) => f.trim())
           .filter(Boolean),
-        coverImageURL: coverImageUrl,
+        coverImageURL: coverImageUrl.trim(),
       });
       notifications.show({
-        title: 'Published!',
-        message: 'Template is now live on the marketplace',
+        title: 'Publié',
+        message: 'Le template est en ligne sur le marketplace.',
         color: 'teal',
       });
-      router.push('/marketplace');
-    } catch {
-      notifications.show({ title: 'Error', message: 'Failed to publish template', color: 'red' });
+      router.push('/dashboard/marketplace');
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+          : undefined;
+      notifications.show({
+        title: 'Erreur',
+        message: msg || 'Publication impossible.',
+        color: 'red',
+      });
     } finally {
       setPublishing(false);
     }
@@ -200,7 +242,7 @@ export default function AddListingPage() {
                     <Select
                       label="Category"
                       placeholder="Select category"
-                      data={CATEGORIES}
+                      data={[...MARKETPLACE_CATEGORIES]}
                       value={category}
                       onChange={setCategory}
                       required
@@ -215,11 +257,18 @@ export default function AddListingPage() {
                   value={selectedTemplateId}
                   onChange={setSelectedTemplateId}
                   required
+                  disabled={lockTemplateSelect}
+                  description={
+                    lockTemplateSelect
+                      ? 'Template pré-sélectionné depuis l’éditeur.'
+                      : undefined
+                  }
                 />
 
                 <Textarea
                   label="Detailed Description"
                   placeholder="Describe the template structure, intended use cases, and design philosophy..."
+                  description={`Minimum ${MIN_MARKETPLACE_DESCRIPTION_LENGTH} caractères (${description.trim().length}/${MIN_MARKETPLACE_DESCRIPTION_LENGTH}).`}
                   minRows={4}
                   value={description}
                   onChange={(e) => setDescription(e.currentTarget.value)}
@@ -244,6 +293,8 @@ export default function AddListingPage() {
                       placeholder="Auto-pagination, Dynamic Tables, SVG support..."
                       value={features}
                       onChange={(e) => setFeatures(e.currentTarget.value)}
+                      required
+                      description="Au moins une fonctionnalité, séparées par des virgules."
                     />
                   </Grid.Col>
                 </Grid>

@@ -391,14 +391,19 @@ export default function Overview() {
                   }}
                 />
                 <Text fw={700} size="sm" c="white" mb={4}>
-                  Explore Marketplace
+                  Marketplace
                 </Text>
                 <Text size="xs" c="blue.3" mb="md">
-                  Discover premium templates.
+                  Catalogue public ou gestion de vos annonces.
                 </Text>
-                <Anchor size="xs" fw={600} c="blue.4" href="/marketplace">
-                  Explore <IconExternalLink size={10} style={{ verticalAlign: 'middle' }} />
-                </Anchor>
+                <Group gap="md">
+                  <Anchor size="xs" fw={600} c="blue.4" href={Links.MARKETPLACE}>
+                    Mes annonces <IconExternalLink size={10} style={{ verticalAlign: 'middle' }} />
+                  </Anchor>
+                  <Anchor size="xs" fw={600} c="blue.1" href="/marketplace">
+                    Catalogue <IconExternalLink size={10} style={{ verticalAlign: 'middle' }} />
+                  </Anchor>
+                </Group>
               </Paper>
             </Stack>
           </Grid.Col>

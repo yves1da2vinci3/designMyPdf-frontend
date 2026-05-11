@@ -74,11 +74,22 @@ export interface TemplateDTO {
 
 export interface PublishToMarketplaceDto {
   templateId: number;
+  name: string;
   price: number;
   description: string;
   category: string;
   features: string[];
   coverImageURL: string;
+}
+
+export interface UpdateMarketplaceListingDto {
+  name: string;
+  price: number;
+  description: string;
+  category: string;
+  features: string[];
+  coverImageURL: string;
+  isPublished?: boolean;
 }
 
 export interface MarketplaceListingDTO {
@@ -174,6 +185,19 @@ export const templateApi = {
 
   async publishToMarketplace(data: PublishToMarketplaceDto): Promise<TemplateDTO> {
     const res = await apiClient.post('/marketplace/publish', data);
+    return res.data.template;
+  },
+
+  async updateMarketplaceListing(
+    templateId: number,
+    data: UpdateMarketplaceListingDto,
+  ): Promise<TemplateDTO> {
+    const res = await apiClient.put(`/marketplace/listings/${templateId}`, data);
+    return res.data.template;
+  },
+
+  async unpublishMarketplaceListing(templateId: number): Promise<TemplateDTO> {
+    const res = await apiClient.post(`/marketplace/listings/${templateId}/unpublish`, {});
     return res.data.template;
   },
 
