@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Modal, Title, TextInput, Button, Group, Stack } from '@mantine/core';
+import React, { useState, useEffect } from 'react';
+import { Modal, Title, Text, TextInput, Button, Group, Stack } from '@mantine/core';
 import { TemplateDTO, templateApi } from '@/api/templateApi';
 
 interface RenameTemplateProps {
@@ -9,9 +9,18 @@ interface RenameTemplateProps {
 }
 
 const RenameTemplate: React.FC<RenameTemplateProps> = ({ template, onClose, onSuccess }) => {
-  const [name, setName] = useState(template?.name || '');
+  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (template) {
+      setName(template.name?.trim() ?? '');
+      setError('');
+    } else {
+      setName('');
+    }
+  }, [template]);
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -37,11 +46,23 @@ const RenameTemplate: React.FC<RenameTemplateProps> = ({ template, onClose, onSu
       opened={!!template}
       onClose={onClose}
       centered
-      title={<Title order={3} my={4}>Renommer le template</Title>}
+      title={
+        <Title order={3} my={4}>
+          Renommer le template
+        </Title>
+      }
     >
       <Stack>
+        {template?.name ? (
+          <Text size="sm" c="dimmed">
+            Nom actuel :{' '}
+            <Text span fw={600} c="dark">
+              {template.name}
+            </Text>
+          </Text>
+        ) : null}
         <TextInput
-          label="Nom"
+          label="Nouveau nom"
           value={name}
           onChange={(e) => setName(e.currentTarget.value)}
           error={error}

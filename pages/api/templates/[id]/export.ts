@@ -3,7 +3,11 @@ import puppeteer from 'puppeteer';
 import { ExportTemplateDto, templateApi } from '@/api/templateApi';
 import { CHART_DATA_VALIDATION_SCRIPT_SNIPPET } from '@/utils/chartUtils';
 
-function buildExportPageHtml(bodyInner: string, data: ExportTemplateDto, sampleText: string): string {
+function buildExportPageHtml(
+  bodyInner: string,
+  data: ExportTemplateDto,
+  sampleText: string,
+): string {
   const fontLinks = data.fonts
     .map((font) => {
       const family = font.replace(/ /g, '+');
@@ -220,4 +224,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ message: 'Error exporting template', error: String(error) });
   }
 }
-

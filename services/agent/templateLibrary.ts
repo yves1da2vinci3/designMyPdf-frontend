@@ -2490,8 +2490,20 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     </div>
   </div>
 </div>`,
-    metadata: { colors: ['slate-800', 'slate-100', 'slate-300', 'slate-700', 'white'], style: 'structured', complexity: 'medium' },
-    variables: ['employeeName', 'period', 'department', 'managerName', 'projectName', 'entries', 'totalHours'],
+    metadata: {
+      colors: ['slate-800', 'slate-100', 'slate-300', 'slate-700', 'white'],
+      style: 'structured',
+      complexity: 'medium',
+    },
+    variables: [
+      'employeeName',
+      'period',
+      'department',
+      'managerName',
+      'projectName',
+      'entries',
+      'totalHours',
+    ],
   },
 
   {
@@ -2550,8 +2562,23 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     <p>{{companyName}} — {{companyAddress}}</p>
   </div>
 </div>`,
-    metadata: { colors: ['blue-700', 'slate-800', 'slate-50', 'blue-50', 'slate-500'], style: 'professional', complexity: 'medium' },
-    variables: ['refNumber', 'submissionDate', 'period', 'employeeName', 'department', 'projectName', 'expenses', 'totalAmount', 'companyName', 'companyAddress'],
+    metadata: {
+      colors: ['blue-700', 'slate-800', 'slate-50', 'blue-50', 'slate-500'],
+      style: 'professional',
+      complexity: 'medium',
+    },
+    variables: [
+      'refNumber',
+      'submissionDate',
+      'period',
+      'employeeName',
+      'department',
+      'projectName',
+      'expenses',
+      'totalAmount',
+      'companyName',
+      'companyAddress',
+    ],
   },
 
   {
@@ -2629,8 +2656,27 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     </div>
   </div>
 </div>`,
-    metadata: { colors: ['slate-900', 'slate-100', 'slate-800', 'slate-200', 'slate-700'], style: 'formal', complexity: 'medium' },
-    variables: ['meetingTitle', 'meetingDate', 'startTime', 'endTime', 'location', 'facilitator', 'writer', 'participants', 'agenda', 'discussionPoints', 'actionItems', 'nextMeetingDate', 'nextMeetingTime', 'nextMeetingLocation'],
+    metadata: {
+      colors: ['slate-900', 'slate-100', 'slate-800', 'slate-200', 'slate-700'],
+      style: 'formal',
+      complexity: 'medium',
+    },
+    variables: [
+      'meetingTitle',
+      'meetingDate',
+      'startTime',
+      'endTime',
+      'location',
+      'facilitator',
+      'writer',
+      'participants',
+      'agenda',
+      'discussionPoints',
+      'actionItems',
+      'nextMeetingDate',
+      'nextMeetingTime',
+      'nextMeetingLocation',
+    ],
   },
 
   {
@@ -2701,8 +2747,28 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     <p>Ce bulletin de paie doit être conservé sans limitation de durée.</p>
   </div>
 </div>`,
-    metadata: { colors: ['slate-800', 'slate-700', 'slate-100', 'slate-200', 'white'], style: 'official', complexity: 'complex' },
-    variables: ['companyName', 'companyAddress', 'companySiret', 'period', 'employeeName', 'jobTitle', 'contractType', 'employeeId', 'socialSecurityNumber', 'hireDate', 'payLines', 'grossSalary', 'totalDeductions', 'netSalary', 'paymentDate'],
+    metadata: {
+      colors: ['slate-800', 'slate-700', 'slate-100', 'slate-200', 'white'],
+      style: 'official',
+      complexity: 'complex',
+    },
+    variables: [
+      'companyName',
+      'companyAddress',
+      'companySiret',
+      'period',
+      'employeeName',
+      'jobTitle',
+      'contractType',
+      'employeeId',
+      'socialSecurityNumber',
+      'hireDate',
+      'payLines',
+      'grossSalary',
+      'totalDeductions',
+      'netSalary',
+      'paymentDate',
+    ],
   },
 
   {
@@ -2756,8 +2822,26 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     </div>
   </div>
 </div>`,
-    metadata: { colors: ['blue-700', 'slate-800', 'slate-50', 'blue-200', 'slate-600'], style: 'modern', complexity: 'medium' },
-    variables: ['companyName', 'jobTitle', 'location', 'contractType', 'schedule', 'salary', 'companyDescription', 'missions', 'requirements', 'benefits', 'contactEmail', 'refCode', 'startDate'],
+    metadata: {
+      colors: ['blue-700', 'slate-800', 'slate-50', 'blue-200', 'slate-600'],
+      style: 'modern',
+      complexity: 'medium',
+    },
+    variables: [
+      'companyName',
+      'jobTitle',
+      'location',
+      'contractType',
+      'schedule',
+      'salary',
+      'companyDescription',
+      'missions',
+      'requirements',
+      'benefits',
+      'contactEmail',
+      'refCode',
+      'startDate',
+    ],
   },
 
   {
@@ -2834,8 +2918,32 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     <span>{{clinicName}} — {{clinicAddress}}</span>
   </div>
 </div>`,
-    metadata: { colors: ['teal-700', 'teal-50', 'slate-800', 'slate-700', 'slate-500'], style: 'clinical', complexity: 'complex' },
-    variables: ['reportTitle', 'reportDate', 'refNumber', 'patientName', 'birthDate', 'gender', 'patientId', 'doctorName', 'specialty', 'clinicName', 'clinicAddress', 'consultationReason', 'medicalHistory', 'clinicalExam', 'diagnosis', 'icd10Code', 'treatments', 'followUp', 'nextAppointment'],
+    metadata: {
+      colors: ['teal-700', 'teal-50', 'slate-800', 'slate-700', 'slate-500'],
+      style: 'clinical',
+      complexity: 'complex',
+    },
+    variables: [
+      'reportTitle',
+      'reportDate',
+      'refNumber',
+      'patientName',
+      'birthDate',
+      'gender',
+      'patientId',
+      'doctorName',
+      'specialty',
+      'clinicName',
+      'clinicAddress',
+      'consultationReason',
+      'medicalHistory',
+      'clinicalExam',
+      'diagnosis',
+      'icd10Code',
+      'treatments',
+      'followUp',
+      'nextAppointment',
+    ],
   },
 
   {
@@ -2877,8 +2985,26 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     <p class="text-sm font-bold text-slate-400 tracking-widest">— FIN DU COMMUNIQUÉ —</p>
   </div>
 </div>`,
-    metadata: { colors: ['slate-900', 'red-700', 'slate-700', 'slate-50', 'slate-400'], style: 'editorial', complexity: 'medium' },
-    variables: ['companyName', 'releaseDate', 'headline', 'subheadline', 'city', 'paragraphs', 'quote', 'quotePerson', 'quoteTitle', 'companyBlurb', 'pressContactName', 'pressContactEmail', 'pressContactPhone'],
+    metadata: {
+      colors: ['slate-900', 'red-700', 'slate-700', 'slate-50', 'slate-400'],
+      style: 'editorial',
+      complexity: 'medium',
+    },
+    variables: [
+      'companyName',
+      'releaseDate',
+      'headline',
+      'subheadline',
+      'city',
+      'paragraphs',
+      'quote',
+      'quotePerson',
+      'quoteTitle',
+      'companyBlurb',
+      'pressContactName',
+      'pressContactEmail',
+      'pressContactPhone',
+    ],
   },
 
   {
@@ -2927,8 +3053,26 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     <p class="text-xs text-slate-400">{{organizerName}} — {{organizerContact}}</p>
   </div>
 </div>`,
-    metadata: { colors: ['slate-900', 'slate-700', 'slate-200', 'slate-50', 'white'], style: 'elegant', complexity: 'medium' },
-    variables: ['organizerName', 'eventName', 'eventTagline', 'eventDate', 'eventTime', 'venue', 'venueAddress', 'invitationMessage', 'programItems', 'dressCode', 'rsvpEmail', 'rsvpDeadline', 'organizerContact'],
+    metadata: {
+      colors: ['slate-900', 'slate-700', 'slate-200', 'slate-50', 'white'],
+      style: 'elegant',
+      complexity: 'medium',
+    },
+    variables: [
+      'organizerName',
+      'eventName',
+      'eventTagline',
+      'eventDate',
+      'eventTime',
+      'venue',
+      'venueAddress',
+      'invitationMessage',
+      'programItems',
+      'dressCode',
+      'rsvpEmail',
+      'rsvpDeadline',
+      'organizerContact',
+    ],
   },
 
   {
@@ -2977,8 +3121,34 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     {{/if}}
   </div>
 </div>`,
-    metadata: { colors: ['slate-900', 'slate-700', 'slate-500', 'slate-200', 'slate-300'], style: 'classic', complexity: 'simple' },
-    variables: ['senderCompany', 'senderAddress', 'senderCity', 'senderPhone', 'senderEmail', 'city', 'letterDate', 'reference', 'recipientName', 'recipientTitle', 'recipientCompany', 'recipientAddress', 'recipientCity', 'subject', 'salutation', 'bodyParagraphs', 'closingFormula', 'senderName', 'senderTitle', 'hasAttachments', 'attachmentsList'],
+    metadata: {
+      colors: ['slate-900', 'slate-700', 'slate-500', 'slate-200', 'slate-300'],
+      style: 'classic',
+      complexity: 'simple',
+    },
+    variables: [
+      'senderCompany',
+      'senderAddress',
+      'senderCity',
+      'senderPhone',
+      'senderEmail',
+      'city',
+      'letterDate',
+      'reference',
+      'recipientName',
+      'recipientTitle',
+      'recipientCompany',
+      'recipientAddress',
+      'recipientCity',
+      'subject',
+      'salutation',
+      'bodyParagraphs',
+      'closingFormula',
+      'senderName',
+      'senderTitle',
+      'hasAttachments',
+      'attachmentsList',
+    ],
   },
 
   {
@@ -3090,8 +3260,28 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     <span>Confidentiel — usage interne</span>
   </div>
 </div>`,
-    metadata: { colors: ['indigo-800', 'indigo-50', 'indigo-200', 'slate-700', 'slate-100'], style: 'analytical', complexity: 'complex' },
-    variables: ['projectName', 'projectCode', 'version', 'startDate', 'endDate', 'budget', 'projectManager', 'clientName', 'priority', 'context', 'inScope', 'outOfScope', 'techStack', 'milestones', 'risks'],
+    metadata: {
+      colors: ['indigo-800', 'indigo-50', 'indigo-200', 'slate-700', 'slate-100'],
+      style: 'analytical',
+      complexity: 'complex',
+    },
+    variables: [
+      'projectName',
+      'projectCode',
+      'version',
+      'startDate',
+      'endDate',
+      'budget',
+      'projectManager',
+      'clientName',
+      'priority',
+      'context',
+      'inScope',
+      'outOfScope',
+      'techStack',
+      'milestones',
+      'risks',
+    ],
   },
 ];
 
