@@ -12,6 +12,7 @@ import {
   IconShoppingBag,
   IconUserCircle,
   IconWaveSawTool,
+  IconWebhook,
 } from '@tabler/icons-react';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -23,6 +24,7 @@ const data = [
   { link: '/dashboard/marketplace', label: 'Marketplace', icon: IconShoppingBag },
   { link: '/dashboard/backtrace', label: 'Logs', icon: IconNotebook },
   { link: '/dashboard/keys', label: 'Api Keys', icon: IconKey },
+  { link: '/dashboard/webhooks', label: 'Webhooks', icon: IconWebhook },
   { link: '/dashboard/account', label: 'Account', icon: IconUserCircle },
   { link: '/documentation', label: 'Documentation API', icon: IconInfoCircle },
 ];
@@ -39,6 +41,7 @@ function labelForPathname(pathname: string): string {
   if (pathname.startsWith('/dashboard/marketplace')) return 'Marketplace';
   if (pathname.startsWith('/dashboard/backtrace')) return 'Logs';
   if (pathname.startsWith('/dashboard/keys')) return 'Api Keys';
+  if (pathname.startsWith('/dashboard/webhooks')) return 'Webhooks';
   if (pathname.startsWith('/dashboard/account')) return 'Account';
   if (pathname.startsWith('/documentation')) return 'Documentation API';
   if (pathname.startsWith('/dashboard')) return 'Overview';

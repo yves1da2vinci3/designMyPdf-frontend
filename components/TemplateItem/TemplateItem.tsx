@@ -1,6 +1,14 @@
 import { useDrag } from 'react-dnd';
 import { Paper, Box, Menu, Text, Group, ActionIcon } from '@mantine/core';
-import { IconDots, IconTrash, IconEdit, IconPencil } from '@tabler/icons-react';
+import { useClipboard } from '@mantine/hooks';
+import {
+  IconCheck,
+  IconCopy,
+  IconDots,
+  IconTrash,
+  IconEdit,
+  IconPencil,
+} from '@tabler/icons-react';
 import { useRouter } from 'next/router';
 import React from 'react';
 import { TemplateDTO, templateApi } from '@/api/templateApi';
@@ -22,6 +30,7 @@ export default function TemplateItem({
   onRename,
 }: TemplateItemProps) {
   const { name, CreatedAt, content, variables, fonts, uuid } = template;
+  const clipboardUUID = useClipboard({ timeout: 1500 });
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'TEMPLATE',
     item: { id },
@@ -72,7 +81,7 @@ export default function TemplateItem({
         </Text>
         <Menu shadow="md" width={200} position="bottom-end" id="template-actions">
           <Menu.Target>
-            <ActionIcon variant="subtle" onClick={(e) => e.stopPropagation()}>
+            <ActionIcon variant="subtle" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
               <IconDots size={16} />
             </ActionIcon>
           </Menu.Target>
@@ -94,6 +103,17 @@ export default function TemplateItem({
               }}
             >
               Rename
+            </Menu.Item>
+            <Menu.Item
+              leftSection={
+                clipboardUUID.copied ? <IconCheck size={14} color="teal" /> : <IconCopy size={14} />
+              }
+              onClick={(e) => {
+                e.stopPropagation();
+                clipboardUUID.copy(uuid);
+              }}
+            >
+              {clipboardUUID.copied ? 'Copied!' : 'Copy template ID'}
             </Menu.Item>
             <Menu.Divider />
             <Menu.Item
