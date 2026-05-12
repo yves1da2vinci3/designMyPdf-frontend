@@ -118,11 +118,17 @@ export const authApi = {
     try {
       const updateResponse = await apiClient.put('/auth/update', updateDTO);
       const userName = get(updateResponse, 'data.data.user_name');
+      const email = get(updateResponse, 'data.data.email');
 
       if (typeof window !== 'undefined') {
         const userSession = this.getUserSession();
         if (userSession) {
-          userSession.userName = userName;
+          if (typeof userName === 'string' && userName.length > 0) {
+            userSession.userName = userName;
+          }
+          if (typeof email === 'string' && email.length > 0) {
+            userSession.email = email;
+          }
           localStorage.setItem('userSession', JSON.stringify(userSession));
         }
         notificationService.showSuccessNotification('User update successful');
