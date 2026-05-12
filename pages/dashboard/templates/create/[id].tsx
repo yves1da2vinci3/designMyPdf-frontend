@@ -2034,7 +2034,7 @@ const CreateTemplate: React.FC = () => {
 
                             const text = `\n\n<!-- Chart Section -->
 <div class="w-full py-4" style="display:flex;justify-content:center;align-items:center;">
-  <canvas
+  <canvas 
     id="${chartId}"
     data-chart-type="${type}"
     data-chart-data='{{charts.${chartId}}}'
