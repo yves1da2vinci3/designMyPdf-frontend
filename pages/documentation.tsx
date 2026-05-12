@@ -13,10 +13,12 @@ import {
   Grid,
   Group,
   List,
+  Table,
   Text,
   Title,
 } from '@mantine/core';
 import {
+  IconAlertTriangle,
   IconArrowLeft,
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
@@ -216,7 +218,7 @@ const Documentation = () => {
               </Text>
             </Group>
             <CodeHighlight
-              code={`fetch('https://ycwsfk5z1o2olxi83ktd3jk9.yvesdavinci.tech/api/generate-pdf/YOUR_TEMPLATE_ID', {
+              code={`fetch('https://dmpbackendapi.yvesdavinci.tech/api/generate-pdf/YOUR_TEMPLATE_ID', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -291,6 +293,24 @@ const Documentation = () => {
           <Title order={2} fw={700} mb="md" id="pdf-generation">
             PDF Generation
           </Title>
+          <Alert
+            color="orange"
+            variant="light"
+            radius="md"
+            mb="md"
+            title="Deprecation Notice"
+            icon={<IconAlertTriangle size={16} />}
+          >
+            <Text size="sm">
+              Synchronous PDF generation is deprecated and will be removed in a future version. Use{' '}
+              <code>POST /api/generate-pdf/:templateId/async</code> combined with webhooks or job
+              polling instead — see the{' '}
+              <Anchor href="#webhooks" size="sm" fw={600}>
+                Webhooks
+              </Anchor>{' '}
+              section.
+            </Text>
+          </Alert>
           <Text c="dimmed" mb="md">
             Endpoint for converting a template and dynamic data into a downloadable PDF.
           </Text>
@@ -384,7 +404,7 @@ const Documentation = () => {
               </Text>
             </Group>
             <CodeHighlight
-              code={`fetch('https://ycwsfk5z1o2olxi83ktd3jk9.yvesdavinci.tech/api/generate-pdf/YOUR_TEMPLATE_ID', {
+              code={`fetch('https://dmpbackendapi.yvesdavinci.tech/api/generate-pdf/YOUR_TEMPLATE_ID', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -617,31 +637,425 @@ const Documentation = () => {
             Webhooks
           </Title>
           <Text c="dimmed" mb="md">
-            Receive real-time event notifications when PDF generation completes, fails, or when
-            usage limits are approached.
+            Receive real-time HTTP POST notifications when PDF generation jobs change state. Combine
+            async generation with webhooks to avoid polling entirely.
           </Text>
-          <Alert color="orange" variant="light" radius="md" mb="xl" title="In Development">
-            <Text size="sm" mb="xs">
-              Webhooks are currently in active development and are not yet available in production.
-              This feature will allow you to:
+          <Alert
+            color="blue"
+            variant="light"
+            radius="md"
+            mb="xl"
+            title="Recommended approach"
+            icon={<IconAlertTriangle size={16} />}
+          >
+            <Text size="sm">
+              Async generation + webhooks is the recommended way to generate PDFs. Synchronous
+              generation (<code>POST /api/generate-pdf/:templateId</code>) is deprecated and will be
+              removed in a future version.
             </Text>
-            <Box component="ul" pl="md" style={{ margin: 0 }}>
-              <Box component="li">
-                <Text size="sm">
-                  Receive <code>generation.completed</code> events with download URLs
-                </Text>
-              </Box>
-              <Box component="li">
-                <Text size="sm">
-                  Handle <code>generation.failed</code> errors in real time
-                </Text>
-              </Box>
-              <Box component="li">
-                <Text size="sm">
-                  Get <code>quota.warning</code> alerts before hitting usage limits
-                </Text>
-              </Box>
-            </Box>
+          </Alert>
+
+          {/* ── Async generation ── */}
+          <Title order={3} fw={600} mb="xs">
+            Async PDF Generation
+          </Title>
+          <Text size="sm" c="dimmed" mb="md">
+            Use the async endpoint to queue a job and get a <code>job_id</code> immediately, without
+            waiting for rendering to complete. Then receive a webhook on completion, or poll the job
+            status endpoint.
+          </Text>
+
+          <Card withBorder radius="md" p={0} mb="sm" style={{ overflow: 'hidden' }}>
+            <Group
+              px="md"
+              py="xs"
+              justify="space-between"
+              style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}
+            >
+              <Text size="xs" fw={600} c="dimmed">
+                POST /api/generate-pdf/:templateId/async
+              </Text>
+              <Badge color="blue" variant="light" size="xs">
+                JWT required
+              </Badge>
+            </Group>
+            <CodeHighlight
+              language="javascript"
+              code={`// Request
+fetch('/api/generate-pdf/YOUR_TEMPLATE_UUID/async', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ name: 'Alice', total: 149.99 }),
+});
+
+// Response 202
+{
+  "job_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "queued"
+}`}
+            />
+          </Card>
+
+          <Card withBorder radius="md" p={0} mb="xl" style={{ overflow: 'hidden' }}>
+            <Group
+              px="md"
+              py="xs"
+              justify="space-between"
+              style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}
+            >
+              <Text size="xs" fw={600} c="dimmed">
+                GET /api/pdf-jobs/:jobId — poll job status
+              </Text>
+              <Badge color="blue" variant="light" size="xs">
+                JWT required
+              </Badge>
+            </Group>
+            <CodeHighlight
+              language="json"
+              code={`// Response — completed
+{
+  "job": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "status": "completed",
+    "result_path": "https://storage.example.com/pdfs/output.pdf",
+    "created_at": "2024-01-15T10:29:55Z",
+    "updated_at": "2024-01-15T10:30:02Z"
+  }
+}
+
+// status values: "queued" | "running" | "completed" | "failed"`}
+            />
+          </Card>
+
+          {/* ── Webhook subscriptions ── */}
+          <Title order={3} fw={600} mb="xs">
+            Webhook Subscription Endpoints
+          </Title>
+          <Text size="sm" c="dimmed" mb="md">
+            All subscription endpoints require a JWT (Bearer token). Subscriptions belong to the
+            authenticated user.
+          </Text>
+
+          <Card withBorder radius="md" p={0} mb="sm" style={{ overflow: 'hidden' }}>
+            <Group
+              px="md"
+              py="xs"
+              justify="space-between"
+              style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}
+            >
+              <Text size="xs" fw={600} c="dimmed">
+                GET /api/webhook-events/definitions — list available events
+              </Text>
+              <Badge color="blue" variant="light" size="xs">
+                JWT required
+              </Badge>
+            </Group>
+            <CodeHighlight
+              language="json"
+              code={`// Response 200
+{ "events": ["PdfJobQueued", "PdfJobCompleted", "PdfJobFailed"] }`}
+            />
+          </Card>
+
+          <Card withBorder radius="md" p={0} mb="sm" style={{ overflow: 'hidden' }}>
+            <Group
+              px="md"
+              py="xs"
+              justify="space-between"
+              style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}
+            >
+              <Text size="xs" fw={600} c="dimmed">
+                POST /api/webhook-subscriptions — create subscription
+              </Text>
+              <Badge color="green" variant="light" size="xs">
+                201 Created
+              </Badge>
+            </Group>
+            <CodeHighlight
+              language="javascript"
+              code={`// Request body
+{
+  "webhook_uri": "https://your-api.com/webhooks",
+  "event_names": ["PdfJobCompleted", "PdfJobFailed"],
+  "key_ids": [42]          // optional — omit to receive events for ALL keys
+}
+
+// Response 201 — secret shown ONCE, store it immediately
+{
+  "subscription": { "id": "...", "webhook_uri": "...", "is_active": true, ... },
+  "secret": "whsec_abc123..."
+}`}
+            />
+          </Card>
+
+          <Card withBorder radius="md" p={0} mb="sm" style={{ overflow: 'hidden' }}>
+            <Group
+              px="md"
+              py="xs"
+              justify="space-between"
+              style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}
+            >
+              <Text size="xs" fw={600} c="dimmed">
+                GET /api/webhook-subscriptions — list subscriptions
+              </Text>
+              <Badge color="blue" variant="light" size="xs">
+                JWT required
+              </Badge>
+            </Group>
+            <CodeHighlight
+              language="json"
+              code={`// Response 200
+{
+  "subscriptions": [
+    {
+      "id": "550e8400-...",
+      "webhook_uri": "https://your-api.com/webhooks",
+      "is_active": true,
+      "event_names": ["PdfJobCompleted"],
+      "keys": [{ "subscription_id": "...", "key_id": 42 }],
+      "last_delivery_status": 200,
+      "last_delivery_at": "2024-01-15T10:30:02Z",
+      "created_at": "2024-01-10T08:00:00Z"
+    }
+  ]
+}`}
+            />
+          </Card>
+
+          <Card withBorder radius="md" p={0} mb="sm" style={{ overflow: 'hidden' }}>
+            <Group
+              px="md"
+              py="xs"
+              justify="space-between"
+              style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}
+            >
+              <Text size="xs" fw={600} c="dimmed">
+                PATCH /api/webhook-subscriptions/:id — update / regenerate secret
+              </Text>
+              <Badge color="orange" variant="light" size="xs">
+                Partial update
+              </Badge>
+            </Group>
+            <CodeHighlight
+              language="javascript"
+              code={`// All fields optional
+{
+  "webhook_uri": "https://new-url.com/hook",
+  "event_names": ["PdfJobQueued", "PdfJobCompleted", "PdfJobFailed"],
+  "key_ids": [],            // empty = all keys
+  "is_active": false,       // pause delivery without deleting
+
+  "regenerate_secret": true // if true → response includes new "secret" field
+}
+
+// Response when regenerate_secret is true
+{ "subscription": { ... }, "secret": "whsec_newvalue..." }`}
+            />
+          </Card>
+
+          <Card withBorder radius="md" p={0} mb="sm" style={{ overflow: 'hidden' }}>
+            <Group
+              px="md"
+              py="xs"
+              justify="space-between"
+              style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}
+            >
+              <Text size="xs" fw={600} c="dimmed">
+                DELETE /api/webhook-subscriptions/:id — delete subscription
+              </Text>
+              <Badge color="red" variant="light" size="xs">
+                204 No Content
+              </Badge>
+            </Group>
+            <CodeHighlight
+              language="javascript"
+              code={`fetch('/api/webhook-subscriptions/550e8400-...', {
+  method: 'DELETE',
+  headers: { 'Authorization': 'Bearer YOUR_JWT' },
+});
+// Response 204 — no body`}
+            />
+          </Card>
+
+          <Card withBorder radius="md" p={0} mb="xl" style={{ overflow: 'hidden' }}>
+            <Group
+              px="md"
+              py="xs"
+              justify="space-between"
+              style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}
+            >
+              <Text size="xs" fw={600} c="dimmed">
+                GET /api/webhook-subscriptions/:id/deliveries — delivery history
+              </Text>
+              <Badge color="blue" variant="light" size="xs">
+                JWT required
+              </Badge>
+            </Group>
+            <CodeHighlight
+              language="json"
+              code={`// Response 200
+{
+  "attempts": [
+    {
+      "id": "...",
+      "subscription_id": "...",
+      "event_name": "PdfJobCompleted",
+      "http_status": 200,
+      "response_snippet": "ok",
+      "error": "",
+      "attempt_no": 1,
+      "payload_json": "{ \"event\": \"PdfJobCompleted\", ... }",
+      "created_at": "2024-01-15T10:30:02Z"
+    }
+  ],
+  "total": 1
+}`}
+            />
+          </Card>
+
+          {/* ── Event types ── */}
+          <Title order={3} fw={600} mb="sm">
+            Event Types
+          </Title>
+          <Card withBorder radius="md" p={0} mb="xl" style={{ overflow: 'hidden' }}>
+            <Table>
+              <Table.Thead style={{ backgroundColor: '#f8f9fa' }}>
+                <Table.Tr>
+                  <Table.Th style={{ fontWeight: 600, fontSize: 12 }}>Event name</Table.Th>
+                  <Table.Th style={{ fontWeight: 600, fontSize: 12 }}>Trigger</Table.Th>
+                  <Table.Th style={{ fontWeight: 600, fontSize: 12 }}>status field</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                <Table.Tr>
+                  <Table.Td>
+                    <code>PdfJobQueued</code>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm" c="dimmed">
+                      Job accepted and queued for processing
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <code>queued</code>
+                  </Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Td>
+                    <code>PdfJobCompleted</code>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm" c="dimmed">
+                      PDF rendered and uploaded to storage
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <code>completed</code>
+                  </Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Td>
+                    <code>PdfJobFailed</code>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text size="sm" c="dimmed">
+                      Generation failed after all retries
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <code>failed</code>
+                  </Table.Td>
+                </Table.Tr>
+              </Table.Tbody>
+            </Table>
+          </Card>
+
+          {/* ── Payload ── */}
+          <Title order={3} fw={600} mb="sm">
+            Webhook Payload
+          </Title>
+          <Card withBorder radius="md" p={0} mb="xl" style={{ overflow: 'hidden' }}>
+            <Group
+              px="md"
+              py="xs"
+              style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}
+            >
+              <Text size="xs" fw={600} c="dimmed">
+                POST to your endpoint — body (PdfJobCompleted)
+              </Text>
+            </Group>
+            <CodeHighlight
+              language="json"
+              code={`{
+  "event": "PdfJobCompleted",
+  "job_id": "550e8400-e29b-41d4-a716-446655440000",
+  "key_id": 42,
+  "template_uuid": "abc123",
+  "status": "completed",
+  "path": "https://storage.example.com/pdfs/output.pdf",
+  "occurred_at": "2024-01-15T10:30:00Z"
+}`}
+            />
+          </Card>
+
+          {/* ── Signature ── */}
+          <Title order={3} fw={600} mb="sm">
+            Signature Verification
+          </Title>
+          <Text size="sm" c="dimmed" mb="sm">
+            Every request includes a <code>Dmp-Webhook-Signature: sha256=&lt;hex&gt;</code> header.
+            Compute HMAC-SHA256 of the raw request body using your signing secret and compare with
+            the header value. Always use <code>timingSafeEqual</code> to prevent timing attacks.
+          </Text>
+          <Card withBorder radius="md" p={0} mb="xl" style={{ overflow: 'hidden' }}>
+            <Group
+              px="md"
+              py="xs"
+              style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}
+            >
+              <Text size="xs" fw={600} c="dimmed">
+                Node.js — signature verification
+              </Text>
+            </Group>
+            <CodeHighlight
+              language="javascript"
+              code={`const crypto = require('crypto');
+
+function verifyWebhook(rawBody, signatureHeader, secret) {
+  const expected = 'sha256=' + crypto
+    .createHmac('sha256', secret)
+    .update(rawBody)
+    .digest('hex');
+  return crypto.timingSafeEqual(
+    Buffer.from(expected),
+    Buffer.from(signatureHeader)
+  );
+}
+
+// Express example
+app.post('/webhooks', express.raw({ type: 'application/json' }), (req, res) => {
+  const sig = req.headers['dmp-webhook-signature'];
+  if (!verifyWebhook(req.body, sig, process.env.WEBHOOK_SECRET)) {
+    return res.status(401).send('Invalid signature');
+  }
+  const event = JSON.parse(req.body);
+  // handle event.event: "PdfJobQueued" | "PdfJobCompleted" | "PdfJobFailed"
+  res.sendStatus(200);
+});`}
+            />
+          </Card>
+
+          <Alert color="blue" variant="light" radius="md" mb="xl" title="Manage Subscriptions">
+            <Text size="sm">
+              Create and manage webhook endpoints from the{' '}
+              <Anchor href="/dashboard/webhooks" size="sm" fw={600}>
+                Dashboard → Webhooks
+              </Anchor>{' '}
+              page. Each endpoint can be scoped to specific API keys and event types.
+            </Text>
           </Alert>
 
           {/* Node.js SDK */}

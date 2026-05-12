@@ -19,12 +19,14 @@ import {
   ThemeIcon,
   Title,
 } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { useClipboard, useDisclosure } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
 import {
   IconActivity,
   IconBook,
   IconChartBar,
+  IconCheck,
+  IconCopy,
   IconKey,
   IconPencil,
   IconPlus,
@@ -43,10 +45,74 @@ const maskKey = (value: string) => {
   return `${value.slice(0, 8)}${'•'.repeat(16)}${value.slice(-3)}`;
 };
 
+interface KeyRowProps {
+  keyItem: KeyDTO;
+  onEdit: (id: number) => void;
+  onDelete: (name: string, id: number) => void;
+}
+
+function KeyRow({ keyItem, onEdit, onDelete }: KeyRowProps) {
+  const clipboard = useClipboard({ timeout: 1500 });
+  return (
+    <Table.Tr style={{ transition: 'background 0.15s' }}>
+      <Table.Td>
+        <Box>
+          <Text fw={600} size="sm">
+            {keyItem.name}
+          </Text>
+          <Group gap={4} align="center">
+            <Text size="xs" c="dimmed" ff="monospace">
+              {maskKey(keyItem.value)}
+            </Text>
+            <ActionIcon
+              variant="subtle"
+              color={clipboard.copied ? 'teal' : 'gray'}
+              size="xs"
+              onClick={() => clipboard.copy(keyItem.value)}
+              title="Copy key"
+            >
+              {clipboard.copied ? <IconCheck size={11} /> : <IconCopy size={11} />}
+            </ActionIcon>
+          </Group>
+        </Box>
+      </Table.Td>
+      <Table.Td>
+        <Text size="sm" c="dimmed">
+          {formatDate(keyItem.created_at)}
+        </Text>
+      </Table.Td>
+      <Table.Td>
+        <Text size="sm" c="dimmed">
+          {keyItem.last_used_at ? formatDate(keyItem.last_used_at) : 'Never'}
+        </Text>
+      </Table.Td>
+      <Table.Td>
+        <Badge color="teal" variant="light" radius="sm" size="sm">
+          ACTIVE
+        </Badge>
+      </Table.Td>
+      <Table.Td>
+        <Group gap="xs" justify="flex-end">
+          <ActionIcon variant="subtle" color="blue" onClick={() => onEdit(keyItem.id)} title="Edit">
+            <IconPencil size={16} />
+          </ActionIcon>
+          <ActionIcon
+            variant="subtle"
+            color="red"
+            onClick={() => onDelete(keyItem.name, keyItem.id)}
+            title="Delete"
+          >
+            <IconTrash size={16} />
+          </ActionIcon>
+        </Group>
+      </Table.Td>
+    </Table.Tr>
+  );
+}
+
 export default function Keys() {
   const [fetchKeysRequestStatus, setFetchKeysRequestStatus] = useState(RequestStatus.NotStated);
   const [keys, setKeys] = useState<KeyDTO[]>([]);
-  const [rows, setRows] = useState<React.ReactNode[]>([]);
   const [total24h, setTotal24h] = useState<number | null>(null);
 
   const fetchKeys = async () => {
@@ -104,59 +170,6 @@ export default function Keys() {
       onConfirm: () => deleteKey(keyId),
     });
   };
-
-  useEffect(() => {
-    const updatedRows = keys.map((keyItem) => (
-      <Table.Tr key={keyItem.id} style={{ transition: 'background 0.15s' }}>
-        <Table.Td>
-          <Box>
-            <Text fw={600} size="sm">
-              {keyItem.name}
-            </Text>
-            <Text size="xs" c="dimmed" ff="monospace">
-              {maskKey(keyItem.value)}
-            </Text>
-          </Box>
-        </Table.Td>
-        <Table.Td>
-          <Text size="sm" c="dimmed">
-            {formatDate(keyItem.created_at)}
-          </Text>
-        </Table.Td>
-        <Table.Td>
-          <Text size="sm" c="dimmed">
-            {keyItem.last_used_at ? formatDate(keyItem.last_used_at) : 'Never'}
-          </Text>
-        </Table.Td>
-        <Table.Td>
-          <Badge color="teal" variant="light" radius="sm" size="sm">
-            ACTIVE
-          </Badge>
-        </Table.Td>
-        <Table.Td>
-          <Group gap="xs" justify="flex-end">
-            <ActionIcon
-              variant="subtle"
-              color="blue"
-              onClick={() => updateKey(keyItem.id)}
-              title="Edit"
-            >
-              <IconPencil size={16} />
-            </ActionIcon>
-            <ActionIcon
-              variant="subtle"
-              color="red"
-              onClick={() => deleteConfirmation(keyItem.name, keyItem.id)}
-              title="Delete"
-            >
-              <IconTrash size={16} />
-            </ActionIcon>
-          </Group>
-        </Table.Td>
-      </Table.Tr>
-    ));
-    setRows(updatedRows);
-  }, [keys]);
 
   const [addKeyOpened, { open: openAddKey, close: closeAddKey }] = useDisclosure(false);
   const [addKeyRequestStatus, setAddKeyRequestStatus] = useState(RequestStatus.NotStated);
@@ -380,7 +393,16 @@ export default function Keys() {
                     </Table.Th>
                   </Table.Tr>
                 </Table.Thead>
-                <Table.Tbody>{rows}</Table.Tbody>
+                <Table.Tbody>
+                  {keys.map((keyItem) => (
+                    <KeyRow
+                      key={keyItem.id}
+                      keyItem={keyItem}
+                      onEdit={updateKey}
+                      onDelete={deleteConfirmation}
+                    />
+                  ))}
+                </Table.Tbody>
               </Table>
             </ScrollArea>
           </Paper>
