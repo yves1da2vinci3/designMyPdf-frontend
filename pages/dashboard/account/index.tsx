@@ -62,6 +62,7 @@ export default function Account() {
       setUserRequestStatus(RequestStatus.Succeeded);
     } catch (error) {
       setUserRequestStatus(RequestStatus.Failed);
+      throw error;
     }
   };
 
@@ -112,6 +113,17 @@ export default function Account() {
     initialValues: { name: '', email: '' },
   });
 
+  useEffect(() => {
+    const session = authApi.getUserSession();
+    if (session) {
+      profileForm.setValues({
+        name: session.userName ?? '',
+        email: session.email ?? '',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate once from session on mount
+  }, []);
+
   const passwordForm = useForm({
     initialValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
     validate: {
@@ -123,12 +135,27 @@ export default function Account() {
     },
   });
 
-  const handleProfileSubmit = (values: { name: string; email: string }) => {
-    updateUserHandler({ userName: values.name, password: '' });
+  const handleProfileSubmit = async (values: { name: string; email: string }) => {
+    try {
+      await updateUserHandler({ userName: values.name, password: '' });
+      const session = authApi.getUserSession();
+      if (session) {
+        profileForm.setValues({
+          name: session.userName ?? '',
+          email: session.email ?? '',
+        });
+      }
+    } catch {
+      /* notification from api layer */
+    }
   };
 
-  const handlePasswordSubmit = (values: { currentPassword: string; newPassword: string }) => {
-    updateUserHandler({ userName: '', password: values.newPassword });
+  const handlePasswordSubmit = async (values: { currentPassword: string; newPassword: string }) => {
+    try {
+      await updateUserHandler({ userName: '', password: values.newPassword });
+    } catch {
+      /* notification from api layer */
+    }
   };
 
   return (
@@ -203,7 +230,9 @@ export default function Account() {
                       <TextInput
                         label="Contact Email"
                         placeholder="you@example.com"
+                        description="From your account. Username above can be saved; email is not updated by this API."
                         {...profileForm.getInputProps('email')}
+                        readOnly
                       />
                       <Group justify="flex-end">
                         <Button
