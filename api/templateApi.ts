@@ -44,6 +44,7 @@ export interface UpdateTemplateDto {
   fonts?: string[];
   preview?: string;
   price?: number;
+  pdf_background_color?: string;
 }
 
 export interface TemplateDTO {
@@ -72,6 +73,7 @@ export interface TemplateDTO {
   uses_count?: number;
   author_user_id?: number;
   author_user_name?: string;
+  pdf_background_color?: string;
 }
 
 /** Row returned by GET /marketplace (no content, no variables). */

@@ -57,9 +57,29 @@ async function fetchImageAsBase64(url: string): Promise<{ data: string; mimeType
 
 // --- MAIN HANDLER ---
 
+async function checkAiQuota(authHeader: string, withImage: boolean): Promise<{ ok: boolean; status: number; body: object }> {
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const response = await fetch(`${apiBase}/ai/quota/check`, {
+    method: 'POST',
+    headers: { Authorization: authHeader, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ withImage }),
+  });
+  const body = await response.json();
+  return { ok: response.ok, status: response.status, body };
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  const quota = await checkAiQuota(authHeader, true);
+  if (!quota.ok) {
+    return res.status(quota.status).json(quota.body);
   }
 
   try {

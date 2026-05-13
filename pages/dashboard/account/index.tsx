@@ -93,6 +93,10 @@ export default function Account() {
     setNamespaces(namespaces.filter((ns) => ns.ID !== id));
   };
 
+  const RenameInClient = (id: number, newName: string) => {
+    setNamespaces((prev) => prev.map((ns) => (ns.ID === id ? { ...ns, name: newName } : ns)));
+  };
+
   // Add namespace
   const [addNamespaceRequestStatus, setAddNameSpaceRequestStatus] = useState(
     RequestStatus.NotStated,
@@ -324,6 +328,7 @@ export default function Account() {
                     id={namespace.ID}
                     key={namespace.ID}
                     DeleteFromClient={DeleteFromClient}
+                    RenameInClient={RenameInClient}
                   />
                 ))
               ) : fetchNamespacesRequestStatus === RequestStatus.Failed ? (

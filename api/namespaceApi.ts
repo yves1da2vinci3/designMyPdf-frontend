@@ -29,7 +29,7 @@ export const namespaceApi = {
 
   async updateNamespace(namespace: UpdateNamespaceDto, id: number): Promise<void> {
     try {
-      const nameResponse = await apiClient.put(`/namespaces/${id}`, namespace);
+      await apiClient.put(`/namespaces/${id}`, namespace);
       notificationService.showSuccessNotification('Namespace has been updated.');
     } catch (error) {
       console.error('Namespace update error:', error);
@@ -39,7 +39,7 @@ export const namespaceApi = {
 
   async deleteNamespace(id: number): Promise<void> {
     try {
-      const nameResponse = await apiClient.delete(`/namespaces/${id}`);
+      await apiClient.delete(`/namespaces/${id}`);
       notificationService.showSuccessNotification('Namespace has been deleted.');
     } catch (error) {
       console.error('Namespace delete error:', error);
@@ -50,7 +50,7 @@ export const namespaceApi = {
   async getNamespaces(): Promise<NamespaceDTO[]> {
     try {
       const nameResponse = await apiClient.get(`/namespaces/`);
-      return nameResponse.data.namepsaces;
+      return nameResponse.data.namespaces;
     } catch (error) {
       console.error('Namespace fetch error:', error);
       throw error; // Rethrow the error to propagate it further if needed

@@ -18,6 +18,9 @@ interface PreviewProps {
   fonts: string[];
   isLandscape?: boolean;
   setTemplateContent?: (string: string) => void;
+  backgroundColor?: string;
+  viewMode?: 'single' | 'book';
+  isFullscreen?: boolean;
 }
 
 function Preview({
@@ -27,10 +30,16 @@ function Preview({
   fonts,
   isLandscape = false,
   setTemplateContent,
+  backgroundColor,
+  viewMode = 'single',
+  isFullscreen = false,
 }: PreviewProps) {
   const [renderedContent, setRenderedContent] = useState('');
+  const [pageCount, setPageCount] = useState(1);
+  const [currentSpread, setCurrentSpread] = useState(0);
   const [fontImport, setFontImport] = useState<string>('');
   const [fontStyle, setFontStyle] = useState<string>('');
+  const [bookPageDims, setBookPageDims] = useState({ width: 0, height: 0, scale: 1 });
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
@@ -74,13 +83,38 @@ function Preview({
   // Update delimiters visibility when the toggle changes
   useEffect(() => {
     if (iframeRef.current && iframeRef.current.contentWindow) {
-      // Use postMessage to communicate with the iframe
       iframeRef.current.contentWindow.postMessage(
         { type: 'togglePageDelimiters', show: showPageDelimiters },
         '*',
       );
     }
   }, [showPageDelimiters]);
+
+  // Listen for pageCount from iframe
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === 'pageCount') {
+        setPageCount(e.data.count);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  // Reset spread when switching view modes
+  useEffect(() => {
+    setCurrentSpread(0);
+  }, [viewMode]);
+
+  // Send showSpread to iframe in book mode
+  useEffect(() => {
+    if (viewMode === 'book' && iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        { type: 'showSpread', startPage: currentSpread },
+        '*',
+      );
+    }
+  }, [viewMode, currentSpread, renderedContent]);
 
   useEffect(() => {
     // Append Tailwind CSS if not already present in the parent document.
@@ -430,13 +464,13 @@ function Preview({
         padding: 0;
         min-height: 100vh;
         width: 100%;
-        background: white;
+        background: ${backgroundColor && /^#[0-9A-Fa-f]{6}$/.test(backgroundColor) ? backgroundColor : 'white'};
         position: relative;
       }
       .content {
         width: 100%;
         height: auto;
-        min-height: 100vh;
+        min-height: 0;
         padding: 2rem;
         position: relative;
       }
@@ -459,6 +493,19 @@ function Preview({
     <script>
       ${chartScript}
       ${pageBreakScript}
+      // Book view spread listener
+      window.addEventListener('message', function(e) {
+        if (e.data && e.data.type === 'showSpread') {
+          var pages = document.querySelectorAll('.page');
+          if (pages.length === 0) return;
+          pages.forEach(function(p, i) {
+            p.style.display = (i === e.data.startPage || i === e.data.startPage + 1) ? '' : 'none';
+          });
+        }
+        if (e.data && e.data.type === 'togglePageDelimiters') {
+          // handled by pageBreakScript already
+        }
+      });
     </script>
   </body>
 </html>`;
@@ -481,7 +528,7 @@ function Preview({
         padding: 0;
         min-height: 100vh;
         width: 100%;
-        background: white;
+        background: ${backgroundColor && /^#[0-9A-Fa-f]{6}$/.test(backgroundColor) ? backgroundColor : 'white'};
       }
       .content {
         width: 100%;
@@ -541,6 +588,7 @@ function Preview({
     format,
     isLandscape,
     showPageDelimiters,
+    backgroundColor,
   ]);
 
   const getSize = () => {
@@ -555,9 +603,13 @@ function Preview({
 
   useEffect(() => {
     const updatePaperSize = () => {
-      if (containerRef.current && paperRef.current) {
-        const containerWidth = containerRef.current.clientWidth * 0.8;
-        const containerHeight = containerRef.current.clientHeight * 0.8;
+      if (!containerRef.current) return;
+
+      // Single view sizing (only when paperRef is mounted)
+      if (paperRef.current) {
+        const singleMul = isFullscreen ? 0.92 : 0.8;
+        const containerWidth = containerRef.current.clientWidth * singleMul;
+        const containerHeight = containerRef.current.clientHeight * singleMul;
         let paperWidth = containerWidth;
         let paperHeight = containerWidth * a4AspectRatio;
         if (paperHeight > containerHeight) {
@@ -572,12 +624,27 @@ function Preview({
           iframeRef.current.style.transformOrigin = 'top left';
         }
       }
+
+      // Book view sizing (always computed so it's ready when switching modes)
+      const PIXELS_PER_MM = 96 / 25.4;
+      const naturalPageW = getSize().width * PIXELS_PER_MM;
+      const bookPageMul = isFullscreen ? 0.46 : 0.44;
+      const bookMaxW = containerRef.current.clientWidth * bookPageMul;
+      const bookMaxH = containerRef.current.clientHeight * (isFullscreen ? 0.92 : 0.85);
+      let bw = bookMaxW;
+      let bh = bookMaxW * a4AspectRatio;
+      if (bh > bookMaxH) { bh = bookMaxH; bw = bh / a4AspectRatio; }
+      const bs = bw / naturalPageW;
+      setBookPageDims((prev) => {
+        if (Math.abs(prev.width - bw) < 0.5 && Math.abs(prev.height - bh) < 0.5) return prev;
+        return { width: bw, height: bh, scale: bs };
+      });
     };
 
     updatePaperSize();
     window.addEventListener('resize', updatePaperSize);
     return () => window.removeEventListener('resize', updatePaperSize);
-  }, [a4AspectRatio, getSize]);
+  }, [a4AspectRatio, getSize, isFullscreen]);
 
   // Toggle page delimiters using postMessage
   const togglePageDelimiters = (value: boolean) => {
@@ -606,19 +673,84 @@ function Preview({
         </Tooltip>
       </div>
 
-      <div ref={paperRef} className="shadow-lg bg-white rounded overflow-visible relative">
-        <iframe
-          ref={iframeRef}
-          title="Preview"
-          srcDoc={renderedContent}
-          style={{
-            width: `${getSize().width}mm`,
-            height: `${getSize().height}mm`,
-            border: 'none',
-          }}
-          sandbox="allow-popups-to-escape-sandbox allow-scripts allow-popups allow-forms allow-pointer-lock allow-top-navigation allow-modals"
-        />
-      </div>
+      {viewMode === 'book' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {[0, 1].map((offset) => {
+              const pageIdx = currentSpread + offset;
+              return (
+                <div
+                  key={offset}
+                  style={{
+                    width: bookPageDims.width,
+                    height: bookPageDims.height,
+                    overflow: 'hidden',
+                    position: 'relative',
+                    flexShrink: 0,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                    opacity: pageIdx >= pageCount ? 0.2 : 1,
+                  }}
+                >
+                  <iframe
+                    title={`page-${pageIdx}`}
+                    srcDoc={renderedContent}
+                    style={{
+                      width: `${getSize().width}mm`,
+                      height: '999999px',
+                      border: 'none',
+                      position: 'absolute',
+                      top: -(pageIdx * bookPageDims.height),
+                      left: 0,
+                      transform: `scale(${bookPageDims.scale})`,
+                      transformOrigin: 'top left',
+                    }}
+                    sandbox="allow-popups-to-escape-sandbox allow-scripts allow-popups allow-forms allow-pointer-lock allow-top-navigation allow-modals"
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginTop: '12px',
+              backgroundColor: 'rgba(0,0,0,0.6)',
+              borderRadius: '24px',
+              padding: '6px 16px',
+              color: 'white',
+              fontSize: '13px',
+            }}
+          >
+            <button
+              onClick={() => setCurrentSpread((s) => Math.max(0, s - 2))}
+              disabled={currentSpread === 0}
+              style={{ background: 'none', border: 'none', color: 'white', cursor: currentSpread === 0 ? 'default' : 'pointer', opacity: currentSpread === 0 ? 0.4 : 1, fontSize: '16px' }}
+            >‹</button>
+            <span>{currentSpread + 1}–{Math.min(currentSpread + 2, pageCount)} of {pageCount}</span>
+            <button
+              onClick={() => setCurrentSpread((s) => Math.min(pageCount - 1, s + 2))}
+              disabled={currentSpread + 2 >= pageCount}
+              style={{ background: 'none', border: 'none', color: 'white', cursor: currentSpread + 2 >= pageCount ? 'default' : 'pointer', opacity: currentSpread + 2 >= pageCount ? 0.4 : 1, fontSize: '16px' }}
+            >›</button>
+          </div>
+        </div>
+      ) : (
+        <div ref={paperRef} className="shadow-lg bg-white rounded overflow-visible relative">
+          <iframe
+            ref={iframeRef}
+            title="Preview"
+            srcDoc={renderedContent}
+            style={{
+              width: `${getSize().width}mm`,
+              height: `${getSize().height}mm`,
+              border: 'none',
+            }}
+            sandbox="allow-popups-to-escape-sandbox allow-scripts allow-popups allow-forms allow-pointer-lock allow-top-navigation allow-modals"
+          />
+        </div>
+      )}
     </div>
   );
 }
