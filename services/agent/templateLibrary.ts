@@ -2261,21 +2261,21 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
     name: 'Fiche Produit',
     type: 'other',
     code: `<div class="max-w-5xl mx-auto bg-white">
-  <div class="grid grid-cols-2 p-4">
-    <div>
+  <div class="flex p-4">
+    <div style="width:48%;margin-right:4%">
       {{#if mainImage}}
       <img src="{{mainImage}}" alt="{{productName}}" class="w-full h-auto rounded-lg border border-gray-200 mb-4">
       {{/if}}
       {{#if additionalImages}}
-      <div class="grid grid-cols-4">
+      <div class="flex flex-wrap">
         {{#each additionalImages}}
-        <img src="{{this}}" alt="Product view" class="w-full h-20 object-cover rounded border border-gray-200">
+        <img src="{{this}}" alt="Product view" style="width:23%;margin-right:2%;margin-bottom:4px" class="h-20 object-cover rounded border border-gray-200">
         {{/each}}
       </div>
       {{/if}}
     </div>
     
-    <div>
+    <div style="width:48%">
       <div class="mb-4">
         {{#if brand}}
         <p class="text-sm text-gray-500 mb-1">{{brand}}</p>
@@ -2348,7 +2348,7 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
             <span class="text-sm text-gray-600 ml-2">({{totalReviews}} avis)</span>
           </div>
         </div>
-        <div class="space-y-4 max-h-64 overflow-y-auto">
+        <div class="space-y-4">
           {{#each reviews}}
           <div class="border-b border-gray-100 pb-4">
             <div class="flex items-center mb-2">
@@ -2386,9 +2386,9 @@ export const REFERENCE_TEMPLATES: ReferenceTemplate[] = [
   {{#if relatedProducts}}
   <div class="border-t border-gray-200 p-4">
     <h2 class="text-2xl font-bold text-gray-900 mb-6">Produits Similaires</h2>
-    <div class="grid grid-cols-4">
+    <div class="flex flex-wrap">
       {{#each relatedProducts}}
-      <div class="border border-gray-200 rounded-lg p-4">
+      <div class="border border-gray-200 rounded-lg p-4" style="width:23%;margin-right:2%;margin-bottom:8px">
         {{#if this.image}}
         <img src="{{this.image}}" alt="{{this.name}}" class="w-full h-32 object-cover rounded mb-2">
         {{/if}}

@@ -25,6 +25,9 @@ import {
   TextInput,
   Tabs,
   Modal,
+  ColorSwatch,
+  ColorInput,
+  SegmentedControl,
 } from '@mantine/core';
 import { useRouter, useParams } from 'next/navigation';
 import { useDisclosure } from '@mantine/hooks';
@@ -59,6 +62,8 @@ import {
   IconSearch,
   IconLock,
   IconEye,
+  IconArrowsMaximize,
+  IconArrowsMinimize,
 } from '@tabler/icons-react';
 
 import { Editor } from '@monaco-editor/react';
@@ -175,6 +180,9 @@ const CreateTemplate: React.FC = () => {
   const [showTourButton, setShowTourButton] = useState(false);
   const [hasSeenTour, setHasSeenTour] = useLocalStorage('hasSeenTemplateEditorTour', false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [pdfBgColor, setPdfBgColor] = useState<string>('#FFFFFF');
+  const [viewMode, setViewMode] = useState<'single' | 'book'>('single');
+  const [isPreviewFullscreen, setIsPreviewFullscreen] = useState(false);
   const [templateDrawerOpened, { open: openTemplateDrawer, close: closeTemplateDrawer }] =
     useDisclosure(false);
   const [templateTab, setTemplateTab] = useState<string>('default');
@@ -217,6 +225,9 @@ const CreateTemplate: React.FC = () => {
       setVariables(rest);
       setJsonContent(JSON.stringify(rest, null, 2));
       setFontsSelected(fetchedTemplate.fonts || [DEFAULT_FONT]);
+      if (fetchedTemplate.pdf_background_color) {
+        setPdfBgColor(fetchedTemplate.pdf_background_color);
+      }
       setIsLoading(RequestStatus.Succeeded);
     } catch (error) {
       setIsLoading(RequestStatus.Failed);
@@ -331,6 +342,7 @@ const CreateTemplate: React.FC = () => {
         content: code,
         variables: mergedTemplateData,
         fonts: fontsSelected,
+        pdf_background_color: pdfBgColor,
       });
     } catch (error: any) {
       notificationService.showErrorNotification(error?.message || 'Error updating template');
@@ -814,6 +826,28 @@ const CreateTemplate: React.FC = () => {
             Describe your template and the AI will generate it along with suggested variables. You
             can also upload images to help the AI understand your design requirements.
           </Text>
+
+          {/* Daily AI limits */}
+          <Box
+            p="sm"
+            style={{
+              backgroundColor: '#25262B',
+              borderRadius: 8,
+              border: '1px solid #373A40',
+            }}
+          >
+            <Text size="xs" fw={600} c="dimmed" mb={6} fs="uppercase">
+              Daily Limits
+            </Text>
+            <Group gap="sm">
+              <Badge color="blue" variant="light" size="sm">
+                Text generation: {process.env.NEXT_PUBLIC_AI_QUOTA_TEXT_ONLY ?? '2'} / day
+              </Badge>
+              <Badge color="violet" variant="light" size="sm">
+                Image generation: {process.env.NEXT_PUBLIC_AI_QUOTA_WITH_IMAGE ?? '1'} / day
+              </Badge>
+            </Group>
+          </Box>
 
           {/* Image Upload Section */}
           {uploadedUrls.length > 0 ? (
@@ -1524,6 +1558,20 @@ const CreateTemplate: React.FC = () => {
           <Text c="white" style={{ fontWeight: 500 }}>
             {template?.name || 'Report_template'}
           </Text>
+          <SegmentedControl
+            id="view-mode-control"
+            value={viewMode}
+            onChange={(v) => setViewMode(v as 'single' | 'book')}
+            data={[
+              { label: 'Single', value: 'single' },
+              { label: 'Book View', value: 'book' },
+            ]}
+            size="xs"
+            styles={{
+              root: { backgroundColor: '#25262B' },
+              label: { color: '#909296' },
+            }}
+          />
         </Group>
 
         <Group gap="md">
@@ -1587,7 +1635,17 @@ const CreateTemplate: React.FC = () => {
 
           {/* Actions Menu */}
           <Box id="action-icon">
-            <Menu shadow="md" width={200}>
+            <Menu
+              shadow="md"
+              width={200}
+              styles={{
+                dropdown: { backgroundColor: '#25262B', borderColor: '#373A40' },
+                item: { color: 'white' },
+                itemSection: { color: 'white' },
+                label: { color: '#909296' },
+                divider: { borderColor: '#373A40' },
+              }}
+            >
               <Menu.Target>
                 <Button
                   variant="light"
@@ -1708,8 +1766,8 @@ const CreateTemplate: React.FC = () => {
                     size="sm"
                     label="Paper Size"
                     w={120}
-                    onChange={(_, selectedFormat) => {
-                      const formatValue = (selectedFormat.value as FormatType) || DEFAULT_FORMAT;
+                    onChange={(value) => {
+                      const formatValue = (value as FormatType) || DEFAULT_FORMAT;
                       setFormat(formatValue);
                     }}
                     defaultValue={DEFAULT_FORMAT}
@@ -1742,13 +1800,17 @@ const CreateTemplate: React.FC = () => {
                         border: '1px solid #373A40',
                       },
                       option: {
+                        color: 'white',
                         '&[data-selected]': {
                           '&, &:hover': {
                             backgroundColor: '#3B82F6',
                             color: 'white',
                           },
                         },
+                        '&[data-combobox-active]': { backgroundColor: '#111111' },
+                        '&:hover': { backgroundColor: '#111111' },
                       },
+                      section: { color: 'white' },
                     }}
                   />
                   <Checkbox
@@ -1762,6 +1824,41 @@ const CreateTemplate: React.FC = () => {
                     }}
                   />
                 </Group>
+
+                {/* PDF Styles — Page Background */}
+                <Box id="pdf-styles-section">
+                  <Text size="sm" fw={600} c="white" mb="xs" fs="uppercase">
+                    PDF Styles
+                  </Text>
+                  <Text size="xs" c="dimmed" mb="xs">
+                    Page Background
+                  </Text>
+                  <Group gap={6} mb="xs">
+                    {['#FFFFFF', '#F3F4F6', '#DBEAFE', '#FEF3C7', '#1F2937'].map((color) => (
+                      <ColorSwatch
+                        key={color}
+                        color={color}
+                        size={24}
+                        style={{
+                          cursor: 'pointer',
+                          border: pdfBgColor === color ? '2px solid #228be6' : '2px solid #373A40',
+                        }}
+                        onClick={() => setPdfBgColor(color)}
+                      />
+                    ))}
+                  </Group>
+                  <ColorInput
+                    size="xs"
+                    value={pdfBgColor}
+                    onChange={setPdfBgColor}
+                    format="hex"
+                    label="Hex Code"
+                    styles={{
+                      label: { color: '#909296', fontSize: '11px' },
+                      input: { backgroundColor: '#25262b', color: 'white', borderColor: '#373A40' },
+                    }}
+                  />
+                </Box>
 
                 {/* Export format */}
                 <Box>
@@ -1894,13 +1991,17 @@ const CreateTemplate: React.FC = () => {
                         border: '1px solid #373A40',
                       },
                       option: {
+                        color: 'white',
                         '&[data-selected]': {
                           '&, &:hover': {
                             backgroundColor: '#3B82F6',
                             color: 'white',
                           },
                         },
+                        '&[data-combobox-active]': { backgroundColor: '#111111' },
+                        '&:hover': { backgroundColor: '#111111' },
                       },
+                      section: { color: 'white' },
                     }}
                   />
                 </Box>
@@ -1933,6 +2034,9 @@ const CreateTemplate: React.FC = () => {
                           value={font}
                           onChange={(value) => handleChangeFont({ value: value || '' }, index)}
                           data={fonts}
+                          searchable
+                          placeholder="Search font..."
+                          nothingFoundMessage="No font found"
                           style={{ flex: 1 }}
                           styles={{
                             input: {
@@ -1949,13 +2053,17 @@ const CreateTemplate: React.FC = () => {
                               border: '1px solid #373A40',
                             },
                             option: {
+                              color: 'white',
                               '&[data-selected]': {
                                 '&, &:hover': {
                                   backgroundColor: '#3B82F6',
                                   color: 'white',
                                 },
                               },
+                              '&[data-combobox-active]': { backgroundColor: '#111111' },
+                              '&:hover': { backgroundColor: '#111111' },
                             },
+                            section: { color: 'white' },
                           }}
                         />
                         {index !== 0 && (
@@ -2094,7 +2202,7 @@ const CreateTemplate: React.FC = () => {
           <Box
             id="editor-container"
             style={{
-              width: sidebarCollapsed ? 'calc(61% - 20px)' : '46%',
+              width: sidebarCollapsed ? 'calc(61% - 20px)' : '48%',
               height: '100%',
               transition: 'width 0.3s ease',
               flexShrink: 0,
@@ -2120,17 +2228,51 @@ const CreateTemplate: React.FC = () => {
           {/* Preview */}
           <Box
             id="preview-container"
-            style={{
-              width: sidebarCollapsed ? 'calc(39% - 20px)' : '30%',
-              height: '100%',
-              backgroundColor: '#1A1B1E',
-              borderLeft: '1px solid #373A40',
-              position: 'relative',
-              transition: 'width 0.3s ease',
-              flexShrink: 0,
-              flexGrow: 0,
-            }}
+            style={
+              isPreviewFullscreen
+                ? {
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 9999,
+                    backgroundColor: '#1A1B1E',
+                  }
+                : {
+                    width: sidebarCollapsed ? 'calc(39% - 20px)' : '30%',
+                    height: '100%',
+                    backgroundColor: '#1A1B1E',
+                    borderLeft: '1px solid #373A40',
+                    position: 'relative',
+                    transition: 'width 0.3s ease',
+                    flexShrink: 0,
+                    flexGrow: 0,
+                  }
+            }
           >
+            <Tooltip label={isPreviewFullscreen ? 'Exit fullscreen' : 'Fullscreen preview'}>
+              <ActionIcon
+                id="fullscreen-button"
+                onClick={() => setIsPreviewFullscreen((v) => !v)}
+                style={{
+                  position: 'absolute',
+                  top: 8,
+                  left: 8,
+                  zIndex: 10,
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                  color: 'white',
+                }}
+                variant="subtle"
+                size="sm"
+              >
+                {isPreviewFullscreen ? (
+                  <IconArrowsMinimize size={14} />
+                ) : (
+                  <IconArrowsMaximize size={14} />
+                )}
+              </ActionIcon>
+            </Tooltip>
             <Box
               style={{
                 position: 'absolute',
@@ -2149,6 +2291,9 @@ const CreateTemplate: React.FC = () => {
                 isLandscape={isLandScape}
                 fonts={fontsSelected}
                 setTemplateContent={setTemplateContent}
+                backgroundColor={pdfBgColor}
+                viewMode={viewMode}
+                isFullscreen={isPreviewFullscreen}
               />
             </Box>
           </Box>

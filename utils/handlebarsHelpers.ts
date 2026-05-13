@@ -147,3 +147,24 @@ Handlebars.registerHelper('if_eq', function (this: any, a: any, b: any, c: any, 
   }
   return '';
 });
+
+Handlebars.registerHelper('range', function (from: number, to: number) {
+  const result: number[] = [];
+  for (let i = from; i <= to; i++) {
+    result.push(i);
+  }
+  return result;
+});
+
+Handlebars.registerHelper('eq', function (this: any, a: any, b: any, options: any) {
+  if (!options || typeof options.fn !== 'function') {
+    return a === b;
+  }
+  if (a === b) {
+    return options.fn(this);
+  }
+  if (options.inverse && typeof options.inverse === 'function') {
+    return options.inverse(this);
+  }
+  return '';
+});
