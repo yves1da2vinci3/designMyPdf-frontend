@@ -24,6 +24,26 @@ export const templateEditorTourSteps: DriveStep[] = [
     },
   },
   {
+    element: '#view-mode-control',
+    popover: {
+      title: 'View Mode',
+      description:
+        'Switch between Single page view and Book View. Book View displays two pages side by side, great for checking spreads and pagination.',
+      side: 'bottom' as const,
+      align: 'center' as const,
+    },
+  },
+  {
+    element: '#fullscreen-button',
+    popover: {
+      title: 'Fullscreen Preview',
+      description:
+        'Expand the preview to fullscreen for a better look at your template. Press the button again or Escape to exit.',
+      side: 'right' as const,
+      align: 'start' as const,
+    },
+  },
+  {
     element: '#variables-section',
     popover: {
       title: 'Variables',
@@ -47,7 +67,17 @@ export const templateEditorTourSteps: DriveStep[] = [
     popover: {
       title: 'Fonts',
       description:
-        'Select fonts to use in your template. You can add multiple fonts and they will be loaded automatically.',
+        'Select fonts to use in your template. You can add multiple fonts and search by name. Multiple fonts can be loaded simultaneously.',
+      side: 'top' as const,
+      align: 'start' as const,
+    },
+  },
+  {
+    element: '#pdf-styles-section',
+    popover: {
+      title: 'PDF Background Color',
+      description:
+        'Set a background color for your exported PDF. Choose from presets or enter any hex color. This color is applied to the page background in the final PDF.',
       side: 'top' as const,
       align: 'start' as const,
     },
@@ -67,6 +97,16 @@ export const templateEditorTourSteps: DriveStep[] = [
     popover: {
       title: 'Export PDF',
       description: "When you're ready, export your template as a PDF document with this button.",
+      side: 'bottom' as const,
+      align: 'center' as const,
+    },
+  },
+  {
+    element: '#models-button',
+    popover: {
+      title: 'Template Models',
+      description:
+        'Browse ready-made template models to jumpstart your design. Pick one and customize it to your needs.',
       side: 'bottom' as const,
       align: 'center' as const,
     },

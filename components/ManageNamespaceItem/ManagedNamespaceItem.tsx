@@ -59,10 +59,14 @@ const ManagedNamespaceItem: React.FC<ManagedNamespaceItemProps> = ({
       centered: true,
       children: (
         <Stack gap="sm">
-          <Text size="sm">Enter a new name for <b>{name}</b>:</Text>
+          <Text size="sm">
+            Enter a new name for <b>{name}</b>:
+          </Text>
           <TextInput
             defaultValue={name}
-            onChange={(e) => { inputValue = e.currentTarget.value; }}
+            onChange={(e) => {
+              inputValue = e.currentTarget.value;
+            }}
             placeholder="Namespace name"
             data-autofocus
           />

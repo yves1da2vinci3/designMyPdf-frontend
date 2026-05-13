@@ -841,10 +841,10 @@ const CreateTemplate: React.FC = () => {
             </Text>
             <Group gap="sm">
               <Badge color="blue" variant="light" size="sm">
-                Text generation: 2 / day
+                Text generation: {process.env.NEXT_PUBLIC_AI_QUOTA_TEXT_ONLY ?? '2'} / day
               </Badge>
               <Badge color="violet" variant="light" size="sm">
-                Image generation: 1 / day
+                Image generation: {process.env.NEXT_PUBLIC_AI_QUOTA_WITH_IMAGE ?? '1'} / day
               </Badge>
             </Group>
           </Box>
@@ -1559,6 +1559,7 @@ const CreateTemplate: React.FC = () => {
             {template?.name || 'Report_template'}
           </Text>
           <SegmentedControl
+            id="view-mode-control"
             value={viewMode}
             onChange={(v) => setViewMode(v as 'single' | 'book')}
             data={[
@@ -1634,7 +1635,17 @@ const CreateTemplate: React.FC = () => {
 
           {/* Actions Menu */}
           <Box id="action-icon">
-            <Menu shadow="md" width={200}>
+            <Menu
+              shadow="md"
+              width={200}
+              styles={{
+                dropdown: { backgroundColor: '#25262B', borderColor: '#373A40' },
+                item: { color: 'white' },
+                itemSection: { color: 'white' },
+                label: { color: '#909296' },
+                divider: { borderColor: '#373A40' },
+              }}
+            >
               <Menu.Target>
                 <Button
                   variant="light"
@@ -1789,13 +1800,17 @@ const CreateTemplate: React.FC = () => {
                         border: '1px solid #373A40',
                       },
                       option: {
+                        color: 'white',
                         '&[data-selected]': {
                           '&, &:hover': {
                             backgroundColor: '#3B82F6',
                             color: 'white',
                           },
                         },
+                        '&[data-combobox-active]': { backgroundColor: '#111111' },
+                        '&:hover': { backgroundColor: '#111111' },
                       },
+                      section: { color: 'white' },
                     }}
                   />
                   <Checkbox
@@ -1811,7 +1826,7 @@ const CreateTemplate: React.FC = () => {
                 </Group>
 
                 {/* PDF Styles — Page Background */}
-                <Box>
+                <Box id="pdf-styles-section">
                   <Text size="sm" fw={600} c="white" mb="xs" fs="uppercase">
                     PDF Styles
                   </Text>
@@ -1976,13 +1991,17 @@ const CreateTemplate: React.FC = () => {
                         border: '1px solid #373A40',
                       },
                       option: {
+                        color: 'white',
                         '&[data-selected]': {
                           '&, &:hover': {
                             backgroundColor: '#3B82F6',
                             color: 'white',
                           },
                         },
+                        '&[data-combobox-active]': { backgroundColor: '#111111' },
+                        '&:hover': { backgroundColor: '#111111' },
                       },
+                      section: { color: 'white' },
                     }}
                   />
                 </Box>
@@ -2015,6 +2034,9 @@ const CreateTemplate: React.FC = () => {
                           value={font}
                           onChange={(value) => handleChangeFont({ value: value || '' }, index)}
                           data={fonts}
+                          searchable
+                          placeholder="Search font..."
+                          nothingFoundMessage="No font found"
                           style={{ flex: 1 }}
                           styles={{
                             input: {
@@ -2031,13 +2053,17 @@ const CreateTemplate: React.FC = () => {
                               border: '1px solid #373A40',
                             },
                             option: {
+                              color: 'white',
                               '&[data-selected]': {
                                 '&, &:hover': {
                                   backgroundColor: '#3B82F6',
                                   color: 'white',
                                 },
                               },
+                              '&[data-combobox-active]': { backgroundColor: '#111111' },
+                              '&:hover': { backgroundColor: '#111111' },
                             },
+                            section: { color: 'white' },
                           }}
                         />
                         {index !== 0 && (
@@ -2176,7 +2202,7 @@ const CreateTemplate: React.FC = () => {
           <Box
             id="editor-container"
             style={{
-              width: sidebarCollapsed ? 'calc(61% - 20px)' : '46%',
+              width: sidebarCollapsed ? 'calc(61% - 20px)' : '48%',
               height: '100%',
               transition: 'width 0.3s ease',
               flexShrink: 0,
@@ -2202,27 +2228,32 @@ const CreateTemplate: React.FC = () => {
           {/* Preview */}
           <Box
             id="preview-container"
-            style={isPreviewFullscreen ? {
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 9999,
-              backgroundColor: '#1A1B1E',
-            } : {
-              width: sidebarCollapsed ? 'calc(39% - 20px)' : '30%',
-              height: '100%',
-              backgroundColor: '#1A1B1E',
-              borderLeft: '1px solid #373A40',
-              position: 'relative',
-              transition: 'width 0.3s ease',
-              flexShrink: 0,
-              flexGrow: 0,
-            }}
+            style={
+              isPreviewFullscreen
+                ? {
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 9999,
+                    backgroundColor: '#1A1B1E',
+                  }
+                : {
+                    width: sidebarCollapsed ? 'calc(39% - 20px)' : '30%',
+                    height: '100%',
+                    backgroundColor: '#1A1B1E',
+                    borderLeft: '1px solid #373A40',
+                    position: 'relative',
+                    transition: 'width 0.3s ease',
+                    flexShrink: 0,
+                    flexGrow: 0,
+                  }
+            }
           >
             <Tooltip label={isPreviewFullscreen ? 'Exit fullscreen' : 'Fullscreen preview'}>
               <ActionIcon
+                id="fullscreen-button"
                 onClick={() => setIsPreviewFullscreen((v) => !v)}
                 style={{
                   position: 'absolute',
@@ -2235,7 +2266,11 @@ const CreateTemplate: React.FC = () => {
                 variant="subtle"
                 size="sm"
               >
-                {isPreviewFullscreen ? <IconArrowsMinimize size={14} /> : <IconArrowsMaximize size={14} />}
+                {isPreviewFullscreen ? (
+                  <IconArrowsMinimize size={14} />
+                ) : (
+                  <IconArrowsMaximize size={14} />
+                )}
               </ActionIcon>
             </Tooltip>
             <Box

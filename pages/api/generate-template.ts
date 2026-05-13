@@ -12,7 +12,10 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
 });
 
-async function checkAiQuota(authHeader: string, withImage: boolean): Promise<{ ok: boolean; status: number; body: object }> {
+async function checkAiQuota(
+  authHeader: string,
+  withImage: boolean,
+): Promise<{ ok: boolean; status: number; body: object }> {
   const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
   const response = await fetch(`${apiBase}/ai/quota/check`, {
     method: 'POST',

@@ -633,7 +633,10 @@ function Preview({
       const bookMaxH = containerRef.current.clientHeight * (isFullscreen ? 0.92 : 0.85);
       let bw = bookMaxW;
       let bh = bookMaxW * a4AspectRatio;
-      if (bh > bookMaxH) { bh = bookMaxH; bw = bh / a4AspectRatio; }
+      if (bh > bookMaxH) {
+        bh = bookMaxH;
+        bw = bh / a4AspectRatio;
+      }
       const bs = bw / naturalPageW;
       setBookPageDims((prev) => {
         if (Math.abs(prev.width - bw) < 0.5 && Math.abs(prev.height - bh) < 0.5) return prev;
@@ -643,7 +646,14 @@ function Preview({
 
     updatePaperSize();
     window.addEventListener('resize', updatePaperSize);
-    return () => window.removeEventListener('resize', updatePaperSize);
+
+    const ro = new ResizeObserver(updatePaperSize);
+    if (containerRef.current) ro.observe(containerRef.current);
+
+    return () => {
+      window.removeEventListener('resize', updatePaperSize);
+      ro.disconnect();
+    };
   }, [a4AspectRatio, getSize, isFullscreen]);
 
   // Toggle page delimiters using postMessage
@@ -674,7 +684,16 @@ function Preview({
       </div>
 
       {viewMode === 'book' ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            height: '100%',
+          }}
+        >
           <div style={{ display: 'flex', gap: '8px' }}>
             {[0, 1].map((offset) => {
               const pageIdx = currentSpread + offset;
@@ -726,14 +745,34 @@ function Preview({
             <button
               onClick={() => setCurrentSpread((s) => Math.max(0, s - 2))}
               disabled={currentSpread === 0}
-              style={{ background: 'none', border: 'none', color: 'white', cursor: currentSpread === 0 ? 'default' : 'pointer', opacity: currentSpread === 0 ? 0.4 : 1, fontSize: '16px' }}
-            >‹</button>
-            <span>{currentSpread + 1}–{Math.min(currentSpread + 2, pageCount)} of {pageCount}</span>
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'white',
+                cursor: currentSpread === 0 ? 'default' : 'pointer',
+                opacity: currentSpread === 0 ? 0.4 : 1,
+                fontSize: '16px',
+              }}
+            >
+              ‹
+            </button>
+            <span>
+              {currentSpread + 1}–{Math.min(currentSpread + 2, pageCount)} of {pageCount}
+            </span>
             <button
               onClick={() => setCurrentSpread((s) => Math.min(pageCount - 1, s + 2))}
               disabled={currentSpread + 2 >= pageCount}
-              style={{ background: 'none', border: 'none', color: 'white', cursor: currentSpread + 2 >= pageCount ? 'default' : 'pointer', opacity: currentSpread + 2 >= pageCount ? 0.4 : 1, fontSize: '16px' }}
-            >›</button>
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'white',
+                cursor: currentSpread + 2 >= pageCount ? 'default' : 'pointer',
+                opacity: currentSpread + 2 >= pageCount ? 0.4 : 1,
+                fontSize: '16px',
+              }}
+            >
+              ›
+            </button>
           </div>
         </div>
       ) : (
