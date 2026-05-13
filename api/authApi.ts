@@ -1,8 +1,10 @@
 'use client';
 
 import { get } from 'lodash';
+import { signOut } from 'firebase/auth';
 import { apiClient } from './apiClient';
 import notificationService from '@/services/NotificationService';
+import { auth } from '@/firebaseConfig';
 
 export interface LoginDto {
   email: string;
@@ -48,21 +50,27 @@ export const authApi = {
     try {
       const loginResponse = await apiClient.post('/auth/login', loginDto);
       console.log('login Response : ', loginResponse);
-      const userSession: UserSession = {
-        userId: Number(get(loginResponse, 'data.data.id') || 0),
-        accessToken: get(loginResponse, 'data.accessToken'),
-        refreshToken: get(loginResponse, 'data.refreshToken'),
-        email: get(loginResponse, 'data.data.email'),
-        userName: get(loginResponse, 'data.data.user_name'),
-      };
+      persistUserSessionFromLoginPayload(loginResponse.data);
 
       if (typeof window !== 'undefined') {
-        localStorage.setItem('userSession', JSON.stringify(userSession));
         notificationService.showSuccessNotification('Login successful');
       }
     } catch (error) {
       console.error('Login error:', error);
       throw error; // Rethrow the error to propagate it further if needed
+    }
+  },
+
+  async loginWithFirebaseIdToken(idToken: string): Promise<void> {
+    try {
+      const res = await apiClient.post('/auth/firebase', { idToken });
+      persistUserSessionFromLoginPayload(res.data);
+      if (typeof window !== 'undefined') {
+        notificationService.showSuccessNotification('Login successful');
+      }
+    } catch (error) {
+      console.error('Firebase login error:', error);
+      throw error;
     }
   },
 
@@ -93,6 +101,12 @@ export const authApi = {
       await apiClient.post('/auth/logout', {
         refreshToken: this.getUserSession()?.refreshToken,
       });
+
+      try {
+        await signOut(auth);
+      } catch {
+        /* ignore if Firebase session was never opened */
+      }
 
       if (typeof window !== 'undefined') {
         localStorage.clear();
@@ -180,3 +194,22 @@ export const authApi = {
     return !!userSession?.accessToken;
   },
 };
+
+function persistUserSessionFromLoginPayload(payload: unknown): void {
+  const accessToken = get(payload, 'accessToken');
+  const refreshToken = get(payload, 'refreshToken');
+  const email = get(payload, 'data.email');
+  const userName = get(payload, 'data.user_name');
+
+  const userSession: UserSession = {
+    userId: Number(get(payload, 'data.id') || 0),
+    accessToken: typeof accessToken === 'string' ? accessToken : '',
+    refreshToken: typeof refreshToken === 'string' ? refreshToken : '',
+    email: typeof email === 'string' ? email : '',
+    userName: typeof userName === 'string' ? userName : '',
+  };
+
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('userSession', JSON.stringify(userSession));
+  }
+}
