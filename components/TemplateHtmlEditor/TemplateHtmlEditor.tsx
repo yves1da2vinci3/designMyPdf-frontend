@@ -19,7 +19,11 @@ const beforeMountMonaco: BeforeMount = (monaco) => {
   monacoPluginsRegistered = true;
 
   const cssContribution = monaco.languages.css as unknown as {
-    cssDefaults: { setOptions: (opts: { data: { dataProviders: { tailwindcssData: typeof tailwindcssData } } }) => void };
+    cssDefaults: {
+      setOptions: (opts: {
+        data: { dataProviders: { tailwindcssData: typeof tailwindcssData } };
+      }) => void;
+    };
   };
   cssContribution.cssDefaults.setOptions({
     data: {

@@ -1,14 +1,18 @@
 /**
- * Workers Monaco + worker Tailwind (sans importer `monaco-editor` : évite les CSS globaux Next).
- * Les plugins Tailwind / Emmet sont enregistrés dans `TemplateHtmlEditor` via `beforeMount`.
+ * Workers Monaco **same-origin** (`new URL('monaco-editor/esm/...', import.meta.url)`),
+ * comme [monaco-tailwindcss](https://github.com/remcohaszing/monaco-tailwindcss), + worker
+ * Tailwind local. Alignement avec `monaco-editor` npm via `@monaco-editor/loader` :
+ * `loader.config({ monaco })` après `import('monaco-editor')` (voir plan).
  */
-let done = false;
+import loader from '@monaco-editor/loader';
 
-export function bootstrapMonacoEditor(): void {
-  if (typeof window === 'undefined' || done) {
+let ensurePromise: Promise<void> | null = null;
+let createWebWorkerPatchApplied = false;
+
+function applyMonacoWorkerEnvironment(): void {
+  if (typeof window === 'undefined') {
     return;
   }
-  done = true;
 
   const w = self as unknown as {
     MonacoEnvironment?: { getWorker: (_moduleId: string, label: string) => Worker };
@@ -39,7 +43,6 @@ export function bootstrapMonacoEditor(): void {
             new URL('monaco-editor/esm/vs/language/typescript/ts.worker.js', import.meta.url),
           );
         case 'tailwindcss':
-          // Chemin relatif : Next refuse `new URL('monaco-tailwindcss/…')` sur paquet ESM.
           return new Worker(
             new URL('../node_modules/monaco-tailwindcss/tailwindcss.worker.js', import.meta.url),
           );
@@ -50,4 +53,57 @@ export function bootstrapMonacoEditor(): void {
       }
     },
   };
+}
+
+/**
+ * À appeler tôt côté client si besoin (avant le premier chunk Monaco). Idempotent.
+ */
+export function installMonacoWorkersOnce(): void {
+  applyMonacoWorkerEnvironment();
+}
+
+/**
+ * `MonacoEnvironment` synchrone puis import npm + `loader.config` avant le premier `<Editor />`.
+ * Réapplique les workers après le chunk Monaco (monaco-editor-webpack-plugin peut écraser l’env).
+ */
+export function ensureMonacoReady(): Promise<void> {
+  if (typeof window === 'undefined') {
+    return Promise.resolve();
+  }
+
+  applyMonacoWorkerEnvironment();
+
+  if (!ensurePromise) {
+    ensurePromise = (async () => {
+      const monaco = await import('monaco-editor');
+      applyMonacoWorkerEnvironment();
+
+      // monaco-worker-manager / monaco-tailwindcss appellent `monaco.editor.createWebWorker({ moduleId, label, createData })`.
+      // Monaco ≥ 0.55 : seul l’export `createWebWorker` de `editor.main` (workers.js) gère ce format ; `monaco.editor.createWebWorker` attend `opts.worker`.
+      if (!createWebWorkerPatchApplied) {
+        createWebWorkerPatchApplied = true;
+        const shim = monaco.createWebWorker;
+        if (typeof shim === 'function') {
+          const original = monaco.editor.createWebWorker.bind(monaco.editor);
+          monaco.editor.createWebWorker = ((opts: {
+            worker?: Worker | Promise<Worker>;
+            moduleId?: string;
+            label?: string;
+            createData?: unknown;
+            host?: Record<string, (...args: unknown[]) => unknown>;
+            keepIdleModels?: boolean;
+          }) => {
+            if (opts?.worker != null) {
+              return original(opts as Parameters<typeof original>[0]);
+            }
+            return shim(opts as Parameters<typeof shim>[0]) as ReturnType<typeof original>;
+          }) as typeof monaco.editor.createWebWorker;
+        }
+      }
+
+      loader.config({ monaco });
+    })();
+  }
+
+  return ensurePromise;
 }
