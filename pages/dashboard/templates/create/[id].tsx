@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import Head from 'next/head';
 import {
   Box,
@@ -67,7 +68,7 @@ import {
 } from '@tabler/icons-react';
 
 import { Editor } from '@monaco-editor/react';
-import IDE from './CodeEditor';
+import { ensureMonacoReady } from '@/lib/monacoBootstrap';
 import Preview from './Preview';
 import AddVariable from '@/modals/AddVariable/AddVariable';
 import VariableBadge from '@/components/VariableBadge/VariableBadge';
@@ -101,6 +102,11 @@ import {
 } from '@/services/agent/templateUtils';
 import type { ReferenceTemplate } from '@/services/agent/types';
 import 'driver.js/dist/driver.css';
+
+const IDE = dynamic(() => import('@/components/TemplateHtmlEditor/TemplateHtmlEditor'), {
+  ssr: false,
+  loading: () => null,
+});
 
 function splitChartsFromVariables(raw: Record<string, any> | null | undefined): {
   rest: Record<string, any>;
@@ -150,6 +156,7 @@ const CreateTemplate: React.FC = () => {
   const params = useParams();
   const router = useRouter();
   const editorRef = useRef<any>(null);
+  const [monacoReady, setMonacoReady] = useState(false);
   /** Force Monaco remount after loading external HTML so model + editorRef stay in sync. */
   const [editorSessionKey, setEditorSessionKey] = useState(0);
 
@@ -236,6 +243,18 @@ const CreateTemplate: React.FC = () => {
 
   useEffect(() => {
     fetchTemplate();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void ensureMonacoReady().then(() => {
+      if (!cancelled) {
+        setMonacoReady(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -1499,22 +1518,28 @@ const CreateTemplate: React.FC = () => {
               overflow: 'hidden',
             }}
           >
-            <Editor
-              key={chartEditId ?? 'chart-json'}
-              height="clamp(380px, 62vh, 720px)"
-              language="json"
-              theme="vs-dark"
-              value={chartEditJson}
-              onChange={(v) => setChartEditJson(v ?? '')}
-              options={{
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-                wordWrap: 'on',
-                fontSize: 13,
-                tabSize: 2,
-                automaticLayout: true,
-              }}
-            />
+            {monacoReady ? (
+              <Editor
+                key={chartEditId ?? 'chart-json'}
+                height="clamp(380px, 62vh, 720px)"
+                language="json"
+                theme="vs-dark"
+                value={chartEditJson}
+                onChange={(v) => setChartEditJson(v ?? '')}
+                options={{
+                  minimap: { enabled: false },
+                  scrollBeyondLastLine: false,
+                  wordWrap: 'on',
+                  fontSize: 13,
+                  tabSize: 2,
+                  automaticLayout: true,
+                }}
+              />
+            ) : (
+              <Center h="clamp(380px, 62vh, 720px)">
+                <Loader size="sm" />
+              </Center>
+            )}
           </Box>
           <Group justify="flex-end">
             <Button variant="default" onClick={closeChartJsonModal}>
@@ -2211,17 +2236,23 @@ const CreateTemplate: React.FC = () => {
             ref={drop}
           >
             <DndProvider backend={HTML5Backend}>
-              <IDE
-                key={editorSessionKey}
-                onChange={(newCode) => {
-                  setCode(newCode);
-                  setTemplateContent(newCode);
-                }}
-                defaultValue={code}
-                editorDidMount={(editor) => {
-                  editorRef.current = editor;
-                }}
-              />
+              {monacoReady ? (
+                <IDE
+                  key={editorSessionKey}
+                  onChange={(newCode) => {
+                    setCode(newCode);
+                    setTemplateContent(newCode);
+                  }}
+                  defaultValue={code}
+                  editorDidMount={(editor) => {
+                    editorRef.current = editor;
+                  }}
+                />
+              ) : (
+                <Center h="100%">
+                  <Loader size="sm" />
+                </Center>
+              )}
             </DndProvider>
           </Box>
 

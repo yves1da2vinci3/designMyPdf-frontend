@@ -29,6 +29,7 @@ import '../styles/global.css';
 
 // Imports locaux
 import { authApi } from '@/api/authApi';
+import { installMonacoWorkersOnce } from '@/lib/monacoBootstrap';
 import { theme } from '../theme';
 
 // Enregistrer les langages nécessaires
@@ -54,6 +55,10 @@ const AUTH_PUBLIC_ROUTES = ['/login', '/signup', '/forgot-password', '/reset-pas
 export default function App({ Component, pageProps }: AppPropsWithLayout) {
   const getLayout = Component.getLayout ?? ((page) => page);
   const router = useRouter();
+
+  useEffect(() => {
+    installMonacoWorkersOnce();
+  }, []);
 
   useEffect(() => {
     if (!router.isReady) return;
