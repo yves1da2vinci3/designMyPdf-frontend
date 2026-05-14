@@ -58,6 +58,7 @@ const TemplateHtmlEditor: React.FC<EditorProps> = ({ onChange, defaultValue, edi
       value={value}
       onChange={handleEditorChange}
       height="100%"
+      theme="vs-dark"
       defaultLanguage="html"
       beforeMount={beforeMountMonaco}
       onMount={editorDidMount}
