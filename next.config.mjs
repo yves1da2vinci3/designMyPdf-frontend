@@ -5,6 +5,8 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 export default withBundleAnalyzer({
+  output: 'standalone',
+
   reactStrictMode: false,
 
   eslint: {

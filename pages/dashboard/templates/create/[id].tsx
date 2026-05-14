@@ -1665,7 +1665,10 @@ const CreateTemplate: React.FC = () => {
               width={200}
               styles={{
                 dropdown: { backgroundColor: '#25262B', borderColor: '#373A40' },
-                item: { color: 'white' },
+                item: {
+                  color: 'white',
+                  '&[data-hovered]': { backgroundColor: '#2C2E33', color: 'white' },
+                },
                 itemSection: { color: 'white' },
                 label: { color: '#909296' },
                 divider: { borderColor: '#373A40' },
@@ -1833,6 +1836,7 @@ const CreateTemplate: React.FC = () => {
                           },
                         },
                         '&[data-combobox-active]': { backgroundColor: '#111111' },
+                        '&[data-hovered]': { backgroundColor: '#2C2E33', color: 'white' },
                         '&:hover': { backgroundColor: '#111111' },
                       },
                       section: { color: 'white' },
@@ -2024,6 +2028,7 @@ const CreateTemplate: React.FC = () => {
                           },
                         },
                         '&[data-combobox-active]': { backgroundColor: '#111111' },
+                        '&[data-hovered]': { backgroundColor: '#2C2E33', color: 'white' },
                         '&:hover': { backgroundColor: '#111111' },
                       },
                       section: { color: 'white' },
@@ -2086,6 +2091,7 @@ const CreateTemplate: React.FC = () => {
                                 },
                               },
                               '&[data-combobox-active]': { backgroundColor: '#111111' },
+                              '&[data-hovered]': { backgroundColor: '#2C2E33', color: 'white' },
                               '&:hover': { backgroundColor: '#111111' },
                             },
                             section: { color: 'white' },
