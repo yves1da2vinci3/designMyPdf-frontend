@@ -10,4 +10,6 @@ export default withBundleAnalyzer({
   eslint: {
     ignoreDuringBuilds: true,
   },
+
+  transpilePackages: ['monaco-editor', 'monaco-tailwindcss', 'emmet-monaco-es'],
 });

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import Head from 'next/head';
 import {
   Box,
@@ -67,7 +68,7 @@ import {
 } from '@tabler/icons-react';
 
 import { Editor } from '@monaco-editor/react';
-import IDE from './CodeEditor';
+import { bootstrapMonacoEditor } from '@/lib/monacoBootstrap';
 import Preview from './Preview';
 import AddVariable from '@/modals/AddVariable/AddVariable';
 import VariableBadge from '@/components/VariableBadge/VariableBadge';
@@ -101,6 +102,15 @@ import {
 } from '@/services/agent/templateUtils';
 import type { ReferenceTemplate } from '@/services/agent/types';
 import 'driver.js/dist/driver.css';
+
+if (typeof window !== 'undefined') {
+  bootstrapMonacoEditor();
+}
+
+const IDE = dynamic(
+  () => import('@/components/TemplateHtmlEditor/TemplateHtmlEditor'),
+  { ssr: false, loading: () => null },
+);
 
 function splitChartsFromVariables(raw: Record<string, any> | null | undefined): {
   rest: Record<string, any>;
