@@ -8,6 +8,7 @@ import {
 } from '@/utils/chartUtils';
 import { sanitizePdfBackgroundColor } from '@/utils/sanitizePdfBackgroundColor';
 import { CSS_PX_PER_MM } from '@/utils/paperDimensions';
+import { resolvedPdfContentPaddingCss } from '@/utils/pdfContentPadding';
 import { Switch, Tooltip } from '@mantine/core';
 
 // Define the FormatType directly in this file
@@ -21,6 +22,7 @@ interface PreviewProps {
   isLandscape?: boolean;
   setTemplateContent?: (string: string) => void;
   backgroundColor?: string;
+  pdfContentPadding?: string;
   viewMode?: 'single' | 'book';
   isFullscreen?: boolean;
 }
@@ -33,6 +35,7 @@ function Preview({
   isLandscape = false,
   setTemplateContent,
   backgroundColor,
+  pdfContentPadding,
   viewMode = 'single',
   isFullscreen = false,
 }: PreviewProps) {
@@ -450,6 +453,7 @@ function Preview({
       `;
 
       const pageBg = sanitizePdfBackgroundColor(backgroundColor);
+      const contentPadCss = resolvedPdfContentPaddingCss(pdfContentPadding);
 
       // Build the complete preview HTML.
       const previewContent = `<!doctype html>
@@ -475,7 +479,7 @@ function Preview({
         width: 100%;
         height: auto;
         min-height: 0;
-        padding: 2rem;
+        padding: ${contentPadCss};
         position: relative;
       }
       canvas {
@@ -538,7 +542,7 @@ function Preview({
         width: 100%;
         height: auto;
         min-height: 100vh;
-        padding: 2rem;
+        padding: ${contentPadCss};
       }
       canvas {
         max-width: 100%;
@@ -593,6 +597,7 @@ function Preview({
     isLandscape,
     showPageDelimiters,
     backgroundColor,
+    pdfContentPadding,
   ]);
 
   const getSize = () => {

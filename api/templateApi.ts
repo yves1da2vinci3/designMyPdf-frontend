@@ -45,6 +45,7 @@ export interface UpdateTemplateDto {
   preview?: string;
   price?: number;
   pdf_background_color?: string;
+  pdf_content_padding?: string;
 }
 
 export interface TemplateDTO {
@@ -74,6 +75,7 @@ export interface TemplateDTO {
   author_user_id?: number;
   author_user_name?: string;
   pdf_background_color?: string;
+  pdf_content_padding?: string;
 }
 
 /** Row returned by GET /marketplace (no content, no variables). */
@@ -132,6 +134,8 @@ export interface ExportTemplateDto {
   renderedHtml?: string;
   /** Couleur de fond de page PDF (hex), alignée sur l’éditeur / preview. */
   pdf_background_color?: string;
+  /** Padding `.content` (ex. `12px`, `0`, `none`, vide = défaut 2rem). */
+  pdf_content_padding?: string;
 }
 
 export const templateApi = {

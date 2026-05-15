@@ -1,9 +1,8 @@
 # Multi-stage Next.js 14 (standalone) — image runtime minimale.
 #
-# PUPPETEER_SKIP_DOWNLOAD=true : pas de téléchargement Chromium pendant `yarn install`
-# (image plus légère et build plus rapide). La route API `pages/api/templates/[id]/export`
-# qui lance Puppeteer ne pourra pas ouvrir de navigateur dans ce conteneur sans ajouter
-# Chromium (image séparée, playwright, ou montage binaire) et retirer ce skip au build.
+# PUPPETEER_SKIP_DOWNLOAD=true : pas de téléchargement Chromium pendant `yarn install`.
+# Le stage runner installe le paquet **chromium** Alpine et définit PUPPETEER_EXECUTABLE_PATH
+# pour que la route `pages/api/templates/[id]/export` (Puppeteer) trouve le binaire sans le cache npm.
 #
 # Build (depuis la racine du dépôt) :
 #   docker build -f frontend/Dockerfile -t designmypdf-frontend ./frontend
@@ -61,8 +60,15 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 RUN apk add --no-cache libc6-compat \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
   && addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
 

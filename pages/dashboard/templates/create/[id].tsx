@@ -79,6 +79,7 @@ import { DEFAULT_TEMPLATE } from '@/constants/template';
 import { DEFAULT_FONT, fonts } from '@/constants/fonts';
 import { RequestStatus } from '@/api/request-status.enum';
 import { TemplateDTO, templateApi, MarketplaceTemplateCard } from '@/api/templateApi';
+import { isPdfContentPaddingValid } from '@/utils/pdfContentPadding';
 import notificationService from '@/services/NotificationService';
 import { FormatType } from '../../../../utils/types';
 import {
@@ -188,6 +189,7 @@ const CreateTemplate: React.FC = () => {
   const [hasSeenTour, setHasSeenTour] = useLocalStorage('hasSeenTemplateEditorTour', false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [pdfBgColor, setPdfBgColor] = useState<string>('#FFFFFF');
+  const [pdfContentPadding, setPdfContentPadding] = useState<string>('');
   const [viewMode, setViewMode] = useState<'single' | 'book'>('single');
   const [isPreviewFullscreen, setIsPreviewFullscreen] = useState(false);
   const [templateDrawerOpened, { open: openTemplateDrawer, close: closeTemplateDrawer }] =
@@ -235,6 +237,7 @@ const CreateTemplate: React.FC = () => {
       if (fetchedTemplate.pdf_background_color) {
         setPdfBgColor(fetchedTemplate.pdf_background_color);
       }
+      setPdfContentPadding(fetchedTemplate.pdf_content_padding ?? '');
       setIsLoading(RequestStatus.Succeeded);
     } catch (error) {
       setIsLoading(RequestStatus.Failed);
@@ -356,12 +359,19 @@ const CreateTemplate: React.FC = () => {
 
   const updateTemplate = async () => {
     try {
+      if (!isPdfContentPaddingValid(pdfContentPadding)) {
+        notificationService.showErrorNotification(
+          'Padding PDF invalide (ex. 12px, 1.5rem, none ou vide).',
+        );
+        return;
+      }
       await templateApi.updateTemplate(template?.ID as number, {
         ...template,
         content: code,
         variables: mergedTemplateData,
         fonts: fontsSelected,
         pdf_background_color: pdfBgColor,
+        pdf_content_padding: pdfContentPadding,
       });
     } catch (error: any) {
       notificationService.showErrorNotification(error?.message || 'Error updating template');
@@ -629,6 +639,10 @@ const CreateTemplate: React.FC = () => {
 
   const exportPdf = async (): Promise<void> => {
     if (!template) return;
+    if (!isPdfContentPaddingValid(pdfContentPadding)) {
+      notificationService.showErrorNotification('Padding PDF invalide.');
+      return;
+    }
     const yieldPaint = () =>
       new Promise<void>((resolve) => {
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
@@ -659,6 +673,7 @@ const CreateTemplate: React.FC = () => {
         fonts: fontsSelected,
         renderedHtml: renderedContent,
         pdf_background_color: pdfBgColor,
+        pdf_content_padding: pdfContentPadding,
       });
 
       setExportPdfProgress({ opened: true, activeStep: 2, error: null });
@@ -1888,6 +1903,41 @@ const CreateTemplate: React.FC = () => {
                       input: { backgroundColor: '#25262b', color: 'white', borderColor: '#373A40' },
                     }}
                   />
+                  <Text size="xs" c="dimmed" mt="md" mb="xs">
+                    Padding du contenu (PDF / aperçu)
+                  </Text>
+                  <TextInput
+                    size="xs"
+                    placeholder="Vide = 2rem (défaut)"
+                    value={pdfContentPadding}
+                    onChange={(e) => setPdfContentPadding(e.currentTarget.value)}
+                    description="Ex. 16px, 1.5rem, none ou 0 pour aucun"
+                    styles={{
+                      label: { color: '#909296', fontSize: '11px' },
+                      input: { backgroundColor: '#25262b', color: 'white', borderColor: '#373A40' },
+                      description: { color: '#868e96', fontSize: '10px' },
+                    }}
+                  />
+                  <Group gap="xs" mt="xs" wrap="wrap">
+                    <Button
+                      size="xs"
+                      variant="default"
+                      onClick={() => setPdfContentPadding('none')}
+                    >
+                      Aucun padding
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="light"
+                      color="gray"
+                      onClick={() => {
+                        setPdfContentPadding('');
+                        setPdfBgColor('#FFFFFF');
+                      }}
+                    >
+                      Réinitialiser options PDF
+                    </Button>
+                  </Group>
                 </Box>
 
                 {/* Export format */}
@@ -2334,6 +2384,7 @@ const CreateTemplate: React.FC = () => {
                 fonts={fontsSelected}
                 setTemplateContent={setTemplateContent}
                 backgroundColor={pdfBgColor}
+                pdfContentPadding={pdfContentPadding}
                 viewMode={viewMode}
                 isFullscreen={isPreviewFullscreen}
               />
