@@ -27,7 +27,7 @@ const ManagedNamespaceItem: React.FC<ManagedNamespaceItemProps> = ({
   DeleteFromClient,
   RenameInClient,
 }) => {
-  const { name, templates } = namespace;
+  const { name, template_count, templates } = namespace;
   const [renameName, setRenameName] = useState(name);
 
   const openDeleteModal = () =>
@@ -93,7 +93,7 @@ const ManagedNamespaceItem: React.FC<ManagedNamespaceItemProps> = ({
         {renameName}
       </Title>
       <Title my={4} c="white" order={6}>
-        {templates ? templates.length : 0} templates
+        {template_count ?? templates?.length ?? 0} templates
       </Title>
       <Button
         justify="space-between"

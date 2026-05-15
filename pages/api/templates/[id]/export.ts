@@ -5,6 +5,11 @@ import { CHART_DATA_VALIDATION_SCRIPT_SNIPPET } from '@/utils/chartUtils';
 import { sanitizePdfBackgroundColor } from '@/utils/sanitizePdfBackgroundColor';
 import { paperViewportCssPixels } from '@/utils/paperDimensions';
 import { isPdfContentPaddingValid, resolvedPdfContentPaddingCss } from '@/utils/pdfContentPadding';
+import {
+  PDF_EXPORT_RESET_CSS,
+  PDF_PRINT_BREAK_CSS,
+  getContentAreaHeightPx,
+} from '@/utils/pdfPageLayout';
 
 function buildExportPageHtml(
   bodyInner: string,
@@ -43,13 +48,17 @@ function buildExportPageHtml(
               padding: 0;
               font-family: ${data.fonts[0] || 'system-ui'}, sans-serif;
               background: ${pageBg};
+              min-height: auto;
+              height: auto;
             }
             .content {
               padding: ${contentPad};
               box-sizing: border-box;
-              min-height: 100%;
+              min-height: auto;
+              height: auto;
               background: ${pageBg};
             }
+            ${PDF_EXPORT_RESET_CSS}
             img {
               max-width: 100%;
               height: auto;
@@ -58,6 +67,7 @@ function buildExportPageHtml(
               max-width: 100%;
               margin: 0 auto;
             }
+            ${PDF_PRINT_BREAK_CSS}
           </style>
         </head>
         <body>
@@ -179,11 +189,94 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const { width, height } = paperViewportCssPixels(data.paperSize, data.isLandscape);
 
-      await page.setViewport({ width, height, deviceScaleFactor: useRendered ? 2 : 1 });
+      await page.setViewport({ width, height, deviceScaleFactor: 1 });
 
       const hasCharts = /<canvas[^>]*data-chart-type/i.test(templateContent);
       const postRenderMs = hasCharts ? 4000 : useRendered ? 2000 : 400;
       await new Promise((r) => setTimeout(r, postRenderMs));
+
+      // Re-apply orphan/widow hints using Puppeteer's own rendered layout.
+      // This corrects any browser-vs-Puppeteer text-metric discrepancy that would
+      // cause the PDF to have a different page count than the preview.
+      const contentAreaHeight = getContentAreaHeightPx(
+        data.paperSize,
+        data.isLandscape,
+        data.pdf_content_padding,
+      );
+      await page.evaluate(
+        ({ cah, threshold }: { cah: number; threshold: number }) => {
+          function collectBlocks(container: Element): Element[] {
+            const direct = Array.from(container.children);
+            if (direct.length === 1) {
+              const nested = Array.from(direct[0].children);
+              if (nested.length > 0) return nested;
+            }
+            return direct.length > 0
+              ? direct
+              : Array.from(
+                  container.querySelectorAll(
+                    'section,article,table,[data-pdf-block],.pdf-keep-together',
+                  ),
+                );
+          }
+
+          const container = document.querySelector('.content');
+          if (!container) return;
+
+          // Reset class-based hints injected by applyPdfPageBreakHints in the browser
+          container.querySelectorAll('.pdf-page-break-before').forEach((el) => {
+            (el as HTMLElement).style.removeProperty('break-before');
+            (el as HTMLElement).style.removeProperty('page-break-before');
+            el.classList.remove('pdf-page-break-before');
+          });
+
+          const blocks = collectBlocks(container);
+          const containerTop = container.getBoundingClientRect().top;
+          let lastBreakPage = -1;
+
+          for (const block of blocks) {
+            const el = block as HTMLElement;
+            const rect = el.getBoundingClientRect();
+            if (rect.height <= 0) continue;
+
+            const blockTop = rect.top - containerTop;
+            const pageNum = Math.floor(blockTop / cah);
+            const posOnPage = blockTop % cah;
+            const remaining = cah - posOnPage;
+
+            let needsBreak = false;
+
+            // Orphan: tiny space before block at bottom of page → push to next page
+            if (
+              remaining > 0 &&
+              remaining < cah &&
+              remaining < threshold &&
+              pageNum !== lastBreakPage
+            ) {
+              needsBreak = true;
+            }
+
+            // Widow: block overflows but only tiny tail on next page → push entire block
+            if (!needsBreak && rect.height <= cah) {
+              const blockEnd = blockTop + rect.height;
+              const pageEnd = (pageNum + 1) * cah;
+              if (blockEnd > pageEnd) {
+                const overflowTail = blockEnd - pageEnd;
+                if (overflowTail > 0 && overflowTail < threshold && pageNum !== lastBreakPage) {
+                  needsBreak = true;
+                }
+              }
+            }
+
+            if (needsBreak) {
+              el.style.breakBefore = 'page';
+              el.style.pageBreakBefore = 'always';
+              lastBreakPage = pageNum;
+            }
+          }
+        },
+        { cah: contentAreaHeight, threshold: contentAreaHeight * 0.2 },
+      );
 
       let output: Buffer | Uint8Array;
       if (data.format === 'pdf') {
@@ -193,7 +286,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           printBackground: true,
           preferCSSPageSize: true,
           margin: { top: '0', right: '0', bottom: '0', left: '0' },
-          scale: useRendered ? 1 : 0.95,
+          scale: 1,
           omitBackground: false,
         });
       } else if (data.format === 'png' || data.format === 'jpg') {

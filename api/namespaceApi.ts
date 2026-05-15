@@ -12,7 +12,9 @@ export interface UpdateNamespaceDto {
 export interface NamespaceDTO {
   ID: number;
   name: string;
-  templates: any[];
+  /** @deprecated Liste complète non chargée — utiliser template_count */
+  templates?: any[];
+  template_count?: number;
 }
 
 export const namespaceApi = {

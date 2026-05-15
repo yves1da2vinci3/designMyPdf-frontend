@@ -228,28 +228,28 @@ export default function MarketplacePage() {
                 shadow="xs"
                 style={{ overflow: 'hidden' }}
               >
-                {/* Couverture marketplace si définie ; sinon aperçu du contenu auteur (pas d’image imposée). */}
                 <Box
                   style={{
                     position: 'relative',
                     height: 180,
                     backgroundColor: '#e9ecef',
                     overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
-                  {template.cover_image_url?.trim() ? (
+                  {template.preview?.trim() ? (
                     <Image
-                      src={template.cover_image_url.trim()}
+                      src={template.preview.trim()}
                       alt={template.name || ''}
                       h={180}
                       fit="cover"
                     />
                   ) : (
-                    <Center h={180} bg="gray.1">
-                      <Text size="sm" c="dimmed" ta="center" px="md">
-                        Aperçu sur la fiche détail
-                      </Text>
-                    </Center>
+                    <Text size="sm" c="dimmed" ta="center" px="md">
+                      {template.description || 'Aperçu non disponible'}
+                    </Text>
                   )}
                   {(template.price ?? 0) > 0 && (
                     <Badge

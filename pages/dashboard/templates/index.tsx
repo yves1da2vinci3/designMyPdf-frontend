@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import {
@@ -51,55 +51,81 @@ function TemplatesPage() {
   );
   const [selectedNamespaceId, setSelectedNamespaceId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const PAGE_SIZE = 12;
   const [showTourButton, setShowTourButton] = useState(false);
   const [hasSeenTour, setHasSeenTour] = useLocalStorage('hasSeenTemplatesDashboardTour', false);
 
-  const fetchTemplatesAndNamespaces = async () => {
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => window.clearTimeout(t);
+  }, [searchQuery]);
+
+  const fetchNamespaces = useCallback(async () => {
+    const namespacesData = await namespaceApi.getNamespaces();
+    setNamespaces(namespacesData);
+    return namespacesData;
+  }, []);
+
+  const fetchTemplatesPage = useCallback(async () => {
     setFetchTemplatesRequestStatus(RequestStatus.InProgress);
     try {
-      const templatesData = await templateApi.getTemplates();
-      const namespacesData = await namespaceApi.getNamespaces();
-      setTemplates(templatesData);
-      setNamespaces(namespacesData);
-      setSelectedNamespaceId(namespacesData[0]?.ID || null);
+      const result = await templateApi.getTemplatesPaginated({
+        namespaceId: selectedNamespaceId,
+        page,
+        limit: PAGE_SIZE,
+        q: debouncedSearch,
+      });
+      setTemplates(result.templates);
+      setTotal(result.total);
       setFetchTemplatesRequestStatus(RequestStatus.Succeeded);
-    } catch (error) {
+    } catch {
+      setFetchTemplatesRequestStatus(RequestStatus.Failed);
+    }
+  }, [selectedNamespaceId, page, debouncedSearch]);
+
+  const refreshDashboard = async () => {
+    try {
+      const namespacesData = await fetchNamespaces();
+      if (selectedNamespaceId === null && namespacesData.length > 0) {
+        setSelectedNamespaceId(namespacesData[0].ID);
+      } else {
+        await fetchTemplatesPage();
+      }
+    } catch {
       setFetchTemplatesRequestStatus(RequestStatus.Failed);
     }
   };
+
+  const fetchTemplatesAndNamespaces = refreshDashboard;
 
   useEffect(() => {
     fetchTemplatesAndNamespaces();
   }, []);
 
+  useEffect(() => {
+    if (selectedNamespaceId === null && namespaces.length === 0) return;
+    fetchTemplatesPage();
+  }, [selectedNamespaceId, page, debouncedSearch, namespaces.length, fetchTemplatesPage]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [selectedNamespaceId, debouncedSearch]);
+
   const handleNamespaceSelect = (id: number) => {
     setSelectedNamespaceId(id);
   };
-
-  const filteredTemplates = selectedNamespaceId
-    ? templates.filter((template) => template.NamespaceID === selectedNamespaceId)
-    : templates;
-
-  // Filter templates by search query
-  const searchedTemplates = searchQuery
-    ? filteredTemplates.filter((template) =>
-        template.name?.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
-    : filteredTemplates;
 
   // Namespace Management
   const [addNamespaceRequestStatus, setAddNameSpaceRequestStatus] = useState(
     RequestStatus.NotStated,
   );
 
-  const updateTemplateOnClient = (id: number, namespaceId: number) => {
-    const newTemplates = templates.map((template) => {
-      if (template.ID === id) {
-        return { ...template, NamespaceID: namespaceId };
-      }
-      return template;
-    });
-    setTemplates(newTemplates);
+  const updateTemplateOnClient = (_id: number, _namespaceId: number) => {
+    fetchTemplatesPage();
+    fetchNamespaces();
   };
 
   const AddNamespaceHandler = async (nameSpaceDTO: CreateNamespaceDto) => {
@@ -129,7 +155,7 @@ function TemplatesPage() {
         selectedNamespaceId as number,
       );
       setAddTemplateRequestStatus(RequestStatus.Succeeded);
-      setTemplates([...templates, newTemplate]);
+      await fetchNamespaces();
       router.push(`/dashboard/templates/create/${newTemplate.uuid}`);
       closeAddTemplate();
     } catch (error) {
@@ -137,8 +163,9 @@ function TemplatesPage() {
     }
   };
 
-  const DeleteTemplateFromClient = (id: number) => {
-    setTemplates(templates.filter((template) => template.ID !== id));
+  const DeleteTemplateFromClient = (_id: number) => {
+    fetchTemplatesPage();
+    fetchNamespaces();
   };
 
   const [renameTarget, setRenameTarget] = useState<TemplateDTO | null>(null);
@@ -222,7 +249,7 @@ function TemplatesPage() {
         <RenameTemplate
           template={renameTarget}
           onClose={() => setRenameTarget(null)}
-          onSuccess={fetchTemplatesAndNamespaces}
+          onSuccess={refreshDashboard}
         />
 
         {/* Header */}
@@ -438,7 +465,7 @@ function TemplatesPage() {
               <Center style={{ height: '200px' }}>
                 <Loader size="lg" />
               </Center>
-            ) : searchedTemplates.length === 0 ? (
+            ) : templates.length === 0 ? (
               <Center style={{ height: '200px', flexDirection: 'column' }}>
                 <Text c="dimmed" mt="md">
                   {searchQuery ? 'No templates match your search' : 'No templates in this folder'}
@@ -455,7 +482,7 @@ function TemplatesPage() {
             ) : (
               <>
                 <Grid id="templates-grid" gutter="md">
-                  {searchedTemplates.map((template) => (
+                  {templates.map((template) => (
                     <Grid.Col key={template.ID} span={{ base: 12, sm: 6, md: 4 }}>
                       <TemplateItem
                         DeleteTemplateFromClient={DeleteTemplateFromClient}
@@ -470,13 +497,18 @@ function TemplatesPage() {
             )}
 
             {/* Pagination */}
-            {searchedTemplates.length > 0 && (
+            {total > 0 && (
               <Group justify="space-between" mt="xl" align="center">
                 <Text size="sm" c="dimmed">
-                  Showing 1 to {Math.min(searchedTemplates.length, 12)} of{' '}
-                  {searchedTemplates.length} templates
+                  Showing {(page - 1) * PAGE_SIZE + 1} to {Math.min(page * PAGE_SIZE, total)} of{' '}
+                  {total} templates
                 </Text>
-                <Pagination total={Math.ceil(searchedTemplates.length / 12)} size="sm" />
+                <Pagination
+                  value={page}
+                  onChange={setPage}
+                  total={Math.max(1, Math.ceil(total / PAGE_SIZE))}
+                  size="sm"
+                />
               </Group>
             )}
           </Box>

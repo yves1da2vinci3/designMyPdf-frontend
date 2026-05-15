@@ -97,16 +97,7 @@ export default function MarketplaceTemplateDetail() {
           {/* Left Column */}
           <Grid.Col span={8}>
             <Stack gap="xl">
-              {/* Image de couverture marketplace si présente ; sinon vignette legacy ; sinon rendu du template auteur. */}
-              {template.cover_image_url?.trim() ? (
-                <Box style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e9ecef' }}>
-                  <Image
-                    src={template.cover_image_url.trim()}
-                    alt={template.name || ''}
-                    radius="md"
-                  />
-                </Box>
-              ) : template.preview?.trim() ? (
+              {template.preview?.trim() ? (
                 <Box style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e9ecef' }}>
                   <Image src={template.preview.trim()} alt={template.name || ''} radius="md" />
                 </Box>

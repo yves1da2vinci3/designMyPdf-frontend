@@ -9,6 +9,7 @@ import {
 import { sanitizePdfBackgroundColor } from '@/utils/sanitizePdfBackgroundColor';
 import { CSS_PX_PER_MM } from '@/utils/paperDimensions';
 import { resolvedPdfContentPaddingCss } from '@/utils/pdfContentPadding';
+import { getContentAreaHeightPx, PDF_PRINT_BREAK_CSS } from '@/utils/pdfPageLayout';
 import { Switch, Tooltip } from '@mantine/core';
 
 // Define the FormatType directly in this file
@@ -310,14 +311,8 @@ function Preview({
             const pageWidth = isLandscape ? paperSize.height : paperSize.width;
             const pageHeight = isLandscape ? paperSize.width : paperSize.height;
             
-            // Convert to pixels (96 CSS px / inch — identique à l’export PDF Puppeteer)
-            const PIXELS_PER_MM = ${CSS_PX_PER_MM};
-            const pageHeightPx = pageHeight * PIXELS_PER_MM;
-            const pageWidthPx = pageWidth * PIXELS_PER_MM;
-            
-            // Account for margins (10mm on each side)
-            const marginPx = 10 * PIXELS_PER_MM;
-            const availableHeightPx = pageHeightPx - (marginPx * 2);
+            // Hauteur utile alignée sur l’export (@page margin 0 + padding .content)
+            const availableHeightPx = ${getContentAreaHeightPx(format, isLandscape, pdfContentPadding)};
             
             // Remove any existing delimiters
             document.querySelectorAll('.page-delimiter, .page-break-tooltip').forEach(el => el.remove());
@@ -486,6 +481,7 @@ function Preview({
         max-width: 100%;
         margin: 0 auto;
       }
+      ${PDF_PRINT_BREAK_CSS}
       /* This class will be used to hide elements during export */
       @media print {
         .preview-only {
@@ -732,7 +728,7 @@ function Preview({
                       transform: `scale(${bookPageDims.scale})`,
                       transformOrigin: 'top left',
                     }}
-                    sandbox="allow-popups-to-escape-sandbox allow-scripts allow-popups allow-forms allow-pointer-lock allow-top-navigation allow-modals"
+                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-pointer-lock allow-top-navigation allow-modals"
                   />
                 </div>
               );
@@ -795,7 +791,7 @@ function Preview({
               height: `${getSize().height}mm`,
               border: 'none',
             }}
-            sandbox="allow-popups-to-escape-sandbox allow-scripts allow-popups allow-forms allow-pointer-lock allow-top-navigation allow-modals"
+            sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-pointer-lock allow-top-navigation allow-modals"
           />
         </div>
       )}

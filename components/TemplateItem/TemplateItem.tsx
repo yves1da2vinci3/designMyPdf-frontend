@@ -131,12 +131,13 @@ export default function TemplateItem({
       </Group>
 
       <Box
+        h={140}
+        mb="xs"
         style={{
           flex: 1,
           position: 'relative',
           borderRadius: '4px',
           overflow: 'hidden',
-          marginBottom: '12px',
           border: '1px solid #eaeaea',
           background: '#f9f9f9',
         }}
