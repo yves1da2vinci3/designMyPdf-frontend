@@ -18,7 +18,7 @@ import {
 } from '@mantine/core';
 import { IconShoppingCart } from '@tabler/icons-react';
 import { RequestStatus } from '@/api/request-status.enum';
-import { templateApi, MarketplaceTemplateCard } from '@/api/templateApi';
+import { templateApi, MarketplaceTemplateCard, marketplaceCoverUrl } from '@/api/templateApi';
 
 interface MarketplaceTemplate extends MarketplaceTemplateCard {
   id: string;
@@ -54,7 +54,7 @@ export default function MarketplaceTemplates() {
           name: template.name || 'Untitled Template',
           description: template.description || '',
           price: template.price || 0,
-          preview: template.preview || '',
+          preview: marketplaceCoverUrl(template) ?? '',
           rating: template.rating || 0,
           reviewCount: template.reviewCount || 0,
           author: {

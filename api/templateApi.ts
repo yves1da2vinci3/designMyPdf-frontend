@@ -86,6 +86,15 @@ export type MarketplaceTemplateCard = Omit<TemplateDTO, 'content' | 'variables' 
   fonts?: string[];
 };
 
+/** Image affichée catalogue / fiche marketplace (upload publication → API `cover_image_url`). */
+export function marketplaceCoverUrl(t: {
+  cover_image_url?: string;
+  preview?: string;
+}): string | undefined {
+  const u = (t.cover_image_url || t.preview || '').trim();
+  return u || undefined;
+}
+
 export interface PublishToMarketplaceDto {
   templateId: number;
   name: string;
