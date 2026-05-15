@@ -7,6 +7,7 @@ import {
   CHART_DATA_VALIDATION_SCRIPT_SNIPPET,
 } from '@/utils/chartUtils';
 import { sanitizePdfBackgroundColor } from '@/utils/sanitizePdfBackgroundColor';
+import { CSS_PX_PER_MM } from '@/utils/paperDimensions';
 import { Switch, Tooltip } from '@mantine/core';
 
 // Define the FormatType directly in this file
@@ -306,8 +307,8 @@ function Preview({
             const pageWidth = isLandscape ? paperSize.height : paperSize.width;
             const pageHeight = isLandscape ? paperSize.width : paperSize.height;
             
-            // Convert to pixels
-            const PIXELS_PER_MM = 3.779527559; // Approximately 96 DPI / 25.4 mm per inch
+            // Convert to pixels (96 CSS px / inch — identique à l’export PDF Puppeteer)
+            const PIXELS_PER_MM = ${CSS_PX_PER_MM};
             const pageHeightPx = pageHeight * PIXELS_PER_MM;
             const pageWidthPx = pageWidth * PIXELS_PER_MM;
             

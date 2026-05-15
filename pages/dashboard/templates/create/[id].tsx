@@ -1745,7 +1745,7 @@ const CreateTemplate: React.FC = () => {
           {/* Sidebar */}
           <Stack
             component={ScrollArea}
-            w={sidebarCollapsed ? '40px' : '28%'}
+            w={sidebarCollapsed ? '40px' : '24%'}
             p={sidebarCollapsed ? 'xs' : 'lg'}
             h="100%"
             bg="#1A1B1E"
@@ -2234,8 +2234,9 @@ const CreateTemplate: React.FC = () => {
           <Box
             id="editor-container"
             style={{
-              width: sidebarCollapsed ? 'calc(61% - 20px)' : '42%',
+              width: sidebarCollapsed ? 'calc(61% - 20px)' : '46%',
               height: '100%',
+              backgroundColor: '#ffffff',
               transition: 'width 0.3s ease',
               flexShrink: 0,
               flexGrow: 0,
