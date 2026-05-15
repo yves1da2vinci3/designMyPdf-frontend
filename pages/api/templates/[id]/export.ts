@@ -4,6 +4,7 @@ import { ExportTemplateDto, templateApi } from '@/api/templateApi';
 import { CHART_DATA_VALIDATION_SCRIPT_SNIPPET } from '@/utils/chartUtils';
 import { sanitizePdfBackgroundColor } from '@/utils/sanitizePdfBackgroundColor';
 import { paperViewportCssPixels } from '@/utils/paperDimensions';
+import { isPdfContentPaddingValid, resolvedPdfContentPaddingCss } from '@/utils/pdfContentPadding';
 
 function buildExportPageHtml(
   bodyInner: string,
@@ -21,6 +22,7 @@ function buildExportPageHtml(
     .join('');
 
   const pageBg = sanitizePdfBackgroundColor(data.pdf_background_color);
+  const contentPad = resolvedPdfContentPaddingCss(data.pdf_content_padding);
 
   return `
       <!DOCTYPE html>
@@ -43,7 +45,7 @@ function buildExportPageHtml(
               background: ${pageBg};
             }
             .content {
-              padding: 2rem;
+              padding: ${contentPad};
               box-sizing: border-box;
               min-height: 100%;
               background: ${pageBg};
@@ -141,6 +143,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { id } = req.query;
     const data: ExportTemplateDto = req.body;
 
+    if (!isPdfContentPaddingValid(data.pdf_content_padding)) {
+      return res.status(400).json({ message: 'Invalid pdf_content_padding' });
+    }
+
     const useRendered =
       typeof data.renderedHtml === 'string' && data.renderedHtml.trim().length > 0;
 
@@ -162,6 +168,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
     });
     try {
       const page = await browser.newPage();
