@@ -2091,7 +2091,10 @@ const CreateTemplate: React.FC = () => {
                                   color: '#1864ab',
                                 },
                               },
-                              '&[data-combobox-active]': { backgroundColor: '#f1f3f5', color: '#212529' },
+                              '&[data-combobox-active]': {
+                                backgroundColor: '#f1f3f5',
+                                color: '#212529',
+                              },
                               '&[data-hovered]': { backgroundColor: '#f1f3f5', color: '#212529' },
                               '&:hover': { backgroundColor: '#f1f3f5' },
                             },
