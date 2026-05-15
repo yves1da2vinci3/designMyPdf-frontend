@@ -3,6 +3,7 @@ import puppeteer from 'puppeteer';
 import { ExportTemplateDto, templateApi } from '@/api/templateApi';
 import { CHART_DATA_VALIDATION_SCRIPT_SNIPPET } from '@/utils/chartUtils';
 import { sanitizePdfBackgroundColor } from '@/utils/sanitizePdfBackgroundColor';
+import { paperViewportCssPixels } from '@/utils/paperDimensions';
 
 function buildExportPageHtml(
   bodyInner: string,
@@ -169,24 +170,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       await page.setContent(htmlContent, { waitUntil: 'load', timeout: 45_000 });
 
-      const paperSizes = {
-        a1: { width: 1684, height: 2384 },
-        a2: { width: 1191, height: 1684 },
-        a3: { width: 842, height: 1191 },
-        a4: { width: 595, height: 842 },
-        a5: { width: 420, height: 595 },
-        a6: { width: 298, height: 420 },
-      };
-
-      const paperSize = paperSizes[data.paperSize as keyof typeof paperSizes] || paperSizes.a4;
-      const { width, height } = data.isLandscape
-        ? { width: paperSize.height, height: paperSize.width }
-        : paperSize;
+      const { width, height } = paperViewportCssPixels(data.paperSize, data.isLandscape);
 
       await page.setViewport({ width, height, deviceScaleFactor: useRendered ? 2 : 1 });
 
       const hasCharts = /<canvas[^>]*data-chart-type/i.test(templateContent);
-      const postRenderMs = hasCharts ? 4000 : useRendered ? 1200 : 400;
+      const postRenderMs = hasCharts ? 4000 : useRendered ? 2000 : 400;
       await new Promise((r) => setTimeout(r, postRenderMs));
 
       let output: Buffer | Uint8Array;
