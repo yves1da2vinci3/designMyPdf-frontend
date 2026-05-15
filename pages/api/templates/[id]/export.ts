@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import puppeteer from 'puppeteer';
 import { ExportTemplateDto, templateApi } from '@/api/templateApi';
 import { CHART_DATA_VALIDATION_SCRIPT_SNIPPET } from '@/utils/chartUtils';
+import { sanitizePdfBackgroundColor } from '@/utils/sanitizePdfBackgroundColor';
 
 function buildExportPageHtml(
   bodyInner: string,
@@ -17,6 +18,8 @@ function buildExportPageHtml(
       return `<link href="https://fonts.googleapis.com/css2?family=${family}:wght@100;200;300;400;500;600;700;800;900${suffix}" rel="stylesheet">`;
     })
     .join('');
+
+  const pageBg = sanitizePdfBackgroundColor(data.pdf_background_color);
 
   return `
       <!DOCTYPE html>
@@ -36,10 +39,13 @@ function buildExportPageHtml(
               margin: 0;
               padding: 0;
               font-family: ${data.fonts[0] || 'system-ui'}, sans-serif;
+              background: ${pageBg};
             }
             .content {
               padding: 2rem;
               box-sizing: border-box;
+              min-height: 100%;
+              background: ${pageBg};
             }
             img {
               max-width: 100%;

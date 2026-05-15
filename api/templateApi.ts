@@ -130,6 +130,8 @@ export interface ExportTemplateDto {
   fonts: string[];
   /** When set, server export uses this HTML (already rendered) instead of fetching the template. */
   renderedHtml?: string;
+  /** Couleur de fond de page PDF (hex), alignée sur l’éditeur / preview. */
+  pdf_background_color?: string;
 }
 
 export const templateApi = {
