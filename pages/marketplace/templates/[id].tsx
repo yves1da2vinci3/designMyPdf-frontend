@@ -19,7 +19,7 @@ import {
   Badge,
 } from '@mantine/core';
 import { IconCheck, IconChevronLeft, IconShoppingCart, IconDownload } from '@tabler/icons-react';
-import { templateApi, TemplateDTO } from '@/api/templateApi';
+import { templateApi, TemplateDTO, marketplaceCoverUrl } from '@/api/templateApi';
 import Preview from '@/components/Preview';
 import CopyTemplateModal from '@/components/marketplace/CopyTemplateModal';
 import PurchaseModal from '@/components/marketplace/PurchaseModal';
@@ -74,6 +74,8 @@ export default function MarketplaceTemplateDetail() {
     }
   };
 
+  const coverSrc = marketplaceCoverUrl(template);
+
   return (
     <Box style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
       {/* Header */}
@@ -97,9 +99,27 @@ export default function MarketplaceTemplateDetail() {
           {/* Left Column */}
           <Grid.Col span={8}>
             <Stack gap="xl">
-              {template.preview?.trim() ? (
-                <Box style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e9ecef' }}>
-                  <Image src={template.preview.trim()} alt={template.name || ''} radius="md" />
+              {coverSrc ? (
+                <Box
+                  style={{
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                    border: '1px solid #e9ecef',
+                    height: 520,
+                    backgroundColor: '#f8f9fa',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Image
+                    src={coverSrc}
+                    alt={template.name || ''}
+                    radius="md"
+                    fit="contain"
+                    w="100%"
+                    h="100%"
+                  />
                 </Box>
               ) : (
                 <Box

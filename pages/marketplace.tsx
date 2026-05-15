@@ -26,7 +26,7 @@ import {
   IconDiamondFilled,
   IconShoppingCart,
 } from '@tabler/icons-react';
-import { templateApi, MarketplaceTemplateCard } from '@/api/templateApi';
+import { templateApi, MarketplaceTemplateCard, marketplaceCoverUrl } from '@/api/templateApi';
 import { authApi } from '@/api/authApi';
 import CopyTemplateModal from '@/components/marketplace/CopyTemplateModal';
 import PurchaseModal from '@/components/marketplace/PurchaseModal';
@@ -219,89 +219,87 @@ export default function MarketplacePage() {
           </Center>
         ) : (
           <SimpleGrid cols={4} spacing="md">
-            {filtered.map((template) => (
-              <Card
-                key={template.ID}
-                withBorder
-                radius="md"
-                p={0}
-                shadow="xs"
-                style={{ overflow: 'hidden' }}
-              >
-                <Box
-                  style={{
-                    position: 'relative',
-                    height: 180,
-                    backgroundColor: '#e9ecef',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
+            {filtered.map((template) => {
+              const coverSrc = marketplaceCoverUrl(template);
+              return (
+                <Card
+                  key={template.ID}
+                  withBorder
+                  radius="md"
+                  p={0}
+                  shadow="xs"
+                  style={{ overflow: 'hidden' }}
                 >
-                  {template.preview?.trim() ? (
-                    <Image
-                      src={template.preview.trim()}
-                      alt={template.name || ''}
-                      h={180}
-                      fit="cover"
-                    />
-                  ) : (
-                    <Text size="sm" c="dimmed" ta="center" px="md">
-                      {template.description || 'Aperçu non disponible'}
-                    </Text>
-                  )}
-                  {(template.price ?? 0) > 0 && (
-                    <Badge
-                      style={{ position: 'absolute', top: 8, left: 8 }}
-                      color="yellow"
-                      variant="filled"
-                      size="xs"
-                      fw={700}
-                    >
-                      PREMIUM
-                    </Badge>
-                  )}
-                </Box>
+                  <Box
+                    style={{
+                      position: 'relative',
+                      height: 180,
+                      backgroundColor: '#e9ecef',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {coverSrc ? (
+                      <Image src={coverSrc} alt={template.name || ''} h={180} fit="cover" />
+                    ) : (
+                      <Text size="sm" c="dimmed" ta="center" px="md">
+                        {template.description || 'Aperçu non disponible'}
+                      </Text>
+                    )}
+                    {(template.price ?? 0) > 0 && (
+                      <Badge
+                        style={{ position: 'absolute', top: 8, left: 8 }}
+                        color="yellow"
+                        variant="filled"
+                        size="xs"
+                        fw={700}
+                      >
+                        PREMIUM
+                      </Badge>
+                    )}
+                  </Box>
 
-                <Box p="md">
-                  <Group justify="space-between" align="flex-start" mb={4}>
-                    <Text fw={700} size="sm" lineClamp={1} style={{ flex: 1 }}>
-                      {template.name}
+                  <Box p="md">
+                    <Group justify="space-between" align="flex-start" mb={4}>
+                      <Text fw={700} size="sm" lineClamp={1} style={{ flex: 1 }}>
+                        {template.name}
+                      </Text>
+                      <Text fw={700} size="sm" c="blue">
+                        {(template.price ?? 0) === 0
+                          ? 'Free'
+                          : `$${((template.price ?? 0) / 100).toFixed(0)}`}
+                      </Text>
+                    </Group>
+                    <Text size="xs" c="dimmed" lineClamp={2} mb="md">
+                      {template.description || 'No description available.'}
                     </Text>
-                    <Text fw={700} size="sm" c="blue">
-                      {(template.price ?? 0) === 0
-                        ? 'Free'
-                        : `$${((template.price ?? 0) / 100).toFixed(0)}`}
+                    <Text size="xs" c="dimmed" mb="sm">
+                      By {template.author_user_name || 'Unknown'}
                     </Text>
-                  </Group>
-                  <Text size="xs" c="dimmed" lineClamp={2} mb="md">
-                    {template.description || 'No description available.'}
-                  </Text>
-                  <Text size="xs" c="dimmed" mb="sm">
-                    By {template.author_user_name || 'Unknown'}
-                  </Text>
-                  <Group gap={6}>
-                    <Button
-                      variant="outline"
-                      size="xs"
-                      flex={1}
-                      onClick={() => router.push(`/marketplace/templates/${template.ID}`)}
-                    >
-                      Detail
-                    </Button>
-                    <Button
-                      size="xs"
-                      flex={1}
-                      leftSection={<IconShoppingCart size={12} />}
-                      onClick={() => handleBuyNow(template)}
-                    >
-                      {(template.price ?? 0) === 0 ? 'Get Free' : 'Buy Now'}
-                    </Button>
-                  </Group>
-                </Box>
-              </Card>
-            ))}
+                    <Group gap={6}>
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        flex={1}
+                        onClick={() => router.push(`/marketplace/templates/${template.ID}`)}
+                      >
+                        Detail
+                      </Button>
+                      <Button
+                        size="xs"
+                        flex={1}
+                        leftSection={<IconShoppingCart size={12} />}
+                        onClick={() => handleBuyNow(template)}
+                      >
+                        {(template.price ?? 0) === 0 ? 'Get Free' : 'Buy Now'}
+                      </Button>
+                    </Group>
+                  </Box>
+                </Card>
+              );
+            })}
           </SimpleGrid>
         )}
 
