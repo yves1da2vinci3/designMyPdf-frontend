@@ -6,6 +6,7 @@ import {
   replaceChartDataPlaceholders,
   CHART_DATA_VALIDATION_SCRIPT_SNIPPET,
 } from '@/utils/chartUtils';
+import { sanitizePdfBackgroundColor } from '@/utils/sanitizePdfBackgroundColor';
 import { Switch, Tooltip } from '@mantine/core';
 
 // Define the FormatType directly in this file
@@ -447,6 +448,8 @@ function Preview({
         })();
       `;
 
+      const pageBg = sanitizePdfBackgroundColor(backgroundColor);
+
       // Build the complete preview HTML.
       const previewContent = `<!doctype html>
 <html>
@@ -464,7 +467,7 @@ function Preview({
         padding: 0;
         min-height: 100vh;
         width: 100%;
-        background: ${backgroundColor && /^#[0-9A-Fa-f]{6}$/.test(backgroundColor) ? backgroundColor : 'white'};
+        background: ${pageBg};
         position: relative;
       }
       .content {
@@ -528,7 +531,7 @@ function Preview({
         padding: 0;
         min-height: 100vh;
         width: 100%;
-        background: ${backgroundColor && /^#[0-9A-Fa-f]{6}$/.test(backgroundColor) ? backgroundColor : 'white'};
+        background: ${pageBg};
       }
       .content {
         width: 100%;

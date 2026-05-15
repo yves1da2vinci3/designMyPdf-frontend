@@ -658,6 +658,7 @@ const CreateTemplate: React.FC = () => {
         isLandscape: isLandScape,
         fonts: fontsSelected,
         renderedHtml: renderedContent,
+        pdf_background_color: pdfBgColor,
       });
 
       setExportPdfProgress({ opened: true, activeStep: 2, error: null });
@@ -1664,14 +1665,14 @@ const CreateTemplate: React.FC = () => {
               shadow="md"
               width={200}
               styles={{
-                dropdown: { backgroundColor: '#25262B', borderColor: '#373A40' },
+                dropdown: { backgroundColor: '#ffffff', borderColor: '#dee2e6' },
                 item: {
-                  color: 'white',
-                  '&[data-hovered]': { backgroundColor: '#2C2E33', color: 'white' },
+                  color: '#212529',
+                  '&[data-hovered]': { backgroundColor: '#f1f3f5', color: '#212529' },
                 },
-                itemSection: { color: 'white' },
-                label: { color: '#909296' },
-                divider: { borderColor: '#373A40' },
+                itemSection: { color: '#495057' },
+                label: { color: '#868e96' },
+                divider: { borderColor: '#dee2e6' },
               }}
             >
               <Menu.Target>
@@ -1744,8 +1745,8 @@ const CreateTemplate: React.FC = () => {
           {/* Sidebar */}
           <Stack
             component={ScrollArea}
-            w={sidebarCollapsed ? '40px' : '22%'}
-            p={sidebarCollapsed ? 'xs' : 'xl'}
+            w={sidebarCollapsed ? '40px' : '28%'}
+            p={sidebarCollapsed ? 'xs' : 'lg'}
             h="100%"
             bg="#1A1B1E"
             style={{
@@ -1810,9 +1811,9 @@ const CreateTemplate: React.FC = () => {
                     styles={{
                       root: { marginBottom: 0 },
                       input: {
-                        backgroundColor: '#25262B',
-                        border: '1px solid #373A40',
-                        color: 'white',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #dee2e6',
+                        color: '#212529',
                         transition: 'all 0.2s ease',
                         '&:hover': {
                           borderColor: '#3B82F6',
@@ -1824,22 +1825,22 @@ const CreateTemplate: React.FC = () => {
                         marginBottom: '0.25rem',
                       },
                       dropdown: {
-                        backgroundColor: '#25262B',
-                        border: '1px solid #373A40',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #dee2e6',
                       },
                       option: {
-                        color: 'white',
+                        color: '#212529',
                         '&[data-selected]': {
                           '&, &:hover': {
-                            backgroundColor: '#3B82F6',
-                            color: 'white',
+                            backgroundColor: '#e7f5ff',
+                            color: '#1864ab',
                           },
                         },
-                        '&[data-combobox-active]': { backgroundColor: '#111111' },
-                        '&[data-hovered]': { backgroundColor: '#2C2E33', color: 'white' },
-                        '&:hover': { backgroundColor: '#111111' },
+                        '&[data-combobox-active]': { backgroundColor: '#f1f3f5', color: '#212529' },
+                        '&[data-hovered]': { backgroundColor: '#f1f3f5', color: '#212529' },
+                        '&:hover': { backgroundColor: '#f1f3f5' },
                       },
-                      section: { color: 'white' },
+                      section: { color: '#495057' },
                     }}
                   />
                   <Checkbox
@@ -2007,31 +2008,31 @@ const CreateTemplate: React.FC = () => {
                     data={[{ value: 'tailwind', label: 'Tailwind CSS' }]}
                     styles={{
                       input: {
-                        backgroundColor: '#25262B',
-                        border: '1px solid #373A40',
-                        color: 'white',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #dee2e6',
+                        color: '#212529',
                         transition: 'all 0.2s ease',
                         '&:hover': {
                           borderColor: '#3B82F6',
                         },
                       },
                       dropdown: {
-                        backgroundColor: '#25262B',
-                        border: '1px solid #373A40',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #dee2e6',
                       },
                       option: {
-                        color: 'white',
+                        color: '#212529',
                         '&[data-selected]': {
                           '&, &:hover': {
-                            backgroundColor: '#3B82F6',
-                            color: 'white',
+                            backgroundColor: '#e7f5ff',
+                            color: '#1864ab',
                           },
                         },
-                        '&[data-combobox-active]': { backgroundColor: '#111111' },
-                        '&[data-hovered]': { backgroundColor: '#2C2E33', color: 'white' },
-                        '&:hover': { backgroundColor: '#111111' },
+                        '&[data-combobox-active]': { backgroundColor: '#f1f3f5', color: '#212529' },
+                        '&[data-hovered]': { backgroundColor: '#f1f3f5', color: '#212529' },
+                        '&:hover': { backgroundColor: '#f1f3f5' },
                       },
-                      section: { color: 'white' },
+                      section: { color: '#495057' },
                     }}
                   />
                 </Box>
@@ -2070,31 +2071,31 @@ const CreateTemplate: React.FC = () => {
                           style={{ flex: 1 }}
                           styles={{
                             input: {
-                              backgroundColor: '#25262B',
-                              border: '1px solid #373A40',
-                              color: 'white',
+                              backgroundColor: '#ffffff',
+                              border: '1px solid #dee2e6',
+                              color: '#212529',
                               transition: 'all 0.2s ease',
                               '&:hover': {
                                 borderColor: '#3B82F6',
                               },
                             },
                             dropdown: {
-                              backgroundColor: '#25262B',
-                              border: '1px solid #373A40',
+                              backgroundColor: '#ffffff',
+                              border: '1px solid #dee2e6',
                             },
                             option: {
-                              color: 'white',
+                              color: '#212529',
                               '&[data-selected]': {
                                 '&, &:hover': {
-                                  backgroundColor: '#3B82F6',
-                                  color: 'white',
+                                  backgroundColor: '#e7f5ff',
+                                  color: '#1864ab',
                                 },
                               },
-                              '&[data-combobox-active]': { backgroundColor: '#111111' },
-                              '&[data-hovered]': { backgroundColor: '#2C2E33', color: 'white' },
-                              '&:hover': { backgroundColor: '#111111' },
+                              '&[data-combobox-active]': { backgroundColor: '#f1f3f5', color: '#212529' },
+                              '&[data-hovered]': { backgroundColor: '#f1f3f5', color: '#212529' },
+                              '&:hover': { backgroundColor: '#f1f3f5' },
                             },
-                            section: { color: 'white' },
+                            section: { color: '#495057' },
                           }}
                         />
                         {index !== 0 && (
@@ -2233,7 +2234,7 @@ const CreateTemplate: React.FC = () => {
           <Box
             id="editor-container"
             style={{
-              width: sidebarCollapsed ? 'calc(61% - 20px)' : '48%',
+              width: sidebarCollapsed ? 'calc(61% - 20px)' : '42%',
               height: '100%',
               transition: 'width 0.3s ease',
               flexShrink: 0,
@@ -2318,7 +2319,7 @@ const CreateTemplate: React.FC = () => {
                 right: 0,
                 bottom: 0,
                 overflow: 'auto',
-                padding: '1rem',
+                padding: '1rem 1rem 1rem 2.75rem',
               }}
             >
               <Preview

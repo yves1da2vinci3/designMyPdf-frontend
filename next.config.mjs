@@ -7,6 +7,18 @@ const withBundleAnalyzer = bundleAnalyzer({
 export default withBundleAnalyzer({
   output: 'standalone',
 
+  // Paquets avec condition `module-sync` → require.mjs : le trace NFT ne les copie pas toujours en standalone.
+  // Clé `/api/**/*` (pas `/**`) : un glob trop large peut corrompre le traçage (chunks manquants au build).
+  experimental: {
+    outputFileTracingIncludes: {
+      '/api/**/*': [
+        './node_modules/async-function/**/*',
+        './node_modules/async-generator-function/**/*',
+        './node_modules/generator-function/**/*',
+      ],
+    },
+  },
+
   reactStrictMode: false,
 
   eslint: {
