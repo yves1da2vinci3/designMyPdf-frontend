@@ -46,6 +46,7 @@ export interface UpdateTemplateDto {
   price?: number;
   pdf_background_color?: string;
   pdf_content_padding?: string;
+  cover_image_url?: string;
 }
 
 export interface TemplateDTO {
@@ -161,6 +162,34 @@ export const templateApi = {
     try {
       const getTemplatesResponse = await apiClient.get('/templates');
       return getTemplatesResponse.data.templates;
+    } catch (error) {
+      throw new Error(`Error fetching templates: ${error}`);
+    }
+  },
+
+  async getTemplatesPaginated(params: {
+    namespaceId?: number | null;
+    page?: number;
+    limit?: number;
+    q?: string;
+  }): Promise<{ templates: TemplateDTO[]; total: number; page: number; limit: number }> {
+    const searchParams = new URLSearchParams();
+    if (params.namespaceId != null) {
+      searchParams.set('namespace_id', String(params.namespaceId));
+    }
+    if (params.page != null) searchParams.set('page', String(params.page));
+    if (params.limit != null) searchParams.set('limit', String(params.limit));
+    if (params.q?.trim()) searchParams.set('q', params.q.trim());
+    const qs = searchParams.toString();
+    const url = qs ? `/templates?${qs}` : '/templates?page=1&limit=12';
+    try {
+      const res = await apiClient.get(url);
+      return {
+        templates: res.data.templates ?? [],
+        total: res.data.total ?? 0,
+        page: res.data.page ?? 1,
+        limit: res.data.limit ?? 12,
+      };
     } catch (error) {
       throw new Error(`Error fetching templates: ${error}`);
     }

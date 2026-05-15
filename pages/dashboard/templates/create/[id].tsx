@@ -62,7 +62,6 @@ import {
   IconCertificate,
   IconSearch,
   IconLock,
-  IconEye,
   IconArrowsMaximize,
   IconArrowsMinimize,
 } from '@tabler/icons-react';
@@ -80,6 +79,7 @@ import { DEFAULT_FONT, fonts } from '@/constants/fonts';
 import { RequestStatus } from '@/api/request-status.enum';
 import { TemplateDTO, templateApi, MarketplaceTemplateCard } from '@/api/templateApi';
 import { isPdfContentPaddingValid } from '@/utils/pdfContentPadding';
+import { applyPdfPageBreakHints } from '@/utils/applyPdfPageBreakHints';
 import notificationService from '@/services/NotificationService';
 import { FormatType } from '../../../../utils/types';
 import {
@@ -204,7 +204,6 @@ const CreateTemplate: React.FC = () => {
   const [chartJsonModalOpened, { open: openChartJsonModal, close: closeChartJsonModal }] =
     useDisclosure(false);
   const [chartsHubOpened, { open: openChartsHub, close: closeChartsHub }] = useDisclosure(false);
-  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
   const [chartEditId, setChartEditId] = useState<string | null>(null);
   const [chartEditJson, setChartEditJson] = useState('');
   const chartFileInputRef = useRef<HTMLInputElement>(null);
@@ -659,6 +658,13 @@ const CreateTemplate: React.FC = () => {
       const compiledTemplate = Handlebars.compile(processedCode);
       let renderedContent = compiledTemplate(mergedTemplateData);
       renderedContent = replaceChartDataPlaceholders(renderedContent, mergedTemplateData);
+      renderedContent = await applyPdfPageBreakHints(renderedContent, {
+        paperSize: format,
+        isLandscape: isLandScape,
+        pdfContentPadding,
+        pdfBackgroundColor: pdfBgColor,
+        fonts: fontsSelected,
+      });
 
       setExportPdfProgress({ opened: true, activeStep: 1, error: null });
       await yieldPaint();
@@ -1300,11 +1306,10 @@ const CreateTemplate: React.FC = () => {
                       <Stack gap="xs" maw={300} mx="auto">
                         {filtered.map((tpl) => {
                           const isFree = !tpl.price || tpl.price === 0;
-                          const cover = tpl.cover_image_url?.trim();
                           return (
                             <Card
                               key={tpl.ID}
-                              padding={0}
+                              padding="xs"
                               radius="md"
                               withBorder
                               styles={{
@@ -1320,48 +1325,7 @@ const CreateTemplate: React.FC = () => {
                               }}
                               onClick={() => isFree && handleMarketplaceSelect(tpl)}
                             >
-                              <Box pos="relative" h={56} style={{ overflow: 'hidden' }}>
-                                {cover ? (
-                                  <>
-                                    <Image
-                                      src={cover}
-                                      alt={tpl.name || 'Cover'}
-                                      h={56}
-                                      w="100%"
-                                      fit="cover"
-                                      fallbackSrc="https://placehold.co/400x200?text=Template"
-                                    />
-                                    <ActionIcon
-                                      size="sm"
-                                      variant="filled"
-                                      color="dark"
-                                      radius="md"
-                                      aria-label="Aperçu de la couverture"
-                                      style={{
-                                        position: 'absolute',
-                                        bottom: 6,
-                                        right: 6,
-                                        boxShadow: '0 1px 4px rgba(0,0,0,0.35)',
-                                      }}
-                                      onClick={(ev) => {
-                                        ev.stopPropagation();
-                                        setCoverPreviewUrl(cover);
-                                      }}
-                                    >
-                                      <IconEye size={16} />
-                                    </ActionIcon>
-                                  </>
-                                ) : (
-                                  <Box
-                                    h="100%"
-                                    style={{
-                                      background:
-                                        'linear-gradient(135deg, #373A40 0%, #1A1B1E 100%)',
-                                    }}
-                                  />
-                                )}
-                              </Box>
-                              <Box p="xs">
+                              <Box>
                                 <Group justify="space-between" wrap="nowrap" gap={6} mb={4}>
                                   <Text
                                     size="xs"
@@ -1417,35 +1381,6 @@ const CreateTemplate: React.FC = () => {
         style={{ display: 'none' }}
         onChange={onChartFileSelected}
       />
-
-      <Modal
-        opened={coverPreviewUrl != null}
-        onClose={() => setCoverPreviewUrl(null)}
-        title="Aperçu"
-        fullScreen
-        styles={{
-          body: {
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#0d0d0f',
-            minHeight: '70vh',
-          },
-        }}
-      >
-        {coverPreviewUrl ? (
-          <Image
-            src={coverPreviewUrl}
-            alt="Couverture"
-            maw="100%"
-            mah="calc(100vh - 80px)"
-            w="auto"
-            h="auto"
-            fit="contain"
-            style={{ objectFit: 'contain' }}
-          />
-        ) : null}
-      </Modal>
 
       <Modal
         opened={chartsHubOpened}

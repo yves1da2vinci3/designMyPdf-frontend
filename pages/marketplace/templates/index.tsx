@@ -54,7 +54,7 @@ export default function MarketplaceTemplates() {
           name: template.name || 'Untitled Template',
           description: template.description || '',
           price: template.price || 0,
-          preview: template.preview || template.cover_image_url || '',
+          preview: template.preview || '',
           rating: template.rating || 0,
           reviewCount: template.reviewCount || 0,
           author: {
@@ -127,22 +127,22 @@ export default function MarketplaceTemplates() {
                           overflow: 'hidden',
                           position: 'relative',
                           backgroundColor: '#2C2E33',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                         }}
                       >
-                        {template.cover_image_url?.trim() ? (
+                        {template.preview?.trim() ? (
                           <Image
-                            src={template.cover_image_url.trim()}
+                            src={template.preview.trim()}
                             alt={template.name}
                             h={200}
                             fit="cover"
-                            fallbackSrc="https://placehold.co/600x400?text=Template"
                           />
                         ) : (
-                          <Center h={200}>
-                            <Text size="sm" c="dimmed" ta="center" px="md">
-                              Voir le détail pour l’aperçu complet
-                            </Text>
-                          </Center>
+                          <Text size="sm" c="dimmed" ta="center" px="md">
+                            {template.description || 'Aperçu non disponible'}
+                          </Text>
                         )}
                       </Box>
                     </Card.Section>

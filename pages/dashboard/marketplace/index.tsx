@@ -101,16 +101,21 @@ export default function PublisherDashboard() {
         <Box
           w={48}
           h={36}
-          style={{ borderRadius: 4, overflow: 'hidden', backgroundColor: '#e9ecef' }}
+          style={{
+            borderRadius: 4,
+            overflow: 'hidden',
+            backgroundColor: '#e9ecef',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
-          {listing.cover_image_url ? (
-            <Image src={listing.cover_image_url} h={36} w={48} fit="cover" alt="" />
+          {listing.cover_image_url?.trim() ? (
+            <Image src={listing.cover_image_url.trim()} h={36} w={48} fit="cover" alt="" />
           ) : (
-            <Center h={36}>
-              <Text size="xs" c="dimmed">
-                IMG
-              </Text>
-            </Center>
+            <Text size="xs" c="dimmed" ta="center" px={4} lineClamp={2}>
+              —
+            </Text>
           )}
         </Box>
       </Table.Td>

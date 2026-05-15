@@ -14,7 +14,6 @@ function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
   const [fontStyle, setFontStyle] = useState('');
   const [iframeKey, setIframeKey] = useState(0);
 
-  // Local utility functions
   function createFontImport(fontList: string[]): string {
     if (!fontList || fontList.length === 0) return '';
     try {
@@ -61,12 +60,10 @@ function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
 
       setIframeKey((prev) => prev + 1);
 
-      // Chart initialization script
       const chartScript = `
         (function() {
           function initializeCharts() {
             if (!window.Chart) {
-              // Chart.js library not loaded
               return;
             }
             var chartElements = document.querySelectorAll('canvas[data-chart-type]');
@@ -76,16 +73,13 @@ function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
                 var rawData = element.getAttribute('data-chart-data');
                 
                 if (!type || !rawData) {
-                  // Missing required chart attributes
                   return;
                 }
 
                 var chartData;
                 try {
-                  // The data is already JSON stringified in the attribute
                   chartData = JSON.parse(rawData);
                 } catch (e) {
-                  // Invalid chart data format
                   return;
                 }
 
@@ -103,29 +97,24 @@ function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
                   }
                 };
 
-                // Create and render the chart
                 var chartInstance = new Chart(element, {
                   type: type,
                   data: chartData,
                   options: defaultOptions
                 });
 
-                // Store chart instance for cleanup
                 element.chart = chartInstance;
               } catch (error) {
-                // Silently handle chart initialization errors
               }
             });
           }
 
-          // Initialize charts when DOM is ready
           if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initializeCharts);
           } else {
             initializeCharts();
           }
 
-          // Cleanup charts before unloading
           window.addEventListener('beforeunload', function() {
             var chartElements = document.querySelectorAll('canvas[data-chart-type]');
             chartElements.forEach(function(element) {
