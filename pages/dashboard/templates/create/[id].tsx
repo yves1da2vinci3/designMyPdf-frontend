@@ -163,6 +163,7 @@ const CreateTemplate: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(RequestStatus.NotStated);
   const [template, setTemplate] = useState<TemplateDTO | null>(null);
+  const [templateName, setTemplateName] = useState('');
   const [code, setCode] = useState<string>(DEFAULT_TEMPLATE);
   const [jsonContent, setJsonContent] = useState<string>(JSON.stringify(data, null, 2));
   const [variables, setVariables] = useState<Record<string, any>>({});
@@ -225,6 +226,7 @@ const CreateTemplate: React.FC = () => {
       setIsLoading(RequestStatus.InProgress);
       const fetchedTemplate = await templateApi.getTemplateById(params.id as string);
       setTemplate(fetchedTemplate);
+      setTemplateName(fetchedTemplate.name?.trim() ?? '');
       setCode(fetchedTemplate.content || DEFAULT_TEMPLATE);
       const { rest, charts } = splitChartsFromVariables(
         (fetchedTemplate.variables as Record<string, any>) || data,
@@ -364,14 +366,22 @@ const CreateTemplate: React.FC = () => {
         );
         return;
       }
-      await templateApi.updateTemplate(template?.ID as number, {
+      const resolvedName = templateName.trim() || template?.name?.trim() || '';
+      if (!resolvedName) {
+        notificationService.showErrorNotification('Le nom du template ne peut pas être vide.');
+        return;
+      }
+      const updated = await templateApi.updateTemplate(template?.ID as number, {
         ...template,
+        name: resolvedName,
         content: code,
         variables: mergedTemplateData,
         fonts: fontsSelected,
         pdf_background_color: pdfBgColor,
         pdf_content_padding: pdfContentPadding,
       });
+      setTemplate(updated);
+      setTemplateName(updated.name?.trim() ?? '');
     } catch (error: any) {
       notificationService.showErrorNotification(error?.message || 'Error updating template');
     }
@@ -1531,9 +1541,21 @@ const CreateTemplate: React.FC = () => {
           <Text c="dimmed" span>
             /
           </Text>
-          <Text c="white" style={{ fontWeight: 500 }}>
-            {template?.name || 'Report_template'}
-          </Text>
+          <TextInput
+            value={templateName}
+            onChange={(e) => setTemplateName(e.currentTarget.value)}
+            placeholder={template?.name || 'Report_template'}
+            variant="unstyled"
+            size="sm"
+            aria-label="Nom du template"
+            styles={{
+              root: { flex: '0 1 auto', minWidth: rem(140), maxWidth: rem(400) },
+              input: {
+                color: 'var(--mantine-color-white)',
+                fontWeight: 500,
+              },
+            }}
+          />
           <SegmentedControl
             id="view-mode-control"
             value={viewMode}
