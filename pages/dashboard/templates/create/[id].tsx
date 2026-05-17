@@ -79,7 +79,7 @@ import { DEFAULT_FONT, fonts } from '@/constants/fonts';
 import { RequestStatus } from '@/api/request-status.enum';
 import { TemplateDTO, templateApi, MarketplaceTemplateCard } from '@/api/templateApi';
 import { isPdfContentPaddingValid } from '@/utils/pdfContentPadding';
-import { applyPdfPageBreakHints } from '@/utils/applyPdfPageBreakHints';
+import { prepareRenderedHtml } from '@/utils/prepareRenderedHtml';
 import notificationService from '@/services/NotificationService';
 import { FormatType } from '../../../../utils/types';
 import {
@@ -200,6 +200,7 @@ const CreateTemplate: React.FC = () => {
   const [marketplaceTemplates, setMarketplaceTemplates] = useState<MarketplaceTemplateCard[]>([]);
   const [marketplaceLoading, setMarketplaceLoading] = useState(false);
   const [marketplaceLoaded, setMarketplaceLoaded] = useState(false);
+  const [previewRenderedHtml, setPreviewRenderedHtml] = useState<string | null>(null);
 
   const [chartDatasets, setChartDatasets] = useState<Record<string, unknown>>({});
   const [chartJsonModalOpened, { open: openChartJsonModal, close: closeChartJsonModal }] =
@@ -248,6 +249,28 @@ const CreateTemplate: React.FC = () => {
   useEffect(() => {
     fetchTemplate();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        const html = await prepareRenderedHtml(code, mergedTemplateData, {
+          paperSize: format,
+          isLandscape: isLandScape,
+          pdfContentPadding,
+          pdfBackgroundColor: pdfBgColor,
+          fonts: fontsSelected,
+        });
+        if (!cancelled) setPreviewRenderedHtml(html);
+      } catch {
+        if (!cancelled) setPreviewRenderedHtml(null);
+      }
+    }, 400);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [code, mergedTemplateData, format, isLandScape, pdfContentPadding, pdfBgColor, fontsSelected]);
 
   useEffect(() => {
     let cancelled = false;
@@ -661,14 +684,7 @@ const CreateTemplate: React.FC = () => {
     await yieldPaint();
 
     try {
-      const { default: Handlebars } = await import('handlebars');
-      await import('../../../../utils/handlebarsHelpers');
-
-      const processedCode = processChartData(code);
-      const compiledTemplate = Handlebars.compile(processedCode);
-      let renderedContent = compiledTemplate(mergedTemplateData);
-      renderedContent = replaceChartDataPlaceholders(renderedContent, mergedTemplateData);
-      renderedContent = await applyPdfPageBreakHints(renderedContent, {
+      const renderedContent = await prepareRenderedHtml(code, mergedTemplateData, {
         paperSize: format,
         isLandscape: isLandScape,
         pdfContentPadding,
@@ -2336,6 +2352,7 @@ const CreateTemplate: React.FC = () => {
               <Preview
                 format={format}
                 htmlContent={code}
+                renderedBodyHtml={previewRenderedHtml}
                 data={mergedTemplateData}
                 isLandscape={isLandScape}
                 fonts={fontsSelected}

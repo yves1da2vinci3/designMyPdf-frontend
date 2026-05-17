@@ -6,9 +6,7 @@ import {
 } from './pdfPageLayout';
 import { resolvedPdfContentPaddingCss } from './pdfContentPadding';
 import { sanitizePdfBackgroundColor } from '@/utils/sanitizePdfBackgroundColor';
-
-/** Espace restant ou queue débordante < 20 % → saut de page. */
-const ORPHAN_THRESHOLD = 0.2;
+import { applyPageBreakHintsToContainer } from './pdfPagination';
 
 function waitForTailwind(doc: Document): Promise<void> {
   return new Promise((resolve) => {
@@ -24,88 +22,6 @@ function waitForTailwind(doc: Document): Promise<void> {
     };
     check();
   });
-}
-
-/** Blocs de premier niveau pour la règle des 20 % (évite un seul wrapper géant). */
-function collectPdfBlocks(container: HTMLElement): HTMLElement[] {
-  const direct = Array.from(container.children).filter(
-    (el): el is HTMLElement => el instanceof HTMLElement,
-  );
-
-  if (direct.length === 1) {
-    const nested = Array.from(direct[0].children).filter(
-      (el): el is HTMLElement => el instanceof HTMLElement,
-    );
-    if (nested.length > 0) return nested;
-  }
-
-  if (direct.length > 0) return direct;
-
-  return Array.from(
-    container.querySelectorAll<HTMLElement>(
-      'section, article, table, [data-pdf-block], .pdf-keep-together',
-    ),
-  );
-}
-
-/**
- * Règle 20 % bidirectionnelle basée sur les positions DOM réelles.
- * - Orphelin : espace restant en bas de page < 20 % → break-before le bloc
- * - Veuve : queue débordant sur la page suivante < 20 % → break-before le bloc entier
- * Un seul saut par frontière de page pour éviter les pages blanches.
- */
-function applyHintsToBlocks(container: HTMLElement, contentAreaHeight: number): void {
-  const blocks = collectPdfBlocks(container);
-  const threshold = ORPHAN_THRESHOLD * contentAreaHeight;
-  const containerTop = container.getBoundingClientRect().top;
-
-  // First pass: tables/charts get break-inside:avoid
-  for (const block of blocks) {
-    if (block.tagName === 'TABLE' || block.querySelector('canvas[data-chart-type]')) {
-      block.classList.add('pdf-avoid-break-inside');
-    }
-  }
-
-  // Second pass: orphan + widow prevention using actual DOM positions
-  let lastBreakPage = -1;
-  for (const block of blocks) {
-    const rect = block.getBoundingClientRect();
-    if (rect.height <= 0) continue;
-
-    const blockTop = rect.top - containerTop;
-    const pageNum = Math.floor(blockTop / contentAreaHeight);
-    const posOnPage = blockTop % contentAreaHeight;
-    const remaining = contentAreaHeight - posOnPage;
-
-    let needsBreak = false;
-
-    // Orphan: tiny space remaining before block at bottom of page → push to next page
-    if (
-      remaining > 0 &&
-      remaining < contentAreaHeight &&
-      remaining < threshold &&
-      pageNum !== lastBreakPage
-    ) {
-      needsBreak = true;
-    }
-
-    // Widow: block overflows but only tiny tail goes to next page → push entire block
-    if (!needsBreak && rect.height <= contentAreaHeight) {
-      const blockEnd = blockTop + rect.height;
-      const pageEnd = (pageNum + 1) * contentAreaHeight;
-      if (blockEnd > pageEnd) {
-        const overflowTail = blockEnd - pageEnd;
-        if (overflowTail > 0 && overflowTail < threshold && pageNum !== lastBreakPage) {
-          needsBreak = true;
-        }
-      }
-    }
-
-    if (needsBreak) {
-      block.classList.add('pdf-page-break-before');
-      lastBreakPage = pageNum;
-    }
-  }
 }
 
 /**
@@ -165,8 +81,7 @@ export async function applyPdfPageBreakHints(
       '</style></head><body>',
       '<div class="content">',
       bodyInnerHtml,
-      '</div>',
-      '</body></html>',
+      '</div></body></html>',
     ].join('');
 
     doc.open();
@@ -182,7 +97,7 @@ export async function applyPdfPageBreakHints(
     }
     await new Promise((r) => setTimeout(r, 300));
 
-    applyHintsToBlocks(contentEl, contentAreaHeight);
+    applyPageBreakHintsToContainer(contentEl, contentAreaHeight);
 
     return contentEl.innerHTML;
   } finally {

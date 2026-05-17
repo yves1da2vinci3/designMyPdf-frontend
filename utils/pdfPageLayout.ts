@@ -70,9 +70,7 @@ export const PDF_PRINT_BREAK_CSS = `
     break-inside: avoid;
     page-break-inside: avoid;
   }
-  table,
-  .pdf-keep-together,
-  canvas[data-chart-type] {
+  .pdf-keep-together {
     break-inside: avoid;
     page-break-inside: avoid;
   }
