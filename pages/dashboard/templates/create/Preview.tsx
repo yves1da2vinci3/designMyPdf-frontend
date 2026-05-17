@@ -9,7 +9,12 @@ import {
 import { sanitizePdfBackgroundColor } from '@/utils/sanitizePdfBackgroundColor';
 import { CSS_PX_PER_MM } from '@/utils/paperDimensions';
 import { resolvedPdfContentPaddingCss } from '@/utils/pdfContentPadding';
-import { getContentAreaHeightPx, PDF_PRINT_BREAK_CSS } from '@/utils/pdfPageLayout';
+import {
+  getContentAreaHeightPx,
+  getContentAreaWidthPx,
+  PDF_EXPORT_RESET_CSS,
+  PDF_PRINT_BREAK_CSS,
+} from '@/utils/pdfPageLayout';
 import { Switch, Tooltip } from '@mantine/core';
 
 // Define the FormatType directly in this file
@@ -17,6 +22,8 @@ type FormatType = 'a1' | 'a2' | 'a3' | 'a4' | 'a5' | 'a6';
 
 interface PreviewProps {
   htmlContent: string;
+  /** Pre-rendered body HTML with PDF page-break hints (WYSIWYG with export). */
+  renderedBodyHtml?: string | null;
   format?: FormatType;
   data?: Record<string, any>;
   fonts: string[];
@@ -30,6 +37,7 @@ interface PreviewProps {
 
 function Preview({
   htmlContent,
+  renderedBodyHtml = null,
   format = 'a4',
   data = {},
   fonts,
@@ -133,10 +141,15 @@ function Preview({
     }
 
     try {
-      const processedHtml = processChartData(htmlContent);
-      const template = Handlebars.compile(processedHtml);
-      const rendered = template(data);
-      const finalHtml = replaceChartDataPlaceholders(rendered, data);
+      let finalHtml: string;
+      if (renderedBodyHtml != null && renderedBodyHtml.trim()) {
+        finalHtml = renderedBodyHtml;
+      } else {
+        const processedHtml = processChartData(htmlContent);
+        const template = Handlebars.compile(processedHtml);
+        const rendered = template(data);
+        finalHtml = replaceChartDataPlaceholders(rendered, data);
+      }
 
       // Chart initialization script.
       const chartScript = `
@@ -289,42 +302,31 @@ function Preview({
             const contentContainer = document.querySelector('.content');
             if (!contentContainer) return;
             
-            // Get the total height of the content
-            const contentHeight = contentContainer.scrollHeight;
-            
-            // Get the page dimensions based on format and orientation
-            const format = '${format}';
-            const isLandscape = ${isLandscape};
-            
-            // Paper dimensions in mm
-            const paperSizes = {
-              a1: { width: 841, height: 1189 },
-              a2: { width: 594, height: 841 },
-              a3: { width: 420, height: 594 },
-              a4: { width: 210, height: 297 },
-              a5: { width: 148, height: 210 },
-              a6: { width: 105, height: 148 }
-            };
-            
-            // Get dimensions based on orientation
-            const paperSize = paperSizes[format];
-            const pageWidth = isLandscape ? paperSize.height : paperSize.width;
-            const pageHeight = isLandscape ? paperSize.width : paperSize.height;
-            
-            // Hauteur utile alignée sur l’export (@page margin 0 + padding .content)
             const availableHeightPx = ${getContentAreaHeightPx(format, isLandscape, pdfContentPadding)};
             
-            // Remove any existing delimiters
             document.querySelectorAll('.page-delimiter, .page-break-tooltip').forEach(el => el.remove());
             
-            // Calculate page breaks
-            const pageBreaks = [];
-            let currentHeight = availableHeightPx;
+            // Page boundaries: forced breaks (.pdf-page-break-before) + flow segments (same as export)
+            const containerTop = contentContainer.getBoundingClientRect().top;
+            const scrollHeight = contentContainer.scrollHeight;
+            const forcedBreaks = [];
+            contentContainer.querySelectorAll('.pdf-page-break-before').forEach(function(el) {
+              var top = el.getBoundingClientRect().top - containerTop;
+              if (top > 0) forcedBreaks.push(top);
+            });
+            forcedBreaks.sort(function(a, b) { return a - b; });
             
-            while (currentHeight < contentHeight) {
-              pageBreaks.push(currentHeight);
-              currentHeight += availableHeightPx;
-            }
+            const pageBreaks = [];
+            var segmentStart = 0;
+            var segmentEnds = forcedBreaks.concat([scrollHeight]);
+            segmentEnds.forEach(function(segmentEnd) {
+              var y = segmentStart;
+              while (y + availableHeightPx < segmentEnd - 0.5) {
+                y += availableHeightPx;
+                pageBreaks.push(y);
+              }
+              segmentStart = segmentEnd;
+            });
             
             // Add page break indicators
             pageBreaks.forEach((height, index) => {
@@ -430,6 +432,8 @@ function Preview({
                 type: 'pageCount',
                 count: pageBreaks.length + 1
               }, '*');
+            } else {
+              window.parent.postMessage({ type: 'pageCount', count: 1 }, '*');
             }
           }
           
@@ -449,6 +453,7 @@ function Preview({
 
       const pageBg = sanitizePdfBackgroundColor(backgroundColor);
       const contentPadCss = resolvedPdfContentPaddingCss(pdfContentPadding);
+      const contentWidthPx = getContentAreaWidthPx(format, isLandscape);
 
       // Build the complete preview HTML.
       const previewContent = `<!doctype html>
@@ -465,13 +470,14 @@ function Preview({
       body {
         margin: 0;
         padding: 0;
-        min-height: 100vh;
         width: 100%;
         background: ${pageBg};
         position: relative;
       }
       .content {
-        width: 100%;
+        width: ${contentWidthPx}px;
+        max-width: 100%;
+        box-sizing: border-box;
         height: auto;
         min-height: 0;
         padding: ${contentPadCss};
@@ -482,7 +488,7 @@ function Preview({
         margin: 0 auto;
       }
       ${PDF_PRINT_BREAK_CSS}
-      /* This class will be used to hide elements during export */
+      ${PDF_EXPORT_RESET_CSS}
       @media print {
         .preview-only {
           display: none !important;
@@ -584,6 +590,7 @@ function Preview({
     }
   }, [
     htmlContent,
+    renderedBodyHtml,
     data,
     fontImport,
     fontStyle,

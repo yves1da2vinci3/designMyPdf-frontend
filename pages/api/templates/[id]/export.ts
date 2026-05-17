@@ -9,7 +9,9 @@ import {
   PDF_EXPORT_RESET_CSS,
   PDF_PRINT_BREAK_CSS,
   getContentAreaHeightPx,
+  getContentAreaWidthPx,
 } from '@/utils/pdfPageLayout';
+import { ORPHAN_THRESHOLD, pageBreakHintsEvaluate } from '@/utils/pdfPagination';
 
 function buildExportPageHtml(
   bodyInner: string,
@@ -28,6 +30,7 @@ function buildExportPageHtml(
 
   const pageBg = sanitizePdfBackgroundColor(data.pdf_background_color);
   const contentPad = resolvedPdfContentPaddingCss(data.pdf_content_padding);
+  const contentWidth = getContentAreaWidthPx(data.paperSize, data.isLandscape);
 
   return `
       <!DOCTYPE html>
@@ -54,6 +57,7 @@ function buildExportPageHtml(
             .content {
               padding: ${contentPad};
               box-sizing: border-box;
+              width: ${contentWidth}px;
               min-height: auto;
               height: auto;
               background: ${pageBg};
@@ -195,88 +199,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const postRenderMs = hasCharts ? 4000 : useRendered ? 2000 : 400;
       await new Promise((r) => setTimeout(r, postRenderMs));
 
-      // Re-apply orphan/widow hints using Puppeteer's own rendered layout.
-      // This corrects any browser-vs-Puppeteer text-metric discrepancy that would
-      // cause the PDF to have a different page count than the preview.
       const contentAreaHeight = getContentAreaHeightPx(
         data.paperSize,
         data.isLandscape,
         data.pdf_content_padding,
       );
-      await page.evaluate(
-        ({ cah, threshold }: { cah: number; threshold: number }) => {
-          function collectBlocks(container: Element): Element[] {
-            const direct = Array.from(container.children);
-            if (direct.length === 1) {
-              const nested = Array.from(direct[0].children);
-              if (nested.length > 0) return nested;
-            }
-            return direct.length > 0
-              ? direct
-              : Array.from(
-                  container.querySelectorAll(
-                    'section,article,table,[data-pdf-block],.pdf-keep-together',
-                  ),
-                );
-          }
 
-          const container = document.querySelector('.content');
-          if (!container) return;
-
-          // Reset class-based hints injected by applyPdfPageBreakHints in the browser
-          container.querySelectorAll('.pdf-page-break-before').forEach((el) => {
-            (el as HTMLElement).style.removeProperty('break-before');
-            (el as HTMLElement).style.removeProperty('page-break-before');
-            el.classList.remove('pdf-page-break-before');
-          });
-
-          const blocks = collectBlocks(container);
-          const containerTop = container.getBoundingClientRect().top;
-          let lastBreakPage = -1;
-
-          for (const block of blocks) {
-            const el = block as HTMLElement;
-            const rect = el.getBoundingClientRect();
-            if (rect.height <= 0) continue;
-
-            const blockTop = rect.top - containerTop;
-            const pageNum = Math.floor(blockTop / cah);
-            const posOnPage = blockTop % cah;
-            const remaining = cah - posOnPage;
-
-            let needsBreak = false;
-
-            // Orphan: tiny space before block at bottom of page → push to next page
-            if (
-              remaining > 0 &&
-              remaining < cah &&
-              remaining < threshold &&
-              pageNum !== lastBreakPage
-            ) {
-              needsBreak = true;
-            }
-
-            // Widow: block overflows but only tiny tail on next page → push entire block
-            if (!needsBreak && rect.height <= cah) {
-              const blockEnd = blockTop + rect.height;
-              const pageEnd = (pageNum + 1) * cah;
-              if (blockEnd > pageEnd) {
-                const overflowTail = blockEnd - pageEnd;
-                if (overflowTail > 0 && overflowTail < threshold && pageNum !== lastBreakPage) {
-                  needsBreak = true;
-                }
-              }
-            }
-
-            if (needsBreak) {
-              el.style.breakBefore = 'page';
-              el.style.pageBreakBefore = 'always';
-              lastBreakPage = pageNum;
-            }
-          }
-        },
-        { cah: contentAreaHeight, threshold: contentAreaHeight * 0.2 },
-      );
+      // Editor sends pre-hinted HTML — trust it (WYSIWYG). Raw template: one Puppeteer pass.
+      if (!useRendered) {
+        await page.evaluate(pageBreakHintsEvaluate, {
+          cah: contentAreaHeight,
+          threshold: contentAreaHeight * ORPHAN_THRESHOLD,
+          resetExisting: true,
+        });
+      }
 
       let output: Buffer | Uint8Array;
       if (data.format === 'pdf') {
