@@ -147,9 +147,7 @@ export function pageBreakHintsEvaluate(params: {
     return direct.length > 0
       ? direct
       : Array.from(
-          container.querySelectorAll(
-            'section,article,table,[data-pdf-block],.pdf-keep-together',
-          ),
+          container.querySelectorAll('section,article,table,[data-pdf-block],.pdf-keep-together'),
         );
   }
 
@@ -200,12 +198,7 @@ export function pageBreakHintsEvaluate(params: {
 
     let needsBreak = false;
 
-    if (
-      remaining > 0 &&
-      remaining < cah &&
-      remaining < threshold &&
-      pageNum !== lastBreakPage
-    ) {
+    if (remaining > 0 && remaining < cah && remaining < threshold && pageNum !== lastBreakPage) {
       needsBreak = true;
     }
 
