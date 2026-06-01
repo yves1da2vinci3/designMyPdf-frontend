@@ -15,6 +15,7 @@ import {
 import { Dropzone, FileWithPath } from '@mantine/dropzone';
 import { IconUpload, IconPhoto, IconX, IconTrash } from '@tabler/icons-react';
 import notificationService from '@/services/NotificationService';
+import { authJsonHeaders } from '@/lib/authFetch';
 
 interface ImageUploaderProps {
   onGenerate: (content: string, variables: any) => void;
@@ -89,9 +90,7 @@ function ImageUploader({ onGenerate, onClose }: ImageUploaderProps) {
     try {
       const response = await fetch('/api/generate-template-from-images', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: authJsonHeaders(),
         body: JSON.stringify({
           prompt,
           imageUrls: uploadedUrls,

@@ -81,6 +81,7 @@ import { TemplateDTO, templateApi, MarketplaceTemplateCard } from '@/api/templat
 import { isPdfContentPaddingValid } from '@/utils/pdfContentPadding';
 import { prepareRenderedHtml } from '@/utils/prepareRenderedHtml';
 import notificationService from '@/services/NotificationService';
+import { authJsonHeaders } from '@/lib/authFetch';
 import { FormatType } from '../../../../utils/types';
 import {
   CHART_TYPES,
@@ -581,9 +582,7 @@ const CreateTemplate: React.FC = () => {
       if (uploadedUrls.length > 0) {
         const response = await fetch('/api/generate-template-from-images', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: authJsonHeaders(),
           body: JSON.stringify({
             prompt,
             imageUrls: uploadedUrls,
@@ -622,9 +621,7 @@ const CreateTemplate: React.FC = () => {
         // Otherwise use the regular generate-template endpoint
         const response = await fetch('/api/generate-template', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: authJsonHeaders(),
           body: JSON.stringify({ prompt }),
         });
 
