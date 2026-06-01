@@ -36,6 +36,8 @@ import { RequestStatus } from '@/api/request-status.enum';
 import { manuallyStartTour } from '@/utils/tourUtils';
 import { useLocalStorage } from '@/utils/useLocalStorage';
 import 'driver.js/dist/driver.css';
+import AiCreditsBadge from '@/components/AiCreditsBadge/AiCreditsBadge';
+import { useAiCredits } from '@/hooks/useAiCredits';
 
 function TemplatesPage() {
   const router = useRouter();
@@ -57,6 +59,7 @@ function TemplatesPage() {
   const PAGE_SIZE = 12;
   const [showTourButton, setShowTourButton] = useState(false);
   const [hasSeenTour, setHasSeenTour] = useLocalStorage('hasSeenTemplatesDashboardTour', false);
+  const aiCredits = useAiCredits();
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedSearch(searchQuery), 300);
@@ -271,6 +274,13 @@ function TemplatesPage() {
             </Text>
           </Box>
           <Group wrap="wrap" gap="sm" justify="flex-end" style={{ flex: '1 1 200px' }}>
+            <AiCreditsBadge
+              variant="compact"
+              remaining={aiCredits.remaining}
+              limit={aiCredits.limit}
+              used={aiCredits.used}
+              loading={aiCredits.loading}
+            />
             <Input
               id="search-templates"
               leftSection={<IconSearch size={16} />}

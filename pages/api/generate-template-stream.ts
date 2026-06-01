@@ -1,49 +1,68 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import {
   assertCanStartAiRun,
   consumeGenerationCredits,
   runWithAiRunLock,
 } from '@/services/ai/aiCreditsGate';
 import { runTemplateGeneration } from '@/services/ai/templateGenerationService';
+import { initSseResponse, writeSseEvent, endSse } from '@/lib/aiGeneration/sse';
 import type { TemplateGenerationRequest } from '@/lib/aiGeneration/types';
+
+export const config = {
+  api: {
+    bodyParser: true,
+  },
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
   const authHeader = req.headers.authorization;
   if (!authHeader) {
-    return res.status(401).json({ error: 'Authentication required' });
+    res.status(401).json({ error: 'Authentication required' });
+    return;
   }
 
   const body = req.body as TemplateGenerationRequest;
-  if (!body.prompt) {
-    return res.status(400).json({ error: 'Prompt is required' });
-  }
+  const hasImages = Boolean(body.imageUrls?.length);
 
   try {
     await assertCanStartAiRun(authHeader);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Monthly credit limit reached';
-    return res.status(429).json({ error: message });
+    res.status(429).json({ error: message });
+    return;
   }
+
+  initSseResponse(res);
 
   try {
     const result = await runWithAiRunLock(authHeader, () =>
-      runTemplateGeneration({
-        prompt: body.prompt,
-        format: body.format,
-        isLandscape: body.isLandscape,
-        pdfContentPadding: body.pdfContentPadding,
-        useAgent: body.useAgent ?? false,
-        useFidelityGraph: body.useFidelityGraph === true,
-      }),
+      runTemplateGeneration(
+        {
+          prompt: body.prompt,
+          imageUrls: body.imageUrls,
+          format: body.format,
+          isLandscape: body.isLandscape,
+          pdfContentPadding: body.pdfContentPadding,
+          useAgent: body.useAgent ?? false,
+          useFidelityGraph: body.useFidelityGraph === true,
+        },
+        (event) => {
+          if (event.type === 'step') {
+            writeSseEvent(res, event);
+          }
+        },
+      ),
     );
 
     const { warnings } = await consumeGenerationCredits(authHeader, result);
 
-    return res.status(200).json({
+    writeSseEvent(res, {
+      type: 'done',
       content: result.content,
       suggestedVariables: result.suggestedVariables,
       recommendedLandscape: result.recommendedLandscape,
@@ -52,6 +71,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to generate template';
-    return res.status(500).json({ error: message });
+    writeSseEvent(res, { type: 'error', message });
   }
+
+  endSse(res);
 }

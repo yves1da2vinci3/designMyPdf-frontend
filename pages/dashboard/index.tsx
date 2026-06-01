@@ -34,6 +34,8 @@ import { Links } from '@/constants/routes';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import getFilledStats from '@/utils/filledStats';
 import { filterLogsByApiPeriod } from '@/utils/logPeriodFilter';
+import AiCreditsBadge from '@/components/AiCreditsBadge/AiCreditsBadge';
+import { useAiCredits } from '@/hooks/useAiCredits';
 
 const DEFAULT_PERIOD = '7d';
 
@@ -61,6 +63,7 @@ export default function Overview() {
   );
   const [period, setPeriod] = useState(DEFAULT_PERIOD);
   const router = useRouter();
+  const aiCredits = useAiCredits();
 
   const fetchLogStats = useCallback(async () => {
     setFetchLogStatsRequestStatus(RequestStatus.InProgress);
@@ -322,16 +325,14 @@ export default function Overview() {
 
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Stack gap="md">
-              <Card withBorder radius="md" shadow="xs" p="lg">
-                <Text fw={600} size="sm" mb="sm">
-                  Plan usage & stockage
-                </Text>
-                <Text size="sm" c="dimmed">
-                  Les quotas de génération et le stockage ne sont pas exposés par l&apos;API pour
-                  l&apos;instant : aucune jauge affichée tant qu&apos;il n&apos;y a pas de endpoint
-                  dédié.
-                </Text>
-              </Card>
+              <AiCreditsBadge
+                variant="card"
+                remaining={aiCredits.remaining}
+                limit={aiCredits.limit}
+                used={aiCredits.used}
+                month={aiCredits.month}
+                loading={aiCredits.loading}
+              />
 
               <Card withBorder radius="md" shadow="xs" p="lg">
                 <Text fw={600} size="sm" mb="sm">

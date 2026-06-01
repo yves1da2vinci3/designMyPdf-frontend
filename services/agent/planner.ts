@@ -1,21 +1,12 @@
 /**
  * Planificateur - Phase 1: Analyse la demande et crée un plan de structure
  */
-import { ChatAnthropic } from '@langchain/anthropic';
 import { HumanMessage } from '@langchain/core/messages';
-import type { TemplatePlan, ProcessedImage } from './types';
+import type { TemplatePlan, ProcessedImage, AgentGenerationOptions } from './types';
 import { formatImagesForClaude } from './imageProcessor';
 import { findClosestTemplate } from './templateLibrary';
-
-/**
- * Modèle Claude configuré pour la planification
- */
-const model = new ChatAnthropic({
-  modelName: 'claude-haiku-4-5-20251001',
-  temperature: 0.3,
-  maxTokens: 4096,
-  anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
-});
+import { createChatAnthropic } from './anthropicClient';
+import { buildPageContextPrompt } from '@/lib/aiGeneration/pdfPromptContext';
 
 /**
  * Génère un plan structuré à partir du prompt utilisateur et des images
@@ -23,7 +14,9 @@ const model = new ChatAnthropic({
 export async function planTemplate(
   userPrompt: string,
   processedImages?: ProcessedImage[],
+  options?: AgentGenerationOptions,
 ): Promise<TemplatePlan> {
+  const model = createChatAnthropic(true, options?.apiKey);
   // Construire le contenu du message
   const content: Array<{ type: string; text?: string; image_url?: string }> = [];
 
@@ -39,13 +32,19 @@ export async function planTemplate(
 ${
   processedImages && processedImages.length > 0
     ? `IMAGES PROVIDED: The user has provided ${processedImages.length} image(s) for reference. Analyze these images carefully to extract:
-- Visual structure and layout
+- Visual structure and layout (note if reference is landscape/wide poster vs tall document)
 - Color palette and dominant colors
 - Typography hierarchy
 - UI components (headers, tables, cards, etc.)
-- Overall design style`
+- Overall design style
+- Image dimensions hint: ${processedImages
+        .filter((i) => i.width && i.height)
+        .map((i) => `${i.width}x${i.height} (${i.orientation || 'unknown'})`)
+        .join(', ')}`
     : ''
 }
+
+${options?.format ? buildPageContextPrompt(options.format, options.isLandscape ?? false, options.pdfContentPadding) : ''}
 
 USER REQUEST: ${userPrompt}
 
@@ -82,14 +81,16 @@ Your task is to create a structured plan in JSON format with the following struc
     "useMargins": true,
     "avoidSticky": true,
     "useExplicitWidths": true
-  }
+  },
+  "recommendedPageOrientation": "landscape" | "portrait"
 ${
   processedImages && processedImages.length > 0
     ? `,
   "imageAnalysis": {
     "detectedColors": ["array of detected color names"],
-    "layout": "description of layout structure",
-    "components": ["list of detected UI components"]
+    "layout": "description of layout structure (e.g. header row + central band + footer)",
+    "components": ["list of detected UI components"],
+    "imageDimensions": [{"width": number, "height": number, "orientation": "landscape|portrait|square"}]
   }`
     : ''
 }
@@ -105,8 +106,8 @@ IMPORTANT:
 - COLORS: Use at most 5 Tailwind color classes (primary/neutral/surface/border/text); no gradients; no opacity modifiers
 ${
   processedImages && processedImages.length > 0
-    ? '- Extract exact colors and layout from the provided images'
-    : ''
+    ? '- Extract exact colors and layout from the provided images; set recommendedPageOrientation to landscape if reference image(s) are clearly wide/horizontal'
+    : '- Set recommendedPageOrientation based on document type (wide posters → landscape, letters/CV → portrait)'
 }
 
 Return ONLY valid JSON, no markdown, no explanations.`;
@@ -160,6 +161,8 @@ Return ONLY valid JSON, no markdown, no explanations.`;
       avoidSticky: planData.pdfConstraints?.avoidSticky ?? true,
       useExplicitWidths: planData.pdfConstraints?.useExplicitWidths ?? true,
     },
+    recommendedPageOrientation:
+      planData.recommendedPageOrientation === 'landscape' ? 'landscape' : 'portrait',
     imageAnalysis: planData.imageAnalysis,
   };
 }
@@ -226,5 +229,6 @@ function createDefaultPlan(userPrompt: string): any {
       avoidSticky: true,
       useExplicitWidths: true,
     },
+    recommendedPageOrientation: 'portrait' as const,
   };
 }

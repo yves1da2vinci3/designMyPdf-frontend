@@ -15,14 +15,25 @@ import {
 import { Dropzone, FileWithPath } from '@mantine/dropzone';
 import { IconUpload, IconPhoto, IconX, IconTrash } from '@tabler/icons-react';
 import notificationService from '@/services/NotificationService';
-import { authJsonHeaders } from '@/lib/authFetch';
+import { runGenerationStream } from '@/lib/aiGeneration/runGenerationStream';
+import type { AiStep } from '@/lib/aiGeneration/types';
+import AiGenerationSteps from '@/components/AiGenerationSteps/AiGenerationSteps';
 
 interface ImageUploaderProps {
-  onGenerate: (content: string, variables: any) => void;
+  onGenerate: (content: string, variables: any, recommendedLandscape?: boolean) => void;
   onClose: () => void;
+  format?: string;
+  isLandscape?: boolean;
+  pdfContentPadding?: string;
 }
 
-function ImageUploader({ onGenerate, onClose }: ImageUploaderProps) {
+function ImageUploader({
+  onGenerate,
+  onClose,
+  format = 'a4',
+  isLandscape = false,
+  pdfContentPadding = '',
+}: ImageUploaderProps) {
   const [files, setFiles] = useState<FileWithPath[]>([]);
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<
@@ -31,6 +42,8 @@ function ImageUploader({ onGenerate, onClose }: ImageUploaderProps) {
   const [prompt, setPrompt] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [aiSteps, setAiSteps] = useState<AiStep[]>([]);
+  const [aiLayoutSummary, setAiLayoutSummary] = useState('');
   const openRef = useRef<() => void>(null);
 
   const handleDrop = (acceptedFiles: FileWithPath[]) => {
@@ -87,42 +100,30 @@ function ImageUploader({ onGenerate, onClose }: ImageUploaderProps) {
     }
 
     setIsGenerating(true);
+    setAiSteps([]);
+    setAiLayoutSummary('');
     try {
-      const response = await fetch('/api/generate-template-from-images', {
-        method: 'POST',
-        headers: authJsonHeaders(),
-        body: JSON.stringify({
+      const result = await runGenerationStream(
+        {
           prompt,
           imageUrls: uploadedUrls,
-        }),
-      });
-
-      // Check if the response is ok before trying to parse JSON
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage = 'Failed to generate template';
-
-        try {
-          // Try to parse the error as JSON
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.error || errorJson.details || errorMessage;
-        } catch (parseError) {
-          // If parsing fails, use the raw text
-          errorMessage = errorText || errorMessage;
-        }
-
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
-      if (data.content) {
-        onGenerate(data.content, data.suggestedVariables || {});
+          format,
+          isLandscape,
+          pdfContentPadding,
+          useAgent: true,
+        },
+        setAiSteps,
+        setAiLayoutSummary,
+      );
+      if (result.content) {
+        onGenerate(result.content, result.suggestedVariables || {}, result.recommendedLandscape);
         onClose();
       } else {
         throw new Error('Failed to generate template');
       }
-    } catch (error: any) {
-      notificationService.showErrorNotification(error?.message || 'Error generating template');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Error generating template';
+      notificationService.showErrorNotification(message);
     } finally {
       setIsGenerating(false);
     }
@@ -269,6 +270,10 @@ function ImageUploader({ onGenerate, onClose }: ImageUploaderProps) {
               },
             }}
           />
+
+          {(isGenerating || aiSteps.length > 0 || aiLayoutSummary) && (
+            <AiGenerationSteps steps={aiSteps} layoutSummary={aiLayoutSummary} />
+          )}
 
           <Group justify="flex-end" mt="md">
             <Button variant="subtle" color="gray" onClick={clearAll} disabled={isGenerating}>

@@ -1,22 +1,13 @@
 /**
  * Générateur - Phase 2: Génère le code HTML/Tailwind basé sur le plan
  */
-import { ChatAnthropic } from '@langchain/anthropic';
 import { HumanMessage } from '@langchain/core/messages';
-import type { TemplatePlan, ProcessedImage } from './types';
+import type { TemplatePlan, ProcessedImage, AgentGenerationOptions } from './types';
 import { PDF_SURVIVAL_GUIDE, TEMPLATE_DESIGN_GUIDE } from './pdfConstraints';
 import { getTemplateById } from './templateLibrary';
 import { formatImagesForClaude } from './imageProcessor';
-
-/**
- * Modèle Claude configuré pour la génération
- */
-const model = new ChatAnthropic({
-  modelName: 'claude-haiku-4-5-20251001',
-  temperature: 0.3,
-  maxTokens: 8192,
-  anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
-});
+import { createChatAnthropic } from './anthropicClient';
+import { buildPageContextPrompt } from '@/lib/aiGeneration/pdfPromptContext';
 
 /**
  * Génère le code HTML/Tailwind à partir du plan
@@ -24,7 +15,14 @@ const model = new ChatAnthropic({
 export async function generateCode(
   plan: TemplatePlan,
   processedImages?: ProcessedImage[],
+  options?: AgentGenerationOptions,
 ): Promise<string> {
+  const model = createChatAnthropic(true, options?.apiKey);
+  const pageLandscape =
+    plan.recommendedPageOrientation === 'landscape' || options?.isLandscape === true;
+  const pageContext = options?.format
+    ? buildPageContextPrompt(options.format, pageLandscape, options.pdfContentPadding)
+    : '';
   // Récupérer le template de référence si disponible
   const referenceTemplate = plan.selectedTemplate ? getTemplateById(plan.selectedTemplate) : null;
 
@@ -63,6 +61,7 @@ Variables used in reference: ${referenceTemplate.variables.join(', ')}
 
 ${PDF_SURVIVAL_GUIDE}
 ${TEMPLATE_DESIGN_GUIDE}
+${pageContext}
 
 CRITICAL REQUIREMENTS:
 1. Generate COMPLETE HTML code from start to finish (no ellipsis, no placeholders)
@@ -82,8 +81,13 @@ CRITICAL REQUIREMENTS:
 11. PADDING: The root <div> wrapper MUST be p-0 — the preview scaffold already provides outer padding (2rem editor / 10mm catalog); inner sections use py-3 or py-4 at most; NEVER stack p-6+ on any nested container
 12. CHARTS: For any chart, use <canvas data-chart-type="bar|line|pie|doughnut" data-chart-data='{{charts.chartName}}'></canvas> — NEVER put raw JSON in the attribute; the variable charts.chartName MUST exist with structure { labels: string[], datasets: [{ label, data: number[], backgroundColor, borderColor }] }
 ${
+  plan.recommendedPageOrientation === 'landscape'
+    ? '13. LANDSCAPE: use horizontal multi-column layout; do NOT use a single narrow vertical column.'
+    : ''
+}
+${
   plan.imageAnalysis
-    ? `11. Match the detected layout and components from image analysis: ${plan.imageAnalysis.components.join(', ')}`
+    ? `14. Match the detected layout and components from image analysis: ${plan.imageAnalysis.components.join(', ')}`
     : ''
 }
 
