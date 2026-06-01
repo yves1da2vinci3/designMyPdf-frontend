@@ -2,50 +2,50 @@
  * Graphe LangGraph pour orchestrer les phases de l'agent
  */
 import { StateGraph, END, START } from '@langchain/langgraph';
-import type { AgentState } from './types';
+import type { AgentState, AgentGenerationOptions } from './types';
 import { planTemplate } from './planner';
 import { generateCode } from './generator';
 import { reviewAndCorrect } from './reviewer';
 import { processImagesForAnalysis } from './imageProcessor';
 import { extractVariablesFromTemplate, buildVariableStructure } from './templateUtils';
+import type { AiStepEmitter } from '@/lib/aiGeneration/types';
+import { emitStep, runStep } from '@/lib/aiGeneration/steps';
+import {
+  detectLandscapeFromImages,
+  resolveEffectiveLandscape,
+  buildLayoutSummaryFromPlan,
+} from '@/lib/aiGeneration/orientation';
+import { fontsStepLabel } from '@/lib/aiGeneration/detectFonts';
 
-// Note: extractVariablesFromTemplate et buildVariableStructure doivent être importés
-// depuis les utilitaires existants. Si elles n'existent pas, on les créera.
+let stepEmitter: AiStepEmitter | undefined;
 
-/**
- * Nœud Planificateur
- */
 async function plannerNode(state: AgentState): Promise<Partial<AgentState>> {
-  const plan = await planTemplate(state.prompt, state.images);
+  const plan = await runStep(stepEmitter, 'plan_layout', 'Plan de la mise en page', () =>
+    planTemplate(state.prompt, state.images, state.generationOptions),
+  );
   return {
     plan,
     iteration: state.iteration + 1,
   };
 }
 
-/**
- * Nœud Générateur
- */
 async function generatorNode(state: AgentState): Promise<Partial<AgentState>> {
   if (!state.plan) {
     throw new Error('Plan is required for generation');
   }
-
-  const generatedCode = await generateCode(state.plan, state.images);
-  return {
-    generatedCode,
-  };
+  const generatedCode = await runStep(stepEmitter, 'generate_html', 'Génération du HTML', () =>
+    generateCode(state.plan!, state.images, state.generationOptions),
+  );
+  return { generatedCode };
 }
 
-/**
- * Nœud Reviewer
- */
 async function reviewerNode(state: AgentState): Promise<Partial<AgentState>> {
   if (!state.generatedCode || !state.plan) {
     throw new Error('Generated code and plan are required for review');
   }
-
-  const review = await reviewAndCorrect(state.generatedCode, state.plan);
+  const review = await runStep(stepEmitter, 'review_html', 'Revue des contraintes PDF', () =>
+    reviewAndCorrect(state.generatedCode!, state.plan!, state.generationOptions),
+  );
   return {
     corrections: review.corrections,
     generatedCode: review.correctedCode,
@@ -53,27 +53,26 @@ async function reviewerNode(state: AgentState): Promise<Partial<AgentState>> {
   };
 }
 
-/**
- * Nœud Finalizer - Extrait les variables et finalise le template
- */
 async function finalizerNode(state: AgentState): Promise<Partial<AgentState>> {
   if (!state.generatedCode) {
     throw new Error('Generated code is required for finalization');
   }
-
-  // Extraire les variables Handlebars du template
-  const extractedVars = extractVariablesFromTemplate(state.generatedCode);
-  const suggestedVariables = buildVariableStructure(extractedVars, state.generatedCode);
-
+  const suggestedVariables = await runStep(
+    stepEmitter,
+    'extract_variables',
+    'Mise à jour des variables d’exemple',
+    async () => {
+      const extractedVars = extractVariablesFromTemplate(state.generatedCode!);
+      return buildVariableStructure(extractedVars, state.generatedCode!);
+    },
+  );
+  emitStep(stepEmitter, 'fonts', fontsStepLabel(state.generatedCode!), 'done');
   return {
     finalTemplate: state.generatedCode,
     suggestedVariables,
   };
 }
 
-/**
- * Condition de transition : décider si on corrige ou on finalise
- */
 function shouldCorrect(state: AgentState): string {
   if (state.corrections && state.corrections.length > 0 && state.iteration < state.maxIterations) {
     return 'correct';
@@ -81,41 +80,19 @@ function shouldCorrect(state: AgentState): string {
   return 'finalize';
 }
 
-/**
- * Construction du graphe avec définition des canaux
- */
 const workflow = new StateGraph<AgentState>({
   channels: {
-    prompt: {
-      reducer: (x: string, y: string | undefined) => y ?? x,
-    },
-    images: {
-      reducer: (x: any, y: any) => y ?? x,
-    },
-    plan: {
-      reducer: (x: any, y: any) => y ?? x,
-    },
-    generatedCode: {
-      reducer: (x: string | undefined, y: string | undefined) => y ?? x,
-    },
-    corrections: {
-      reducer: (x: string[] | undefined, y: string[] | undefined) => y ?? x,
-    },
-    iteration: {
-      reducer: (x: number, y: number | undefined) => y ?? x,
-    },
-    maxIterations: {
-      reducer: (x: number, y: number | undefined) => y ?? x,
-    },
-    finalTemplate: {
-      reducer: (x: string | undefined, y: string | undefined) => y ?? x,
-    },
-    suggestedVariables: {
-      reducer: (x: any, y: any) => y ?? x,
-    },
-    warnings: {
-      reducer: (x: string[] | undefined, y: string[] | undefined) => y ?? x,
-    },
+    prompt: { reducer: (x: string, y: string | undefined) => y ?? x },
+    images: { reducer: (x: any, y: any) => y ?? x },
+    plan: { reducer: (x: any, y: any) => y ?? x },
+    generatedCode: { reducer: (x: string | undefined, y: string | undefined) => y ?? x },
+    corrections: { reducer: (x: string[] | undefined, y: string[] | undefined) => y ?? x },
+    iteration: { reducer: (x: number, y: number | undefined) => y ?? x },
+    maxIterations: { reducer: (x: number, y: number | undefined) => y ?? x },
+    finalTemplate: { reducer: (x: string | undefined, y: string | undefined) => y ?? x },
+    suggestedVariables: { reducer: (x: any, y: any) => y ?? x },
+    warnings: { reducer: (x: string[] | undefined, y: string[] | undefined) => y ?? x },
+    generationOptions: { reducer: (x: any, y: any) => y ?? x },
   },
 })
   .addNode('planner', plannerNode)
@@ -126,40 +103,72 @@ const workflow = new StateGraph<AgentState>({
   .addEdge('planner', 'generator')
   .addEdge('generator', 'reviewer')
   .addConditionalEdges('reviewer', shouldCorrect, {
-    correct: 'generator', // Retour au générateur pour corriger
+    correct: 'generator',
     finalize: 'finalizer',
   })
   .addEdge('finalizer', END);
 
-/**
- * Compilation du graphe
- */
 const app = workflow.compile();
 
-/**
- * Fonction principale pour générer un template avec l'agent
- */
 export async function generateTemplateWithAgent(
   prompt: string,
   imageUrls?: string[],
-): Promise<{ content: string; suggestedVariables: Record<string, any>; warnings?: string[] }> {
-  // Traiter les images si présentes
-  const processedImages = imageUrls ? await processImagesForAnalysis(imageUrls) : undefined;
+  options?: AgentGenerationOptions,
+  emit?: AiStepEmitter,
+): Promise<{
+  content: string;
+  suggestedVariables: Record<string, unknown>;
+  warnings?: string[];
+  recommendedLandscape?: boolean;
+  layoutSummary?: string;
+}> {
+  stepEmitter = emit;
 
-  // État initial
+  const processedImages = imageUrls?.length
+    ? await runStep(emit, 'analyze_images', 'Analyse des images de référence', () =>
+        processImagesForAnalysis(imageUrls),
+      )
+    : undefined;
+
+  const detectedLandscape = processedImages ? detectLandscapeFromImages(processedImages) : false;
+  const effectiveLandscape = resolveEffectiveLandscape(
+    options?.isLandscape === true,
+    Boolean(processedImages?.length),
+    detectedLandscape,
+  );
+
+  emitStep(
+    emit,
+    'detect_orientation',
+    effectiveLandscape ? 'Orientation paysage' : 'Orientation portrait',
+    'done',
+  );
+
+  const generationOptions: AgentGenerationOptions = {
+    ...options,
+    isLandscape: effectiveLandscape,
+  };
+
   const initialState: AgentState = {
     prompt,
     images: processedImages,
+    generationOptions,
     iteration: 0,
-    maxIterations: 3, // Maximum 3 itérations de correction
+    maxIterations: 3,
   };
 
-  // Exécuter le graphe
   const result = await app.invoke(initialState);
+  stepEmitter = undefined;
+
+  const plan = result.plan;
+  const recommendedLandscape =
+    plan?.recommendedPageOrientation === 'landscape' || effectiveLandscape;
 
   return {
     content: result.finalTemplate || '',
     suggestedVariables: result.suggestedVariables || {},
     warnings: result.warnings,
+    recommendedLandscape,
+    layoutSummary: plan ? buildLayoutSummaryFromPlan(plan) : undefined,
   };
 }

@@ -43,8 +43,6 @@ import {
   IconWand,
   IconChartDots,
   IconShoppingCart,
-  IconPhoto,
-  IconUpload,
   IconX,
   IconTrash,
   IconChevronRight,
@@ -82,6 +80,10 @@ import { isPdfContentPaddingValid } from '@/utils/pdfContentPadding';
 import { prepareRenderedHtml } from '@/utils/prepareRenderedHtml';
 import notificationService from '@/services/NotificationService';
 import { authJsonHeaders } from '@/lib/authFetch';
+import AiChatPanel from '@/components/AiChat/AiChatPanel';
+import type { ChatMessage } from '@/lib/aiGeneration/types';
+import { normalizeEditorHtmlFragment } from '@/lib/aiGeneration/cleanHtml';
+import { useAiCredits } from '@/hooks/useAiCredits';
 import { FormatType } from '../../../../utils/types';
 import {
   CHART_TYPES,
@@ -175,17 +177,21 @@ const CreateTemplate: React.FC = () => {
   const [isLandScape, setIsLandScape] = useState<boolean>(false);
   const [fontsSelected, setFontsSelected] = useState([DEFAULT_FONT]);
   const [templateContent, setTemplateContent] = useState('');
-  const [prompt, setPrompt] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
   const [promptDrawerOpened, { open: openPromptDrawer, close: closePromptDrawer }] =
     useDisclosure(false);
-  const [files, setFiles] = useState<FileWithPath[]>([]);
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<
     Array<{ url: string; fileName: string; fileId: string }>
   >([]);
   const [isUploading, setIsUploading] = useState(false);
-  const openRef = useRef<() => void>(null);
+  const {
+    used: creditsUsed,
+    limit: creditsLimit,
+    remaining: creditsRemaining,
+    refresh: refreshAiCredits,
+  } = useAiCredits();
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInputDraft, setChatInputDraft] = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showTourButton, setShowTourButton] = useState(false);
   const [hasSeenTour, setHasSeenTour] = useLocalStorage('hasSeenTemplateEditorTour', false);
@@ -250,6 +256,11 @@ const CreateTemplate: React.FC = () => {
   useEffect(() => {
     fetchTemplate();
   }, []);
+
+  useEffect(() => {
+    setChatMessages([]);
+    setChatInputDraft('');
+  }, [params.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -468,53 +479,6 @@ const CreateTemplate: React.FC = () => {
     openAddVariable();
   };
 
-  const handleDrop = (acceptedFiles: FileWithPath[]) => {
-    // Limit to 5 files
-    const newFiles = [...files, ...acceptedFiles].slice(0, 5);
-    setFiles(newFiles);
-  };
-
-  const removeFile = (index: number) => {
-    setFiles((current) => current.filter((_, i) => i !== index));
-  };
-
-  const uploadFiles = async () => {
-    if (files.length === 0) return;
-
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      files.forEach((file) => {
-        formData.append('files', file);
-      });
-
-      const response = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const uploadData = await response.json();
-      if (uploadData.urls && Array.isArray(uploadData.urls) && uploadData.files) {
-        setUploadedUrls(uploadData.urls);
-        setUploadedFiles(
-          uploadData.files.map((file: any) => ({
-            url: file.url,
-            fileName: file.fileName,
-            fileId: file.public_id,
-          })),
-        );
-        setFiles([]);
-        notificationService.showSuccessNotification('Images uploaded successfully');
-      } else {
-        throw new Error('Failed to upload images');
-      }
-    } catch (error: any) {
-      notificationService.showErrorNotification(error?.message || 'Error uploading images');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const removeUploadedImage = (index: number) => {
     const fileToRemove = uploadedFiles[index];
 
@@ -573,92 +537,56 @@ const CreateTemplate: React.FC = () => {
     setUploadedFiles([]);
   };
 
-  const generateTemplateFromPrompt = async (): Promise<void> => {
-    if (!prompt) return;
+  const handleDropAndUpload = async (acceptedFiles: FileWithPath[]): Promise<void> => {
+    const remaining = 5 - uploadedUrls.length;
+    const limited = acceptedFiles.slice(0, remaining);
+    if (limited.length === 0) return;
 
-    setIsGenerating(true);
+    setIsUploading(true);
     try {
-      // If we have uploaded images, use the generate-template-from-images endpoint
-      if (uploadedUrls.length > 0) {
-        const response = await fetch('/api/generate-template-from-images', {
-          method: 'POST',
-          headers: authJsonHeaders(),
-          body: JSON.stringify({
-            prompt,
-            imageUrls: uploadedUrls,
-          }),
-        });
-
-        // Check if the response is ok before trying to parse JSON
-        if (!response.ok) {
-          const errorText = await response.text();
-          let errorMessage = 'Failed to generate template';
-
-          try {
-            // Try to parse the error as JSON
-            const errorJson = JSON.parse(errorText);
-            errorMessage = errorJson.error || errorJson.details || errorMessage;
-          } catch (parseError) {
-            // If parsing fails, use the raw text
-            errorMessage = errorText || errorMessage;
-          }
-
-          throw new Error(errorMessage);
-        }
-
-        const responseData = await response.json();
-        if (responseData.content) {
-          if (responseData.suggestedVariables) {
-            const { rest, charts } = splitChartsFromVariables(responseData.suggestedVariables);
-            setChartDatasets((prev) => ({ ...prev, ...charts }));
-            handleVariablesUpdate(rest);
-            setSuggestedVariables(responseData.suggestedVariables);
-          }
-          setCode(responseData.content);
-          closePromptDrawer();
-        }
+      const formData = new FormData();
+      limited.forEach((file) => formData.append('files', file));
+      const response = await fetch('/api/upload-image', { method: 'POST', body: formData });
+      const uploadData = await response.json();
+      if (uploadData.urls && Array.isArray(uploadData.urls) && uploadData.files) {
+        setUploadedUrls((prev) => [...prev, ...uploadData.urls].slice(0, 5));
+        setUploadedFiles((prev) =>
+          [
+            ...prev,
+            ...uploadData.files.map((f: any) => ({
+              url: f.url,
+              fileName: f.fileName,
+              fileId: f.public_id,
+            })),
+          ].slice(0, 5),
+        );
+        notificationService.showSuccessNotification('Images téléversées');
       } else {
-        // Otherwise use the regular generate-template endpoint
-        const response = await fetch('/api/generate-template', {
-          method: 'POST',
-          headers: authJsonHeaders(),
-          body: JSON.stringify({ prompt }),
-        });
-
-        // Check if the response is ok before trying to parse JSON
-        if (!response.ok) {
-          const errorText = await response.text();
-          let errorMessage = 'Failed to generate template';
-
-          try {
-            // Try to parse the error as JSON
-            const errorJson = JSON.parse(errorText);
-            errorMessage = errorJson.error || errorJson.details || errorMessage;
-          } catch (parseError) {
-            // If parsing fails, use the raw text
-            errorMessage = errorText || errorMessage;
-          }
-
-          throw new Error(errorMessage);
-        }
-
-        const generatedData = await response.json();
-        if (generatedData.content) {
-          if (generatedData.suggestedVariables) {
-            const { rest, charts } = splitChartsFromVariables(generatedData.suggestedVariables);
-            setChartDatasets((prev) => ({ ...prev, ...charts }));
-            handleVariablesUpdate(rest);
-            setSuggestedVariables(generatedData.suggestedVariables);
-          }
-          setCode(generatedData.content);
-          closePromptDrawer();
-        }
+        throw new Error('Failed to upload images');
       }
     } catch (error: any) {
-      notificationService.showErrorNotification(error?.message || 'Error generating template');
+      notificationService.showErrorNotification(error?.message || 'Erreur lors du téléversement');
     } finally {
-      setIsGenerating(false);
+      setIsUploading(false);
     }
+  };
+
+  const applyGenerationResult = (
+    content: string,
+    suggestedVariables: Record<string, unknown> | undefined,
+    recommendedLandscape: boolean,
+  ): void => {
+    if (suggestedVariables) {
+      const { rest, charts } = splitChartsFromVariables(suggestedVariables);
+      setChartDatasets((prev) => ({ ...prev, ...charts }));
+      handleVariablesUpdate(rest);
+      setSuggestedVariables(suggestedVariables);
+    }
+    const formatted = normalizeEditorHtmlFragment(content);
+    setCode(formatted);
+    setTemplateContent(formatted);
+    setEditorSessionKey((k) => k + 1);
+    setIsLandScape(recommendedLandscape);
   };
 
   const goToMarketplacePublishForm = (): void => {
@@ -857,282 +785,61 @@ const CreateTemplate: React.FC = () => {
         />
       ) : null}
 
-      {/* AI Prompt Drawer */}
+      {/* AI Chat Drawer */}
       <Drawer
+        keepMounted
         opened={promptDrawerOpened}
         onClose={closePromptDrawer}
-        title="Generate Template with AI"
+        title="Assistant IA"
         position="right"
         size="lg"
         styles={{
           header: {
             backgroundColor: '#1A1B1E',
             color: 'white',
-            padding: '1rem',
+            padding: '0.75rem 1rem',
             borderBottom: '1px solid #373A40',
+          },
+          body: {
+            padding: 0,
+            height: '100%',
           },
           content: {
             backgroundColor: '#1A1B1E',
             color: 'white',
+            display: 'flex',
+            flexDirection: 'column',
           },
           close: {
             color: 'white',
-            transition: 'all 0.2s ease',
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              transform: 'scale(1.1)',
-            },
           },
         }}
       >
-        <Stack gap="xl" p="xl">
-          <Text size="sm" c="dimmed">
-            Describe your template and the AI will generate it along with suggested variables. You
-            can also upload images to help the AI understand your design requirements.
-          </Text>
-
-          {/* Daily AI limits */}
-          <Box
-            p="sm"
-            style={{
-              backgroundColor: '#25262B',
-              borderRadius: 8,
-              border: '1px solid #373A40',
-            }}
-          >
-            <Text size="xs" fw={600} c="dimmed" mb={6} fs="uppercase">
-              Daily Limits
-            </Text>
-            <Group gap="sm">
-              <Badge color="blue" variant="light" size="sm">
-                Text generation: {process.env.NEXT_PUBLIC_AI_QUOTA_TEXT_ONLY ?? '2'} / day
-              </Badge>
-              <Badge color="violet" variant="light" size="sm">
-                Image generation: {process.env.NEXT_PUBLIC_AI_QUOTA_WITH_IMAGE ?? '1'} / day
-              </Badge>
-            </Group>
-          </Box>
-
-          {/* Image Upload Section */}
-          {uploadedUrls.length > 0 ? (
-            <Box>
-              <Group justify="space-between" mb="xs">
-                <Text size="sm" fw={500}>
-                  Uploaded Images
-                </Text>
-                <Button
-                  variant="subtle"
-                  color="red"
-                  size="xs"
-                  leftSection={<IconTrash size={14} />}
-                  onClick={clearImages}
-                >
-                  Clear All
-                </Button>
-              </Group>
-              <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="xs">
-                {uploadedUrls.map((url, index) => (
-                  <Box key={index} pos="relative">
-                    <ActionIcon
-                      color="red"
-                      variant="filled"
-                      radius="xl"
-                      size="sm"
-                      style={{ position: 'absolute', top: 5, right: 5, zIndex: 10 }}
-                      onClick={() => removeUploadedImage(index)}
-                    >
-                      <IconX size={14} />
-                    </ActionIcon>
-                    <Image
-                      src={url}
-                      height={120}
-                      fit="cover"
-                      radius="md"
-                      style={{ border: '1px solid #373A40' }}
-                    />
-                  </Box>
-                ))}
-              </SimpleGrid>
-            </Box>
-          ) : (
-            <Box>
-              <Text size="sm" fw={500} mb="xs">
-                Upload Images (Optional)
-              </Text>
-              <Dropzone
-                onDrop={handleDrop}
-                accept={['image/png', 'image/jpeg', 'image/gif', 'image/webp']}
-                maxSize={5 * 1024 * 1024}
-                maxFiles={5}
-                openRef={openRef}
-                styles={{
-                  root: {
-                    borderColor: '#373A40',
-                    backgroundColor: '#25262B',
-                    '&:hover': {
-                      borderColor: '#3B82F6',
-                    },
-                  },
-                }}
-              >
-                <Group justify="center" gap="xl" style={{ minHeight: 100, pointerEvents: 'none' }}>
-                  <Dropzone.Accept>
-                    <IconUpload size={40} stroke={1.5} color="#3B82F6" />
-                  </Dropzone.Accept>
-                  <Dropzone.Reject>
-                    <IconX size={40} stroke={1.5} color="#ff0000" />
-                  </Dropzone.Reject>
-                  <Dropzone.Idle>
-                    <IconPhoto size={40} stroke={1.5} color="#909296" />
-                  </Dropzone.Idle>
-
-                  <Stack gap="xs" style={{ textAlign: 'center' }}>
-                    <Text size="sm" inline c="white">
-                      Drag images here or click to select files
-                    </Text>
-                    <Text size="xs" c="dimmed" inline>
-                      Upload up to 5 images, each file should not exceed 5MB
-                    </Text>
-                  </Stack>
-                </Group>
-              </Dropzone>
-
-              {files.length > 0 && (
-                <Box mt="md">
-                  <Text size="sm" fw={500} mb="xs">
-                    Selected Images
-                  </Text>
-                  <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="xs">
-                    {files.map((file, index) => (
-                      <Box key={index} pos="relative">
-                        <ActionIcon
-                          color="red"
-                          variant="filled"
-                          radius="xl"
-                          size="sm"
-                          style={{ position: 'absolute', top: 5, right: 5, zIndex: 10 }}
-                          onClick={() => removeFile(index)}
-                        >
-                          <IconX size={14} />
-                        </ActionIcon>
-                        <Image
-                          src={URL.createObjectURL(file)}
-                          height={120}
-                          fit="cover"
-                          radius="md"
-                          style={{ border: '1px solid #373A40' }}
-                          onLoad={() => URL.revokeObjectURL(URL.createObjectURL(file))}
-                        />
-                      </Box>
-                    ))}
-                  </SimpleGrid>
-
-                  <Group justify="flex-end" mt="md">
-                    <Button variant="subtle" color="gray" onClick={() => setFiles([])}>
-                      Clear
-                    </Button>
-                    <Button
-                      onClick={uploadFiles}
-                      loading={isUploading}
-                      leftSection={<IconUpload size={16} />}
-                      color="blue"
-                    >
-                      Upload
-                    </Button>
-                  </Group>
-                </Box>
-              )}
-            </Box>
-          )}
-
-          <Textarea
-            label="Template Description"
-            description="Be specific about the layout, sections, and design elements you want"
-            placeholder="Create a modern invoice template with a clean header, company details section, itemized table with calculations, and a professional footer..."
-            minRows={4}
-            autosize
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            styles={{
-              root: {
-                '& label': {
-                  color: 'white',
-                  marginBottom: '0.5rem',
-                },
-                '& .mantine-Textarea-description': {
-                  color: '#909296',
-                },
-              },
-              input: {
-                backgroundColor: '#25262B',
-                color: 'white',
-                border: '1px solid #373A40',
-                transition: 'all 0.2s ease',
-                '&:focus': {
-                  borderColor: '#3B82F6',
-                  boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.2)',
-                },
-              },
-            }}
-          />
-
-          <Button
-            onClick={generateTemplateFromPrompt}
-            loading={isGenerating}
-            loaderProps={{ type: 'dots' }}
-            disabled={!prompt}
-            leftSection={<IconWand size={16} />}
-            variant="filled"
-            color="blue"
-            fullWidth
-            styles={{
-              root: {
-                height: '2.75rem',
-                transition: 'all 0.2s ease',
-                '&:not(:disabled):hover': {
-                  transform: 'translateY(-1px)',
-                },
-              },
-            }}
-          >
-            Generate Template
-          </Button>
-
-          {suggestedVariables && (
-            <Box
-              style={{
-                backgroundColor: '#25262B',
-                padding: '1rem',
-                borderRadius: '8px',
-                border: '1px solid #373A40',
-              }}
-            >
-              <Text size="sm" fw={500} c="white" mb="md">
-                Suggested Variables
-              </Text>
-              <Text size="xs" c="dimmed" mb="md">
-                The AI has generated a set of variables with realistic sample data. You can review
-                and modify them in the variables panel.
-              </Text>
-              <Button
-                onClick={mergeSuggestedVariables}
-                variant="light"
-                color="blue"
-                fullWidth
-                styles={{
-                  root: {
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      transform: 'translateY(-1px)',
-                    },
-                  },
-                }}
-              >
-                Use Suggested Variables
-              </Button>
-            </Box>
-          )}
-        </Stack>
+        <AiChatPanel
+          currentHtml={code}
+          variables={variables}
+          format={format}
+          isLandscape={isLandScape}
+          pdfContentPadding={pdfContentPadding}
+          creditsUsed={creditsUsed}
+          creditsLimit={creditsLimit}
+          creditsRemaining={creditsRemaining}
+          uploadedUrls={uploadedUrls}
+          isUploading={isUploading}
+          messages={chatMessages}
+          setMessages={setChatMessages}
+          inputText={chatInputDraft}
+          setInputText={setChatInputDraft}
+          onDrop={handleDropAndUpload}
+          onClearImages={clearImages}
+          onRemoveImage={removeUploadedImage}
+          onResultApply={applyGenerationResult}
+          onCreditsRefresh={refreshAiCredits}
+          onClearConversation={() => {
+            setChatMessages([]);
+            setChatInputDraft('');
+          }}
+        />
       </Drawer>
 
       {/* Template Selection Drawer */}

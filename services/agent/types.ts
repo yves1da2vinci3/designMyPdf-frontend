@@ -11,6 +11,7 @@ export interface ProcessedImage {
   mimeType: string;
   width?: number;
   height?: number;
+  orientation?: 'landscape' | 'portrait' | 'square';
 }
 
 /**
@@ -53,11 +54,24 @@ export interface TemplatePlan {
     avoidSticky: boolean;
     useExplicitWidths: boolean;
   };
+  recommendedPageOrientation?: 'landscape' | 'portrait';
   imageAnalysis?: {
     detectedColors: string[];
     layout: string;
     components: string[];
+    imageDimensions?: Array<{
+      width: number;
+      height: number;
+      orientation: string;
+    }>;
   };
+}
+
+export interface AgentGenerationOptions {
+  format?: string;
+  isLandscape?: boolean;
+  pdfContentPadding?: string;
+  apiKey?: string;
 }
 
 /**
@@ -80,6 +94,7 @@ export interface ReviewedCode {
   corrections: string[];
   isValid: boolean;
   warnings?: string[];
+  usage?: { model: string; inputTokens: number; outputTokens: number };
 }
 
 /**
@@ -104,6 +119,7 @@ export interface ReferenceTemplate {
 export interface AgentState {
   prompt: string;
   images?: ProcessedImage[];
+  generationOptions?: AgentGenerationOptions;
   plan?: TemplatePlan;
   generatedCode?: string;
   corrections?: string[];
@@ -120,5 +136,65 @@ export interface AgentState {
 export interface FinalTemplateResult {
   content: string;
   suggestedVariables: Record<string, any>;
+  warnings?: string[];
+}
+
+export interface UiTypographyEntry {
+  element: string;
+  classes: string;
+}
+
+export interface UiDomNode {
+  id: string;
+  role: string;
+  layout: string;
+  children?: string[];
+}
+
+export interface UiSpacingEntry {
+  zone: string;
+  classes: string;
+}
+
+export interface UiColorZone {
+  zoneId: string;
+  hex: string;
+  tailwind: string;
+}
+
+export interface CriticDelta {
+  zone: string;
+  probleme: string;
+  fix: string;
+}
+
+/** Analyse structurelle JSON (nœud Analyst). */
+export interface UiAnalysis {
+  palette_couleurs: string[];
+  typographie: UiTypographyEntry[];
+  structure_dom: UiDomNode[];
+  espacements: UiSpacingEntry[];
+  icones?: 'lucide' | 'fontawesome' | 'none' | string;
+  viewport_recommande?: { width: number; height: number };
+  dimensions_maquette?: { width: number; height: number };
+  couleurs_par_zone?: UiColorZone[];
+}
+
+export interface FidelityAgentState {
+  prompt: string;
+  images: ProcessedImage[];
+  generationOptions: AgentGenerationOptions;
+  analysis?: UiAnalysis;
+  generatedCode?: string;
+  draftVariables?: Record<string, unknown>;
+  renderPngBase64?: string;
+  criticNotes?: string;
+  criticDeltas?: CriticDelta[];
+  criticPassed?: boolean;
+  usageLog?: Array<{ model: string; inputTokens: number; outputTokens: number }>;
+  iteration: number;
+  maxIterations: number;
+  finalTemplate?: string;
+  suggestedVariables?: Record<string, unknown>;
   warnings?: string[];
 }

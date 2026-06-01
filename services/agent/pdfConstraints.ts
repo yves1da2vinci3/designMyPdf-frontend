@@ -1,6 +1,7 @@
 /**
  * Contraintes et documentation de survie pour le rendu PDF
  */
+import { getContentAreaWidthPx } from '@/utils/pdfPageLayout';
 
 /**
  * Guide de survie PDF - Contraintes critiques pour le rendu
@@ -105,6 +106,39 @@ export const PDF_REQUIRED_PATTERNS: RequiredPattern[] = [
     description: 'All image sources must be dynamic using Handlebars',
   },
 ];
+
+/**
+ * Avertit si le HTML semble trop large pour une page portrait.
+ */
+export function validateOrientationConstraints(
+  code: string,
+  targetLandscape: boolean,
+  paperSize: string,
+  effectiveLandscape: boolean,
+): { warnings: string[] } {
+  const warnings: string[] = [];
+  if (effectiveLandscape || targetLandscape) return { warnings };
+
+  const contentWidth = getContentAreaWidthPx(paperSize, false);
+  const threshold = contentWidth * 0.9;
+  const minWidthRe = /min-w-\[(\d+)px\]|w-\[(\d+)px\]/g;
+  let m: RegExpExecArray | null;
+  while ((m = minWidthRe.exec(code)) !== null) {
+    const px = parseInt(m[1] || m[2], 10);
+    if (px >= threshold) {
+      warnings.push(
+        `Fixed width ${px}px may overflow portrait page (~${contentWidth}px content width). Use landscape or reduce width.`,
+      );
+      break;
+    }
+  }
+  if (/grid-cols-3|grid-cols-4/.test(code) && !targetLandscape) {
+    warnings.push(
+      'Multi-column grid (3+) may be too wide for portrait PDF; consider landscape orientation.',
+    );
+  }
+  return { warnings };
+}
 
 /**
  * Vérifie si le code respecte les contraintes PDF

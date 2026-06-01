@@ -1,31 +1,33 @@
 /**
  * Reviewer - Phase 3: Valide et corrige le code généré
  */
-import { ChatAnthropic } from '@langchain/anthropic';
 import { HumanMessage } from '@langchain/core/messages';
-import type { TemplatePlan, ReviewedCode } from './types';
+import type { TemplatePlan, ReviewedCode, AgentGenerationOptions } from './types';
 import {
   validatePDFConstraints,
+  validateOrientationConstraints,
   generateCorrectionPrompt,
-  PDF_SURVIVAL_GUIDE,
 } from './pdfConstraints';
-
-/**
- * Modèle Claude configuré pour la révision
- */
-const model = new ChatAnthropic({
-  modelName: 'claude-haiku-4-5-20251001',
-  temperature: 0.2, // Plus déterministe pour la correction
-  maxTokens: 8192,
-  anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
-});
+import { createChatAnthropic } from './anthropicClient';
+import { getAiTextModel } from '@/lib/aiGeneration/models';
 
 /**
  * Révision et correction du code généré
  */
-export async function reviewAndCorrect(code: string, plan: TemplatePlan): Promise<ReviewedCode> {
-  // Validation automatique des contraintes PDF
+export async function reviewAndCorrect(
+  code: string,
+  plan: TemplatePlan,
+  options?: AgentGenerationOptions,
+): Promise<ReviewedCode> {
+  const model = createChatAnthropic(false, options?.apiKey);
   const validation = validatePDFConstraints(code);
+  const orientationCheck = validateOrientationConstraints(
+    code,
+    plan.recommendedPageOrientation === 'landscape' || options?.isLandscape === true,
+    options?.format || 'a4',
+    options?.isLandscape === true || plan.recommendedPageOrientation === 'landscape',
+  );
+  validation.warnings.push(...orientationCheck.warnings);
 
   // Si le code est valide, retourner directement
   if (validation.isValid && validation.warnings.length === 0) {
@@ -45,6 +47,9 @@ export async function reviewAndCorrect(code: string, plan: TemplatePlan): Promis
     });
 
     const response = await model.invoke([message]);
+    const meta = response.response_metadata as
+      | { usage?: { input_tokens?: number; output_tokens?: number } }
+      | undefined;
     let correctedCode = response.content.toString().trim();
 
     // Nettoyer le code
@@ -68,6 +73,11 @@ export async function reviewAndCorrect(code: string, plan: TemplatePlan): Promis
       corrections: validation.errors,
       isValid: revalidation.isValid,
       warnings: [...validation.warnings, ...revalidation.warnings],
+      usage: {
+        model: getAiTextModel(),
+        inputTokens: meta?.usage?.input_tokens ?? 0,
+        outputTokens: meta?.usage?.output_tokens ?? 0,
+      },
     };
   }
 
