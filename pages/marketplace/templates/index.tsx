@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import type { GetServerSideProps } from 'next';
+import { useRouter } from 'next/router';
 import {
   Box,
   Container,
@@ -196,3 +197,7 @@ export default function MarketplaceTemplates() {
     </Box>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => ({
+  props: {},
+});

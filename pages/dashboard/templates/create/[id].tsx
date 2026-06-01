@@ -30,7 +30,8 @@ import {
   ColorInput,
   SegmentedControl,
 } from '@mantine/core';
-import { useRouter, useParams } from 'next/navigation';
+import type { GetServerSideProps } from 'next';
+import { useRouter } from 'next/router';
 import { useDisclosure } from '@mantine/hooks';
 import { DndProvider, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -156,9 +157,15 @@ const data = {
   showTerms: true,
 };
 
+function resolveTemplateIdFromQuery(queryId: string | string[] | undefined): string {
+  if (typeof queryId === 'string') return queryId;
+  if (Array.isArray(queryId)) return queryId[0] ?? '';
+  return '';
+}
+
 const CreateTemplate: React.FC = () => {
-  const params = useParams();
   const router = useRouter();
+  const templateId = router.isReady ? resolveTemplateIdFromQuery(router.query.id) : '';
   const editorRef = useRef<any>(null);
   const [monacoReady, setMonacoReady] = useState(false);
   /** Force Monaco remount after loading external HTML so model + editorRef stay in sync. */
@@ -229,10 +236,11 @@ const CreateTemplate: React.FC = () => {
     [variables, chartDatasets],
   );
 
-  const fetchTemplate = async () => {
+  const fetchTemplate = async (id: string) => {
+    if (!id) return;
     try {
       setIsLoading(RequestStatus.InProgress);
-      const fetchedTemplate = await templateApi.getTemplateById(params.id as string);
+      const fetchedTemplate = await templateApi.getTemplateById(id);
       setTemplate(fetchedTemplate);
       setTemplateName(fetchedTemplate.name?.trim() ?? '');
       setCode(fetchedTemplate.content || DEFAULT_TEMPLATE);
@@ -254,13 +262,14 @@ const CreateTemplate: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchTemplate();
-  }, []);
+    if (!router.isReady || !templateId) return;
+    void fetchTemplate(templateId);
+  }, [router.isReady, templateId]);
 
   useEffect(() => {
     setChatMessages([]);
     setChatInputDraft('');
-  }, [params.id]);
+  }, [templateId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1428,7 +1437,7 @@ const CreateTemplate: React.FC = () => {
       </Group>
 
       {/* Main Content */}
-      {isLoading === RequestStatus.InProgress ? (
+      {!router.isReady || isLoading === RequestStatus.InProgress ? (
         <Center h="calc(100vh - 60px)" w="100%">
           <Loader size="lg" color="blue" />
         </Center>
@@ -2073,5 +2082,9 @@ const CreateTemplate: React.FC = () => {
     </Stack>
   );
 };
+
+export const getServerSideProps: GetServerSideProps = async () => ({
+  props: {},
+});
 
 export default CreateTemplate;
