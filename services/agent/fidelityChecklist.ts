@@ -28,6 +28,12 @@ export function buildAnalysisChecklist(analysis: UiAnalysis): string {
       lines.push(`  • ${e.zone}: ${e.classes}`);
     }
   }
+  if (analysis.bordures_et_ombres?.length) {
+    lines.push('- Bordures et Ombres:');
+    for (const b of analysis.bordures_et_ombres) {
+      lines.push(`  • ${b.zone}: ${b.classes}`);
+    }
+  }
   if (analysis.icones && analysis.icones !== 'none') {
     lines.push(`- Icônes: ${analysis.icones} (CDN, data-lucide)`);
   }

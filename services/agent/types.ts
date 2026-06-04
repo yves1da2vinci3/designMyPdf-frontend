@@ -178,6 +178,7 @@ export interface UiAnalysis {
   viewport_recommande?: { width: number; height: number };
   dimensions_maquette?: { width: number; height: number };
   couleurs_par_zone?: UiColorZone[];
+  bordures_et_ombres?: Array<{ zone: string; classes: string }>;
 }
 
 export interface FidelityAgentState {

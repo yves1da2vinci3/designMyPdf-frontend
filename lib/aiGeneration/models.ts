@@ -1,5 +1,5 @@
-const DEFAULT_TEXT = 'claude-haiku-4-5-20251001';
-const DEFAULT_VISION = 'claude-haiku-4-5-20251001';
+const DEFAULT_TEXT = 'claude-3-5-sonnet-latest';
+const DEFAULT_VISION = 'claude-3-5-sonnet-latest';
 
 /** Modèle pour prompt texte seul. */
 export function getAiTextModel(): string {

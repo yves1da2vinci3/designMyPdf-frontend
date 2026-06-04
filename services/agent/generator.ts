@@ -64,6 +64,7 @@ ${TEMPLATE_DESIGN_GUIDE}
 ${pageContext}
 
 CRITICAL REQUIREMENTS:
+0. QUALITY: Generate a STUNNING, HIGH-END design. Use generous whitespace, professional typography, and a refined color palette.
 1. Generate COMPLETE HTML code from start to finish (no ellipsis, no placeholders)
 2. Use ONLY Tailwind CSS utility classes
 3. Use semantic HTML5 tags (h1-h6 for headings, not div)

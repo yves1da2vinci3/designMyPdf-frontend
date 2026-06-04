@@ -106,9 +106,16 @@ IMPORTANT:
 - COLORS: Use at most 5 Tailwind color classes (primary/neutral/surface/border/text); no gradients; no opacity modifiers
 ${
   processedImages && processedImages.length > 0
-    ? '- Extract exact colors and layout from the provided images; set recommendedPageOrientation to landscape if reference image(s) are clearly wide/horizontal'
-    : '- Set recommendedPageOrientation based on document type (wide posters → landscape, letters/CV → portrait)'
+    ? `- Extract exact colors (HEX or Tailwind), border-radius, shadows, and layout from the provided images.
+- Set recommendedPageOrientation to landscape if reference image(s) are clearly wide/horizontal.`
+    : `- Set recommendedPageOrientation based on document type (wide posters → landscape, letters/CV → portrait)`
 }
+
+ADDITIONAL QUALITY GUIDELINES:
+- Aim for a high-end, professional look.
+- Use sophisticated spacing (e.g., py-12, py-16 for hero sections).
+- Define clear typography rules for the generator.
+- Be precise about colors from the image analysis.
 
 Return ONLY valid JSON, no markdown, no explanations.`;
 
