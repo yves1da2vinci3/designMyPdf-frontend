@@ -23,6 +23,12 @@ import type {
 import { emitStep, runStep } from '@/lib/aiGeneration/steps';
 import { normalizeEditorHtmlFragment } from '@/lib/aiGeneration/cleanHtml';
 import { runSinglePassImageGeneration } from './imageVisionGeneration';
+import {
+  hasBillableUsage,
+  mergeUsageLogs,
+  MISSING_USAGE_WARNING,
+  usageFromAnthropicResponse,
+} from './usageTypes';
 
 function buildTextOnlyPrompt(prompt: string, pageContext: string): string {
   return `You are an EXPERT UI/UX designer. Create a PROFESSIONAL template for: ${prompt}
@@ -158,8 +164,10 @@ export async function runTemplateGeneration(
       if (msg.content.length === 0 || msg.content[0].type !== 'text') {
         throw new Error('Invalid response from AI model');
       }
-      inputTokens += msg.usage?.input_tokens ?? 0;
-      outputTokens += msg.usage?.output_tokens ?? 0;
+      const usage = usageFromAnthropicResponse(model, msg.usage, msg.model);
+      inputTokens = usage.inputTokens;
+      outputTokens = usage.outputTokens;
+      model = usage.model;
       return normalizeEditorHtmlFragment(msg.content[0].text);
     });
   }
@@ -177,8 +185,12 @@ export async function runTemplateGeneration(
 
   emitStep(emit, 'fonts', fontsStepLabel(template), 'done');
 
-  const usageEntry =
-    inputTokens > 0 || outputTokens > 0 ? [{ model, inputTokens, outputTokens }] : undefined;
+  const usageLog = mergeUsageLogs([{ model, inputTokens, outputTokens }]);
+  const usageWarnings: string[] = [];
+  if (!hasBillableUsage(usageLog)) {
+    usageWarnings.push(MISSING_USAGE_WARNING);
+    console.warn('[templateGeneration] Tokens usage vides après génération', { model });
+  }
 
   const modeLabel = useVisualQualityMode
     ? 'mode qualité'
@@ -196,12 +208,15 @@ export async function runTemplateGeneration(
     inputTokens,
     outputTokens,
     model,
-    usageLog: usageEntry,
-    warnings:
-      outputTokens >= 16000
-        ? [
-            'La sortie du modèle est proche de la limite — le HTML peut être tronqué. Réessayez avec une maquette plus simple ou activez le mode qualité.',
-          ]
-        : undefined,
+    usageLog,
+    warnings: (() => {
+      const w = [...usageWarnings];
+      if (outputTokens >= 16000) {
+        w.push(
+          'La sortie du modèle est proche de la limite — le HTML peut être tronqué. Réessayez avec une maquette plus simple ou activez le mode qualité.',
+        );
+      }
+      return w.length ? w : undefined;
+    })(),
   };
 }

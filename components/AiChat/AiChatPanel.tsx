@@ -15,7 +15,11 @@ import { Dropzone } from '@mantine/dropzone';
 import { IconPaperclip, IconRobot, IconSend, IconX } from '@tabler/icons-react';
 import { v4 as uuidv4 } from 'uuid';
 import type { AiStep, ChatMessage } from '@/lib/aiGeneration/types';
-import { formatAiBudgetLabel, getChatImageModeHint } from '@/lib/aiGeneration/chatImageMode';
+import {
+  formatAiBudgetLabel,
+  getAiCreditsCostHint,
+  getChatImageModeHint,
+} from '@/lib/aiGeneration/chatImageMode';
 import {
   getAiCreditsUsedPercent,
   getAiCreditsWarningBanner,
@@ -149,7 +153,9 @@ export default function AiChatPanel({
       });
 
       onResultApply(result.content, result.suggestedVariables, result.recommendedLandscape);
-      onCreditsRefresh?.();
+      if (onCreditsRefresh) {
+        await onCreditsRefresh();
+      }
 
       if (uploadedUrls.length > 0) {
         onClearImages();
@@ -303,6 +309,11 @@ export default function AiChatPanel({
         >
           {imageModeHint}
         </Badge>
+        {uploadedUrls.length > 0 && (
+          <Text size="xs" c="dimmed" mt={4}>
+            {getAiCreditsCostHint(visualQualityMode)}
+          </Text>
+        )}
       </Box>
 
       {/* Attached images strip */}

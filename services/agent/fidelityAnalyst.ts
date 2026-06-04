@@ -87,7 +87,7 @@ export async function runFidelityAnalyst(
 
   return {
     analysis,
-    usage: usageFromAnthropicResponse(model, response.usage),
+    usage: usageFromAnthropicResponse(model, response.usage, response.model),
   };
 }
 

@@ -130,6 +130,6 @@ export async function runFidelityCoder(params: {
   return {
     html,
     suggestedVariables: parsed.suggestedVariables,
-    usage: usageFromAnthropicResponse(model, response.usage),
+    usage: usageFromAnthropicResponse(model, response.usage, response.model),
   };
 }

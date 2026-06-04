@@ -67,7 +67,7 @@ export async function runSinglePassImageGeneration(params: {
     return {
       html,
       suggestedVariables: parsed.suggestedVariables ?? {},
-      usage: usageFromAnthropicResponse(model, msg.usage),
+      usage: usageFromAnthropicResponse(model, msg.usage, msg.model),
     };
   });
 }

@@ -52,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }),
     );
 
-    const { warnings } = await consumeGenerationCredits(authHeader, result);
+    const { warnings, creditsDeducted } = await consumeGenerationCredits(authHeader, result);
 
     return res.status(200).json({
       content: result.content,
@@ -60,6 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       recommendedLandscape: result.recommendedLandscape,
       layoutSummary: result.layoutSummary,
       warnings: warnings.length ? warnings : result.warnings,
+      creditsDeducted: creditsDeducted > 0 ? creditsDeducted : undefined,
     });
   } catch (error: unknown) {
     const message =

@@ -29,6 +29,7 @@ export type AiStreamEvent =
       layoutSummary?: string;
       responseText?: string;
       warnings?: string[];
+      creditsDeducted?: number;
     }
   | { type: 'error'; message: string };
 

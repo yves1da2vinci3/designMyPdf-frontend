@@ -21,3 +21,10 @@ export function formatAiBudgetLabel(remaining: number, limit: number): string {
   const fmt = (n: number) => n.toFixed(2);
   return `${fmt(remaining)} crédits restants / ${fmt(limit)} ce mois`;
 }
+
+export function getAiCreditsCostHint(visualQualityEnabled = false): string {
+  if (visualQualityEnabled) {
+    return 'Coût selon tokens (Sonnet 4) — mode qualité = plusieurs appels, décompte plus élevé.';
+  }
+  return 'Coût selon tokens consommés (Claude Sonnet 4).';
+}
