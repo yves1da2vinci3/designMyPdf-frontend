@@ -24,7 +24,7 @@ export const TEMPLATE_DESIGN_GUIDE = `
 DESIGN CONSTRAINTS FOR PDF TEMPLATES:
 - Padding: the root wrapper MUST use p-0 (the preview scaffold already adds 2rem/10mm padding around it); inner sections use py-6 to py-12 for better whitespace; NEVER add p-* on the outermost div
 - Spacing between sections: use space-y-8 to space-y-12 or margin mb-8 to mb-12 for a premium feel; NEVER gap-*
-- Colors: Use professional palettes (e.g., slate-900 for text, blue-600 for accents). Sublte gradients are allowed if they enhance the professional look (e.g., from-slate-50 to-white).
+- Colors: Use professional palettes (e.g., slate-900 for text, blue-600 for accents). Subtle gradients are allowed if they enhance the professional look (e.g., from-slate-50 to-white).
 - Typography: Focus on hierarchy. Use font-bold for headings, tracking-tight for titles, and leading-relaxed for body text.
 - Hover/animation: NEVER use hover:, transition-, scale-, translate- (not rendered in PDF).
 - Container: max-w-4xl or max-w-5xl mx-auto; avoid max-w-7xl (too wide for A4).

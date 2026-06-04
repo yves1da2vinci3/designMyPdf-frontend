@@ -19,6 +19,7 @@ export function parseUiAnalysis(raw: string): UiAnalysis {
   if (!Array.isArray(parsed.espacements)) parsed.espacements = [];
   if (!Array.isArray(parsed.couleurs_par_zone)) parsed.couleurs_par_zone = [];
   if (!Array.isArray(parsed.bordures_et_ombres)) parsed.bordures_et_ombres = [];
+  if (!Array.isArray(parsed.effets_visuels)) parsed.effets_visuels = [];
   return parsed;
 }
 

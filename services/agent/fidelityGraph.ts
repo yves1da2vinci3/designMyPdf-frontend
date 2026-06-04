@@ -214,7 +214,7 @@ export async function runFidelityGraph(
     'done',
   );
 
-  const maxIterations = req.maxFidelityIterations ?? 2;
+  const maxIterations = req.maxFidelityIterations ?? 3;
 
   const initialState: FidelityAgentState = {
     prompt: req.prompt,

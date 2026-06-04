@@ -2,7 +2,9 @@ import type { UiAnalysis } from './types';
 
 /** Checklist textuelle injectée dans le 1er Coder pour forcer l’application de l’analyse. */
 export function buildAnalysisChecklist(analysis: UiAnalysis): string {
-  const lines: string[] = ['CHECKLIST OBLIGATOIRE (appliquer avant de répondre):'];
+  const lines: string[] = [
+    "CHECKLIST DE FIDÉLITÉ (L'image de référence reste la source de vérité absolue):",
+  ];
   if (analysis.dimensions_maquette) {
     lines.push(
       `- Dimensions cible: ${analysis.dimensions_maquette.width}×${analysis.dimensions_maquette.height}px`,
@@ -32,6 +34,12 @@ export function buildAnalysisChecklist(analysis: UiAnalysis): string {
     lines.push('- Bordures et Ombres:');
     for (const b of analysis.bordures_et_ombres) {
       lines.push(`  • ${b.zone}: ${b.classes}`);
+    }
+  }
+  if (analysis.effets_visuels?.length) {
+    lines.push('- Effets visuels:');
+    for (const f of analysis.effets_visuels) {
+      lines.push(`  • ${f.zone}: ${f.classes}`);
     }
   }
   if (analysis.icones && analysis.icones !== 'none') {
