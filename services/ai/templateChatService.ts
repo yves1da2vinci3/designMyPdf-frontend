@@ -6,6 +6,7 @@ import {
   extractVariablesFromTemplate,
   buildVariableStructure,
 } from '@/services/agent/templateUtils';
+import { buildVisionUserPromptFromMessage } from '@/lib/aiGeneration/imageGenerationPrompt';
 import { runTemplateGeneration } from './templateGenerationService';
 import type { AiStepEmitter, TemplateGenerationResult } from '@/lib/aiGeneration/types';
 
@@ -18,8 +19,10 @@ export interface ChatTurnRequest {
   format?: string;
   isLandscape?: boolean;
   pdfContentPadding?: string;
-  /** false = one-shot rapide sans graphe fidélité */
+  /** Ancien graphe Analyst→JSON (opt-in tests) */
   useFidelityGraph?: boolean;
+  /** Mode qualité : vision + render + critique + 1 affinage */
+  useVisualQualityMode?: boolean;
   maxFidelityIterations?: number;
 }
 
@@ -86,7 +89,8 @@ function buildVisionPromptFromChat(
   const htmlNote = currentHtml?.trim()
     ? '\nIgnore le template HTML actuellement dans l’éditeur. Reproduis uniquement la ou les image(s) jointe(s).\n'
     : '';
-  return `${historyText}${htmlNote}Demande utilisateur: ${message}`;
+  const visionPrompt = buildVisionUserPromptFromMessage(message);
+  return `${historyText}${htmlNote}${visionPrompt}`;
 }
 
 export async function runTemplateChatTurn(
@@ -110,6 +114,7 @@ export async function runTemplateChatTurn(
           pdfContentPadding: request.pdfContentPadding,
           useAgent: false,
           useFidelityGraph: request.useFidelityGraph === true,
+          useVisualQualityMode: request.useVisualQualityMode === true,
           maxFidelityIterations: request.maxFidelityIterations,
         },
         emit,
@@ -144,6 +149,7 @@ export async function runTemplateChatTurn(
           pdfContentPadding: request.pdfContentPadding,
           useAgent: false,
           useFidelityGraph: request.useFidelityGraph === true,
+          useVisualQualityMode: request.useVisualQualityMode === true,
           maxFidelityIterations: request.maxFidelityIterations,
         },
         emit,

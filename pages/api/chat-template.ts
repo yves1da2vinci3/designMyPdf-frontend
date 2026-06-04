@@ -49,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }),
     );
 
-    const { warnings } = await consumeGenerationCredits(authHeader, result);
+    const { warnings, creditsDeducted } = await consumeGenerationCredits(authHeader, result);
 
     writeSseEvent(res, {
       type: 'done',
@@ -59,6 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       layoutSummary: result.layoutSummary,
       responseText: result.responseText,
       warnings: warnings.length ? warnings : result.warnings,
+      creditsDeducted: creditsDeducted > 0 ? creditsDeducted : undefined,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to process request';

@@ -6,6 +6,7 @@ import {
   Box,
   Group,
   Stack,
+  Switch,
   Text,
   Textarea,
   Tooltip,
@@ -14,7 +15,11 @@ import { Dropzone } from '@mantine/dropzone';
 import { IconPaperclip, IconRobot, IconSend, IconX } from '@tabler/icons-react';
 import { v4 as uuidv4 } from 'uuid';
 import type { AiStep, ChatMessage } from '@/lib/aiGeneration/types';
-import { formatAiBudgetLabel, getChatImageModeHint } from '@/lib/aiGeneration/chatImageMode';
+import {
+  formatAiBudgetLabel,
+  getAiCreditsCostHint,
+  getChatImageModeHint,
+} from '@/lib/aiGeneration/chatImageMode';
 import {
   getAiCreditsUsedPercent,
   getAiCreditsWarningBanner,
@@ -76,11 +81,12 @@ export default function AiChatPanel({
     ? getAiCreditsWarningBanner(creditsWarningTier)
     : null;
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const [visualQualityMode, setVisualQualityMode] = React.useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropzoneOpenRef = useRef<() => void>(null);
 
-  const imageModeHint = getChatImageModeHint(uploadedUrls.length);
+  const imageModeHint = getChatImageModeHint(uploadedUrls.length, visualQualityMode);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -131,6 +137,7 @@ export default function AiChatPanel({
           format,
           isLandscape,
           pdfContentPadding,
+          useVisualQualityMode: uploadedUrls.length > 0 && visualQualityMode,
         },
         (steps: AiStep[]) => {
           updateAssistant({ toolCalls: steps });
@@ -146,7 +153,9 @@ export default function AiChatPanel({
       });
 
       onResultApply(result.content, result.suggestedVariables, result.recommendedLandscape);
-      onCreditsRefresh?.();
+      if (onCreditsRefresh) {
+        await onCreditsRefresh();
+      }
 
       if (uploadedUrls.length > 0) {
         onClearImages();
@@ -280,6 +289,17 @@ export default function AiChatPanel({
 
       {/* Image mode hint */}
       <Box px="md" py={6} style={{ borderTop: '1px solid #373A40', backgroundColor: '#1A1B1E' }}>
+        {uploadedUrls.length > 0 && (
+          <Switch
+            mb={6}
+            size="xs"
+            label="Mode qualité (critique visuelle)"
+            description="Plus lent, consomme plus de crédits"
+            checked={visualQualityMode}
+            onChange={(e) => setVisualQualityMode(e.currentTarget.checked)}
+            disabled={isGenerating}
+          />
+        )}
         <Badge
           size="sm"
           variant="light"
@@ -289,6 +309,11 @@ export default function AiChatPanel({
         >
           {imageModeHint}
         </Badge>
+        {uploadedUrls.length > 0 && (
+          <Text size="xs" c="dimmed" mt={4}>
+            {getAiCreditsCostHint(visualQualityMode)}
+          </Text>
+        )}
       </Box>
 
       {/* Attached images strip */}

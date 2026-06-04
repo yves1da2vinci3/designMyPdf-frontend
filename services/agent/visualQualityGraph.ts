@@ -1,9 +1,9 @@
 /**
- * Graphe LangGraph fidélité image: Analyst → Coder → Render → Critic → (loop max 1) → PDF harden
+ * Boucle fidélité allégée : vision → render → critic → 1 refine max (sans Analyst JSON).
  */
 import { StateGraph, END, START } from '@langchain/langgraph';
 import type { FidelityAgentState } from './types';
-import { runFidelityAnalyst, buildLayoutSummaryFromAnalysis } from './fidelityAnalyst';
+import type { UiAnalysis } from './types';
 import { runFidelityCoder } from './fidelityCoder';
 import { renderFidelityHtmlToPng } from './fidelityRender';
 import { runFidelityCritic } from './fidelityCritic';
@@ -13,59 +13,56 @@ import { emitStep, runStep } from '@/lib/aiGeneration/steps';
 import { fontsStepLabel } from '@/lib/aiGeneration/detectFonts';
 import type { TemplateGenerationRequest, TemplateGenerationResult } from '@/lib/aiGeneration/types';
 import type { ProcessedImage } from './types';
-import type { UsageRecord } from '@/services/ai/usageTypes';
 import { mergeUsageLogs, sumUsage } from '@/services/ai/usageTypes';
 import { getAiVisionModel } from '@/lib/aiGeneration/models';
 import {
   detectLandscapeFromImages,
   resolveEffectiveLandscape,
 } from '@/lib/aiGeneration/orientation';
+import { runSinglePassImageGeneration } from '@/services/ai/imageVisionGeneration';
+import { buildImageViewportHint } from '@/lib/aiGeneration/pdfPromptContext';
 
 let stepEmitter: AiStepEmitter | undefined;
 
-function appendUsage(state: FidelityAgentState, entry: UsageRecord): UsageRecord[] {
+function appendUsage(
+  state: FidelityAgentState,
+  entry: { model: string; inputTokens: number; outputTokens: number },
+): Array<{ model: string; inputTokens: number; outputTokens: number }> {
   return mergeUsageLogs([...(state.usageLog ?? []), entry]);
 }
 
-async function analystNode(state: FidelityAgentState): Promise<Partial<FidelityAgentState>> {
-  const { analysis, usage } = await runStep(
-    stepEmitter,
-    'analyst',
-    'Analyse structurelle de la maquette',
-    () => runFidelityAnalyst(state.prompt, state.images),
-  );
-  return { analysis, usageLog: appendUsage(state, usage) };
+function minimalAnalysisFromImages(images: ProcessedImage[]): UiAnalysis {
+  const img = images[0];
+  const w = img?.width ?? 800;
+  const h = img?.height ?? 600;
+  return {
+    palette_couleurs: [],
+    typographie: [],
+    structure_dom: [],
+    espacements: [],
+    couleurs_par_zone: [],
+    icones: 'none',
+    dimensions_maquette: { width: w, height: h },
+    viewport_recommande: { width: w, height: h },
+  };
 }
 
-async function coderNode(state: FidelityAgentState): Promise<Partial<FidelityAgentState>> {
-  if (!state.analysis) {
-    throw new Error('Analyse requise avant génération');
-  }
-  const isRefine = Boolean(state.criticNotes || state.criticDeltas?.length);
-  const stepId = !isRefine ? 'generate_faithful' : 'refine_code';
-  const label = !isRefine
-    ? 'Génération HTML fidèle'
-    : `Affinage du code (passe ${state.iteration})`;
-
-  const { html, suggestedVariables, usage } = await runStep(stepEmitter, stepId, label, () =>
-    runFidelityCoder({
-      prompt: state.prompt,
-      analysis: state.analysis!,
-      images: state.images,
-      generationOptions: state.generationOptions,
-      criticNotes: state.criticNotes,
-      criticDeltas: state.criticDeltas,
-      previousCode: state.generatedCode,
-      renderPngBase64: isRefine ? state.renderPngBase64 : undefined,
-      iteration: state.iteration,
-    }),
+async function generateNode(state: FidelityAgentState): Promise<Partial<FidelityAgentState>> {
+  const viewportHint = buildImageViewportHint(
+    state.generationOptions?.format || 'a4',
+    state.generationOptions?.isLandscape ?? false,
+    state.generationOptions?.pdfContentPadding,
   );
-
+  const { html, suggestedVariables, usage } = await runSinglePassImageGeneration({
+    prompt: state.prompt,
+    processedImages: state.images,
+    viewportHint,
+    emit: stepEmitter,
+  });
   return {
     generatedCode: html,
+    analysis: minimalAnalysisFromImages(state.images),
     draftVariables: { ...(state.draftVariables ?? {}), ...suggestedVariables },
-    criticNotes: undefined,
-    criticDeltas: undefined,
     usageLog: appendUsage(state, usage),
   };
 }
@@ -78,7 +75,7 @@ async function renderNode(state: FidelityAgentState): Promise<Partial<FidelityAg
     renderFidelityHtmlToPng(
       state.generatedCode!,
       state.draftVariables ?? {},
-      state.generationOptions,
+      state.generationOptions!,
       state.analysis,
     ),
   );
@@ -92,13 +89,10 @@ async function criticNode(state: FidelityAgentState): Promise<Partial<FidelityAg
   const result = await runStep(stepEmitter, 'visual_critique', 'Critique visuelle', () =>
     runFidelityCritic(state.images, state.renderPngBase64!),
   );
-
   const nextLog = appendUsage(state, result.usage);
-
   if (result.passed) {
     return { criticPassed: true, usageLog: nextLog };
   }
-
   return {
     criticPassed: false,
     criticNotes: result.corrections || 'Corriger les écarts visuels par rapport à la maquette.',
@@ -108,20 +102,45 @@ async function criticNode(state: FidelityAgentState): Promise<Partial<FidelityAg
   };
 }
 
-async function pdfHardenNode(state: FidelityAgentState): Promise<Partial<FidelityAgentState>> {
-  if (!state.generatedCode || !state.analysis) {
-    throw new Error('Code et analyse requis pour la passe PDF');
+async function refineNode(state: FidelityAgentState): Promise<Partial<FidelityAgentState>> {
+  if (!state.analysis || !state.generatedCode) {
+    throw new Error('Analyse et code requis pour affinage');
   }
+  const { html, suggestedVariables, usage } = await runStep(
+    stepEmitter,
+    'refine_code',
+    'Affinage visuel (1 passe)',
+    () =>
+      runFidelityCoder({
+        prompt: state.prompt,
+        analysis: state.analysis!,
+        images: state.images,
+        generationOptions: state.generationOptions!,
+        criticNotes: state.criticNotes,
+        criticDeltas: state.criticDeltas,
+        previousCode: state.generatedCode,
+        renderPngBase64: state.renderPngBase64,
+        iteration: 1,
+        imageFirst: true,
+      }),
+  );
+  return {
+    generatedCode: html,
+    draftVariables: { ...(state.draftVariables ?? {}), ...suggestedVariables },
+    criticNotes: undefined,
+    criticDeltas: undefined,
+    usageLog: appendUsage(state, usage),
+  };
+}
+
+async function finalizeNode(state: FidelityAgentState): Promise<Partial<FidelityAgentState>> {
   const warnings: string[] = [...(state.warnings ?? [])];
   if (!state.criticPassed && state.iteration >= state.maxIterations) {
     warnings.push(
-      'Fidélité visuelle : 2 passes maximum atteintes (1 génération + 1 correction). Résultat conservé au mieux.',
+      'Mode qualité : affinage maximum atteint. Résultat conservé au mieux par rapport à la maquette.',
     );
   }
-
-  const code = state.generatedCode!;
-  emitStep(stepEmitter, 'pdf_harden', 'Finalisation', 'done');
-
+  const code = state.generatedCode || '';
   const suggestedVariables = await runStep(
     stepEmitter,
     'extract_variables',
@@ -132,9 +151,7 @@ async function pdfHardenNode(state: FidelityAgentState): Promise<Partial<Fidelit
       return { ...state.draftVariables, ...built };
     },
   );
-
   emitStep(stepEmitter, 'fonts', fontsStepLabel(code), 'done');
-
   return {
     finalTemplate: code,
     suggestedVariables,
@@ -143,14 +160,10 @@ async function pdfHardenNode(state: FidelityAgentState): Promise<Partial<Fidelit
   };
 }
 
-function routeAfterCritic(state: FidelityAgentState): 'coder' | 'pdfHarden' {
-  if (state.criticPassed) {
-    return 'pdfHarden';
-  }
-  if (state.iteration >= state.maxIterations) {
-    return 'pdfHarden';
-  }
-  return 'coder';
+function routeAfterCritic(state: FidelityAgentState): 'refine' | 'finalize' {
+  if (state.criticPassed) return 'finalize';
+  if (state.iteration >= state.maxIterations) return 'finalize';
+  return 'refine';
 }
 
 const workflow = new StateGraph<FidelityAgentState>({
@@ -175,24 +188,24 @@ const workflow = new StateGraph<FidelityAgentState>({
     warnings: { reducer: (x, y) => y ?? x },
   },
 })
-  .addNode('analyst', analystNode)
-  .addNode('coder', coderNode)
+  .addNode('generate', generateNode)
   .addNode('render', renderNode)
   .addNode('critic', criticNode)
-  .addNode('pdfHarden', pdfHardenNode)
-  .addEdge(START, 'analyst')
-  .addEdge('analyst', 'coder')
-  .addEdge('coder', 'render')
+  .addNode('refine', refineNode)
+  .addNode('finalize', finalizeNode)
+  .addEdge(START, 'generate')
+  .addEdge('generate', 'render')
   .addEdge('render', 'critic')
   .addConditionalEdges('critic', routeAfterCritic, {
-    coder: 'coder',
-    pdfHarden: 'pdfHarden',
+    refine: 'refine',
+    finalize: 'finalize',
   })
-  .addEdge('pdfHarden', END);
+  .addEdge('refine', 'finalize')
+  .addEdge('finalize', END);
 
-const fidelityApp = workflow.compile();
+const visualQualityApp = workflow.compile();
 
-export async function runFidelityGraph(
+export async function runVisualQualityGraph(
   req: TemplateGenerationRequest,
   processedImages: ProcessedImage[],
   emit?: AiStepEmitter,
@@ -214,8 +227,6 @@ export async function runFidelityGraph(
     'done',
   );
 
-  const maxIterations = req.maxFidelityIterations ?? 3;
-
   const initialState: FidelityAgentState = {
     prompt: req.prompt,
     images: processedImages,
@@ -225,15 +236,14 @@ export async function runFidelityGraph(
       pdfContentPadding: req.pdfContentPadding,
     },
     iteration: 0,
-    maxIterations,
+    maxIterations: 1,
     warnings: [],
     usageLog: [],
   };
 
   try {
-    const result = await fidelityApp.invoke(initialState);
+    const result = await visualQualityApp.invoke(initialState);
     const content = result.finalTemplate || result.generatedCode || '';
-    const analysis = result.analysis;
     const usageLog = mergeUsageLogs(result.usageLog ?? []);
     const totals = sumUsage(usageLog);
     const visionModel = getAiVisionModel();
@@ -242,7 +252,7 @@ export async function runFidelityGraph(
       content,
       suggestedVariables: result.suggestedVariables ?? {},
       recommendedLandscape: effectiveLandscape,
-      layoutSummary: analysis ? buildLayoutSummaryFromAnalysis(analysis) : undefined,
+      layoutSummary: `- **Mode qualité** : vision + critique visuelle (1 affinage max).\n- **Orientation** : ${effectiveLandscape ? 'paysage' : 'portrait'}\n- ${processedImages.length} image(s) de référence.`,
       warnings: result.warnings,
       usageLog,
       model: visionModel,

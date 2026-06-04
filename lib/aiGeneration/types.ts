@@ -29,6 +29,7 @@ export type AiStreamEvent =
       layoutSummary?: string;
       responseText?: string;
       warnings?: string[];
+      creditsDeducted?: number;
     }
   | { type: 'error'; message: string };
 
@@ -39,8 +40,10 @@ export interface TemplateGenerationRequest {
   isLandscape?: boolean;
   pdfContentPadding?: string;
   useAgent?: boolean;
-  /** true = ancien pipeline multi-passes (opt-in / tests) ; défaut = une passe vision */
+  /** true = ancien pipeline Analyst→JSON (opt-in / tests) */
   useFidelityGraph?: boolean;
+  /** true = vision + render + critique + 1 affinage (sans Analyst JSON) */
+  useVisualQualityMode?: boolean;
   maxFidelityIterations?: number;
 }
 

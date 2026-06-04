@@ -22,12 +22,14 @@ CRITICAL PDF RENDERING CONSTRAINTS:
 
 export const TEMPLATE_DESIGN_GUIDE = `
 DESIGN CONSTRAINTS FOR PDF TEMPLATES:
-- Padding: the root wrapper MUST use p-0 (the preview scaffold already adds 2rem/10mm padding around it); inner sections use py-2 to py-4 only; NEVER add p-* on the outermost div
-- Spacing between sections: use space-y-4 to space-y-6 or margin mb-4 to mb-6; NEVER gap-*
-- Colors: max 5 Tailwind color classes (primary/neutral/surface/border/text); no gradients (bg-gradient-*); no opacity shortcuts (bg-blue-500/10)
-- Hover/animation: NEVER use hover:, transition-, scale-, translate- (not rendered in PDF)
-- Container: max-w-4xl or max-w-5xl mx-auto; avoid max-w-7xl (too wide for A4)
-- Cards: rounded-lg shadow-sm p-4 (not p-8, not shadow-xl)
+- Padding: the root wrapper MUST use p-0 (the preview scaffold already adds 2rem/10mm padding around it); inner sections use py-6 to py-12 for better whitespace; NEVER add p-* on the outermost div
+- Spacing between sections: use space-y-8 to space-y-12 or margin mb-8 to mb-12 for a premium feel; NEVER gap-*
+- Colors: Use professional palettes (e.g., slate-900 for text, blue-600 for accents). Subtle gradients are allowed if they enhance the professional look (e.g., from-slate-50 to-white).
+- Typography: Focus on hierarchy. Use font-bold for headings, tracking-tight for titles, and leading-relaxed for body text.
+- Hover/animation: NEVER use hover:, transition-, scale-, translate- (not rendered in PDF).
+- Container: max-w-4xl or max-w-5xl mx-auto; avoid max-w-7xl (too wide for A4).
+- Cards: Use rounded-2xl or rounded-3xl for a modern look. Subtle shadows (shadow-sm or shadow-md) are allowed.
+- Quality: Aim for "Apple-style" or "Modern SaaS" aesthetic: generous whitespace, refined typography, and subtle borders (border-slate-100).
 `;
 
 /**

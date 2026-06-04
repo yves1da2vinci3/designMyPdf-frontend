@@ -58,7 +58,7 @@ export async function runFidelityCritic(
     throw new Error('Réponse critic invalide');
   }
 
-  const usage = usageFromAnthropicResponse(model, response.usage);
+  const usage = usageFromAnthropicResponse(model, response.usage, response.model);
 
   try {
     const parsed = parseCriticResponse(response.content[0].text);

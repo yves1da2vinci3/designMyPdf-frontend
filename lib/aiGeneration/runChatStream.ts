@@ -9,6 +9,7 @@ export interface ChatStreamResult {
   responseText: string;
   toolCalls: AiStep[];
   warnings?: string[];
+  creditsDeducted?: number;
 }
 
 export async function runChatStream(
@@ -81,6 +82,7 @@ export async function runChatStream(
           responseText: event.responseText || accumulatedText || '',
           toolCalls: Array.from(stepMap.values()),
           warnings: event.warnings,
+          creditsDeducted: event.creditsDeducted,
         };
       }
     }

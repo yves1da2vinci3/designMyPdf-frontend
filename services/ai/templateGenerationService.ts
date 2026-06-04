@@ -1,27 +1,34 @@
 import { createAnthropicSdk } from '@/services/agent/anthropicClient';
 import { processImagesForAnalysis } from '@/services/agent/imageProcessor';
-import { parseCoderResponse } from '@/services/agent/fidelityJson';
 import { TEMPLATE_DESIGN_GUIDE } from '@/services/agent/pdfConstraints';
 import {
   extractVariablesFromTemplate,
   buildVariableStructure,
 } from '@/services/agent/templateUtils';
-import { getAiTextModel, getAiVisionModel } from '@/lib/aiGeneration/models';
+import { getAiTextModel } from '@/lib/aiGeneration/models';
 import {
   detectLandscapeFromImages,
   resolveEffectiveLandscape,
 } from '@/lib/aiGeneration/orientation';
-import { buildPageContextPrompt } from '@/lib/aiGeneration/pdfPromptContext';
-import { buildSinglePassImagePrompt } from '@/lib/aiGeneration/imageGenerationPrompt';
+import {
+  buildImageViewportHint,
+  buildPageContextPrompt,
+} from '@/lib/aiGeneration/pdfPromptContext';
 import { fontsStepLabel } from '@/lib/aiGeneration/detectFonts';
 import type {
   AiStepEmitter,
   TemplateGenerationRequest,
   TemplateGenerationResult,
 } from '@/lib/aiGeneration/types';
-import type { ProcessedImage } from '@/services/agent/types';
 import { emitStep, runStep } from '@/lib/aiGeneration/steps';
-import { cleanHtmlFromModel, normalizeEditorHtmlFragment } from '@/lib/aiGeneration/cleanHtml';
+import { normalizeEditorHtmlFragment } from '@/lib/aiGeneration/cleanHtml';
+import { runSinglePassImageGeneration } from './imageVisionGeneration';
+import {
+  hasBillableUsage,
+  mergeUsageLogs,
+  MISSING_USAGE_WARNING,
+  usageFromAnthropicResponse,
+} from './usageTypes';
 
 function buildTextOnlyPrompt(prompt: string, pageContext: string): string {
   return `You are an EXPERT UI/UX designer. Create a PROFESSIONAL template for: ${prompt}
@@ -31,51 +38,10 @@ OUTPUT: ONLY inner HTML (no DOCTYPE). Semantic HTML5. Tailwind CSS. Handlebars f
 Return HTML now:`;
 }
 
-async function runSinglePassImageGeneration(params: {
-  prompt: string;
-  processedImages: ProcessedImage[];
-  pageContext: string;
-  emit?: AiStepEmitter;
-}): Promise<{ html: string; inputTokens: number; outputTokens: number; model: string }> {
-  const { prompt, processedImages, pageContext, emit } = params;
-  const anthropic = createAnthropicSdk();
-  const model = getAiVisionModel();
-
-  const imageParts = processedImages.map((img) => ({
-    type: 'image' as const,
-    source: {
-      type: 'base64' as const,
-      media_type: img.mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-      data: img.base64,
-    },
-  }));
-
-  return runStep(emit, 'generate_html', "Génération du HTML depuis l'image", async () => {
-    const msg = await anthropic.messages.create({
-      model,
-      max_tokens: 8192,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            ...imageParts,
-            { type: 'text', text: buildSinglePassImagePrompt(prompt, pageContext) },
-          ],
-        },
-      ],
-    });
-    if (msg.content.length === 0 || msg.content[0].type !== 'text') {
-      throw new Error('Invalid response from AI model');
-    }
-    const parsed = parseCoderResponse(msg.content[0].text);
-    const html = normalizeEditorHtmlFragment(parsed.html);
-    return {
-      html,
-      inputTokens: msg.usage?.input_tokens ?? 0,
-      outputTokens: msg.usage?.output_tokens ?? 0,
-      model,
-    };
-  });
+function formatImageDimensionsDetail(
+  images: Awaited<ReturnType<typeof processImagesForAnalysis>>,
+): string {
+  return images.map((img, i) => `img${i + 1}: ${img.width}×${img.height}px`).join(', ');
 }
 
 export async function runTemplateGeneration(
@@ -87,6 +53,7 @@ export async function runTemplateGeneration(
   const hasImages = imageUrls.length > 0;
   const useAgent = req.useAgent === true;
   const useFidelityGraph = hasImages && req.useFidelityGraph === true;
+  const useVisualQualityMode = hasImages && req.useVisualQualityMode === true;
 
   let processedImages: Awaited<ReturnType<typeof processImagesForAnalysis>> | undefined;
   if (hasImages) {
@@ -101,6 +68,13 @@ export async function runTemplateGeneration(
         'Impossible de charger les images de référence pour l’analyse visuelle. Vérifiez les URLs ou réessayez.',
       );
     }
+    emitStep(
+      emit,
+      'analyze_images',
+      'Préparation des images de référence',
+      'done',
+      formatImageDimensionsDetail(processedImages),
+    );
   }
 
   const detectedLandscape = processedImages ? detectLandscapeFromImages(processedImages) : false;
@@ -130,6 +104,11 @@ export async function runTemplateGeneration(
     return runFidelityGraph(req, processedImages, emit);
   }
 
+  if (useVisualQualityMode && processedImages?.length) {
+    const { runVisualQualityGraph } = await import('@/services/agent/visualQualityGraph');
+    return runVisualQualityGraph(req, processedImages, emit);
+  }
+
   if (useAgent) {
     const { generateTemplateWithAgent } = await import('@/services/agent/agentGraph');
     const result = await generateTemplateWithAgent(
@@ -149,23 +128,26 @@ export async function runTemplateGeneration(
   }
 
   const pageContext = buildPageContextPrompt(format, effectiveLandscape, req.pdfContentPadding);
+  const viewportHint = buildImageViewportHint(format, effectiveLandscape, req.pdfContentPadding);
 
   let template: string;
   let inputTokens = 0;
   let outputTokens = 0;
   let model = getAiTextModel();
+  let draftVariables: Record<string, unknown> = {};
 
   if (hasImages && processedImages) {
     const single = await runSinglePassImageGeneration({
       prompt: req.prompt,
       processedImages,
-      pageContext,
+      viewportHint,
       emit,
     });
     template = single.html;
-    inputTokens = single.inputTokens;
-    outputTokens = single.outputTokens;
-    model = single.model;
+    draftVariables = single.suggestedVariables;
+    inputTokens = single.usage.inputTokens;
+    outputTokens = single.usage.outputTokens;
+    model = single.usage.model;
   } else {
     const anthropic = createAnthropicSdk();
     template = await runStep(emit, 'generate_html', 'Génération du HTML', async () => {
@@ -182,8 +164,10 @@ export async function runTemplateGeneration(
       if (msg.content.length === 0 || msg.content[0].type !== 'text') {
         throw new Error('Invalid response from AI model');
       }
-      inputTokens += msg.usage?.input_tokens ?? 0;
-      outputTokens += msg.usage?.output_tokens ?? 0;
+      const usage = usageFromAnthropicResponse(model, msg.usage, msg.model);
+      inputTokens = usage.inputTokens;
+      outputTokens = usage.outputTokens;
+      model = usage.model;
       return normalizeEditorHtmlFragment(msg.content[0].text);
     });
   }
@@ -194,25 +178,41 @@ export async function runTemplateGeneration(
     "Mise à jour des variables d'exemple",
     async () => {
       const extractedVars = extractVariablesFromTemplate(template);
-      return buildVariableStructure(extractedVars, template);
+      const built = buildVariableStructure(extractedVars, template);
+      return { ...draftVariables, ...built };
     },
   );
 
   emitStep(emit, 'fonts', fontsStepLabel(template), 'done');
 
-  const usageEntry =
-    inputTokens > 0 || outputTokens > 0 ? [{ model, inputTokens, outputTokens }] : undefined;
+  const usageLog = mergeUsageLogs([{ model, inputTokens, outputTokens }]);
+  const usageWarnings: string[] = [];
+  if (!hasBillableUsage(usageLog)) {
+    usageWarnings.push(MISSING_USAGE_WARNING);
+    console.warn('[templateGeneration] Tokens usage vides après génération', { model });
+  }
+
+  const modeLabel = useVisualQualityMode ? 'mode qualité' : hasImages ? '1 passe vision' : 'texte';
 
   return {
     content: template,
     suggestedVariables,
     recommendedLandscape: effectiveLandscape,
     layoutSummary: hasImages
-      ? `- **Orientation** : ${effectiveLandscape ? 'paysage' : 'portrait'}\n- Template généré à partir de ${imageUrls.length} image(s) de référence.`
+      ? `- **${modeLabel}** : ${effectiveLandscape ? 'paysage' : 'portrait'} (layout = maquette).\n- ${imageUrls.length} image(s) de référence.`
       : undefined,
     inputTokens,
     outputTokens,
     model,
-    usageLog: usageEntry,
+    usageLog,
+    warnings: (() => {
+      const w = [...usageWarnings];
+      if (outputTokens >= 16000) {
+        w.push(
+          'La sortie du modèle est proche de la limite — le HTML peut être tronqué. Réessayez avec une maquette plus simple ou activez le mode qualité.',
+        );
+      }
+      return w.length ? w : undefined;
+    })(),
   };
 }

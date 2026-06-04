@@ -11,6 +11,34 @@ export interface UseAiCreditsResult {
   refresh: () => Promise<void>;
 }
 
+/** Valeurs affichées (crédits), pas µcrédits bruts. */
+function parseCreditsBalance(data: Record<string, unknown>): {
+  used: number;
+  limit: number;
+  remaining: number;
+  month: string;
+} {
+  if (typeof data.creditsUsed === 'number' && typeof data.creditsLimit === 'number') {
+    const used = data.creditsUsed;
+    const limit = data.creditsLimit;
+    const remaining =
+      typeof data.creditsRemaining === 'number' ? data.creditsRemaining : Math.max(0, limit - used);
+    return { used, limit, remaining, month: String(data.month ?? '') };
+  }
+
+  // Legacy : champs bruts en µcrédits — convertir pour l'affichage uniquement
+  const usedMicro = typeof data.used === 'number' ? data.used : 0;
+  const limitMicro = typeof data.limit === 'number' ? data.limit : 1_000_000;
+  const remainingMicro =
+    typeof data.remaining === 'number' ? data.remaining : Math.max(0, limitMicro - usedMicro);
+  return {
+    used: usedMicro / 1000,
+    limit: limitMicro / 1000,
+    remaining: remainingMicro / 1000,
+    month: String(data.month ?? ''),
+  };
+}
+
 export function useAiCredits(): UseAiCreditsResult {
   const [used, setUsed] = useState(0);
   const [limit, setLimit] = useState(1000);
@@ -35,15 +63,12 @@ export function useAiCredits(): UseAiCreditsResult {
         setError('Impossible de charger les crédits IA');
         return;
       }
-      const data = await res.json();
-      const creditsUsed = data.creditsUsed ?? data.used ?? 0;
-      const creditsLimit = data.creditsLimit ?? data.limit ?? 1000;
-      const creditsRemaining =
-        data.creditsRemaining ?? data.remaining ?? Math.max(0, creditsLimit - creditsUsed);
-      setUsed(creditsUsed);
-      setLimit(creditsLimit);
-      setRemaining(creditsRemaining);
-      setMonth(data.month ?? '');
+      const data = (await res.json()) as Record<string, unknown>;
+      const balance = parseCreditsBalance(data);
+      setUsed(balance.used);
+      setLimit(balance.limit);
+      setRemaining(balance.remaining);
+      setMonth(balance.month);
     } catch {
       setError('Impossible de charger les crédits IA');
     } finally {

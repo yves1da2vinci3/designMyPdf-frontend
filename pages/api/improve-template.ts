@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import Anthropic from '@anthropic-ai/sdk';
+import { getAiTextModel } from '@/lib/aiGeneration/models';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -87,7 +88,7 @@ OUTPUT:
 TRANSFORM THIS INTO SOMETHING STUNNING. Return HTML now:`;
 
     const msg = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: getAiTextModel(),
       max_tokens: 8192,
       messages: [{ role: 'user', content: improvePrompt }],
     });
