@@ -22,9 +22,7 @@ function parseCreditsBalance(data: Record<string, unknown>): {
     const used = data.creditsUsed;
     const limit = data.creditsLimit;
     const remaining =
-      typeof data.creditsRemaining === 'number'
-        ? data.creditsRemaining
-        : Math.max(0, limit - used);
+      typeof data.creditsRemaining === 'number' ? data.creditsRemaining : Math.max(0, limit - used);
     return { used, limit, remaining, month: String(data.month ?? '') };
   }
 

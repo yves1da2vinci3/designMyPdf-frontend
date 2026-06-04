@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge, Card, Group, Progress, Stack, Text } from '@mantine/core';
-import { formatAiBudgetLabel } from '@/lib/aiGeneration/chatImageMode';
+import { formatAiBudgetLabel, getAiMonthlyBudgetHint } from '@/lib/aiGeneration/chatImageMode';
 import {
   getAiCreditsProgressColor,
   getAiCreditsUsedPercent,
@@ -73,8 +73,7 @@ export default function AiCreditsBadge({
           </Text>
         ) : null}
         <Text size="xs" c="dimmed">
-          Plafond mensuel de crédits IA — chaque génération déduit selon les tokens (fidèle ou
-          rapide).
+          {getAiMonthlyBudgetHint()} Chaque génération déduit selon les tokens consommés.
         </Text>
       </Stack>
     </Card>

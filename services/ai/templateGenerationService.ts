@@ -192,11 +192,7 @@ export async function runTemplateGeneration(
     console.warn('[templateGeneration] Tokens usage vides après génération', { model });
   }
 
-  const modeLabel = useVisualQualityMode
-    ? 'mode qualité'
-    : hasImages
-      ? '1 passe vision'
-      : 'texte';
+  const modeLabel = useVisualQualityMode ? 'mode qualité' : hasImages ? '1 passe vision' : 'texte';
 
   return {
     content: template,

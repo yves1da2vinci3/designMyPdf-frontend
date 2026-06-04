@@ -73,14 +73,10 @@ export async function consumeGenerationCredits(
   }
 
   const merged = mergeUsageLogs(entries);
-  const { outcomes, totalDeductedMicro, allSkipped } = await consumeUsageLog(
-    authHeader,
-    merged,
-    {
-      bestEffort: true,
-      allowPartial: true,
-    },
-  );
+  const { outcomes, totalDeductedMicro, allSkipped } = await consumeUsageLog(authHeader, merged, {
+    bestEffort: true,
+    allowPartial: true,
+  });
 
   if (allSkipped) {
     if (!warnings.includes(MISSING_USAGE_WARNING)) {

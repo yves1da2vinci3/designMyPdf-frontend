@@ -16,15 +16,20 @@ export function getChatImageModeHint(
   return 'Génération depuis image : 1 passe vision (la maquette prime sur le toggle orientation).';
 }
 
-/** Affichage budget IA : API renvoie des crédits (plafond typique 1000 / mois). */
+/** Affichage budget IA : plafond typique 1000 crédits/mois ≈ 1 $ API. */
 export function formatAiBudgetLabel(remaining: number, limit: number): string {
   const fmt = (n: number) => n.toFixed(2);
   return `${fmt(remaining)} crédits restants / ${fmt(limit)} ce mois`;
 }
 
+/** Court rappel du plafond et du mix modèles (Haiku texte, Sonnet image). */
+export function getAiMonthlyBudgetHint(): string {
+  return '1000 crédits/mois ≈ 1 $ API — image : Sonnet, édition texte : Haiku.';
+}
+
 export function getAiCreditsCostHint(visualQualityEnabled = false): string {
   if (visualQualityEnabled) {
-    return 'Coût selon tokens (Sonnet 4) — mode qualité = plusieurs appels, décompte plus élevé.';
+    return 'Débit selon tokens (Sonnet 4) — mode qualité = plusieurs appels, coût plus élevé.';
   }
-  return 'Coût selon tokens consommés (Claude Sonnet 4).';
+  return 'Débit selon tokens — maquette/image : Sonnet 4 ; édition sans image : Haiku 4.5.';
 }
