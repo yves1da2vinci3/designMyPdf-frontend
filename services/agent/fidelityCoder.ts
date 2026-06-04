@@ -1,6 +1,13 @@
 import { createAnthropicSdk } from './anthropicClient';
 import { getAiVisionModel } from '@/lib/aiGeneration/models';
-import { buildPageContextPrompt } from '@/lib/aiGeneration/pdfPromptContext';
+import {
+  buildImageViewportHint,
+  buildPageContextPrompt,
+} from '@/lib/aiGeneration/pdfPromptContext';
+import {
+  buildImageGenerationSystemPrompt,
+  IMAGE_VISION_MAX_OUTPUT_TOKENS,
+} from '@/lib/aiGeneration/imageGenerationPrompt';
 import { normalizeEditorHtmlFragment } from '@/lib/aiGeneration/cleanHtml';
 import type { UsageRecord } from '@/services/ai/usageTypes';
 import { usageFromAnthropicResponse } from '@/services/ai/usageTypes';
@@ -43,6 +50,8 @@ export async function runFidelityCoder(params: {
   previousCode?: string;
   renderPngBase64?: string;
   iteration: number;
+  /** Affinage vision : viewport léger, pas de grille paysage imposée. */
+  imageFirst?: boolean;
 }): Promise<{
   html: string;
   suggestedVariables: Record<string, unknown>;
@@ -58,21 +67,32 @@ export async function runFidelityCoder(params: {
     previousCode,
     renderPngBase64,
     iteration,
+    imageFirst = false,
   } = params;
   const sdk = createAnthropicSdk();
   const isRefine = Boolean(criticNotes || criticDeltas?.length || renderPngBase64);
   const useVision = iteration === 0 || isRefine;
   const model = getAiVisionModel();
 
-  const pageContext = buildPageContextPrompt(
-    generationOptions.format || 'a4',
-    generationOptions.isLandscape ?? false,
-    generationOptions.pdfContentPadding,
-  );
+  const pageContext = imageFirst
+    ? buildImageViewportHint(
+        generationOptions.format || 'a4',
+        generationOptions.isLandscape ?? false,
+        generationOptions.pdfContentPadding,
+      )
+    : buildPageContextPrompt(
+        generationOptions.format || 'a4',
+        generationOptions.isLandscape ?? false,
+        generationOptions.pdfContentPadding,
+      );
 
-  const system = buildCoderSystemPrompt(pageContext, useVision);
+  const system = imageFirst
+    ? buildImageGenerationSystemPrompt(pageContext)
+    : buildCoderSystemPrompt(pageContext, useVision);
 
-  let userText = `Demande: ${prompt}\n\n${buildAnalysisChecklist(analysis)}\n\nAnalyse JSON:\n${JSON.stringify(analysis, null, 2)}`;
+  let userText = imageFirst
+    ? `Demande: ${prompt}`
+    : `Demande: ${prompt}\n\n${buildAnalysisChecklist(analysis)}\n\nAnalyse JSON:\n${JSON.stringify(analysis, null, 2)}`;
 
   if (isRefine && previousCode) {
     const deltaText = criticDeltas?.length
@@ -96,7 +116,7 @@ export async function runFidelityCoder(params: {
 
   const response = await sdk.messages.create({
     model,
-    max_tokens: 8192,
+    max_tokens: imageFirst ? IMAGE_VISION_MAX_OUTPUT_TOKENS : 8192,
     system,
     messages: [{ role: 'user', content }],
   });

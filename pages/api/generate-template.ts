@@ -38,6 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         pdfContentPadding: body.pdfContentPadding,
         useAgent: body.useAgent ?? false,
         useFidelityGraph: body.useFidelityGraph === true,
+        useVisualQualityMode: body.useVisualQualityMode === true,
       }),
     );
 

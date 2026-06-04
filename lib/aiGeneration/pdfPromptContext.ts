@@ -32,3 +32,25 @@ TARGET PDF PAGE:
 - Root wrapper MUST be p-0 (outer padding is added by the preview scaffold).${padNote}
 ${layoutRules}`;
 }
+
+/**
+ * Contexte léger pour la passe vision : format + largeur indicative + padding scaffold.
+ * N'impose pas de grille paysage/portrait — la maquette jointe fait foi pour le layout.
+ */
+export function buildImageViewportHint(
+  format: string,
+  isLandscape: boolean,
+  pdfContentPadding?: string,
+): string {
+  const paper = (format || 'a4').toUpperCase();
+  const orientation = isLandscape ? 'landscape' : 'portrait';
+  const contentWidthPx = getContentAreaWidthPx(format || 'a4', isLandscape);
+  const padNote = pdfContentPadding?.trim()
+    ? ` Padding appliqué par le scaffold de prévisualisation : ${pdfContentPadding}.`
+    : '';
+
+  return `Contexte page (indicatif uniquement — le layout visuel suit la maquette jointe) :
+- Format papier : ${paper}, orientation UI : ${orientation} (~${contentWidthPx}px de large utile typique).
+- Wrapper racine : class="p-0" (marges extérieures gérées par le scaffold).${padNote}
+- Ne réorganise pas la maquette pour « remplir » une grille paysage si l'image est en colonne étroite.`;
+}

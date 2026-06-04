@@ -2,7 +2,8 @@ import sharp from 'sharp';
 import { readImageDimensions } from '@/utils/imageDimensions';
 
 const TARGET_LONG_MIN = 1280;
-const TARGET_LONG_MAX = 1600;
+/** Bord long max envoyé au modèle (UI denses / petits textes). */
+export const TARGET_LONG_MAX = 2000;
 
 /**
  * Resize reference image for vision API: long edge in [1280, 1600] when possible.

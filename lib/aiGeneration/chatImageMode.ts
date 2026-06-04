@@ -3,11 +3,17 @@ export function willSendImagesToModel(attachedImageCount: number): boolean {
   return attachedImageCount > 0;
 }
 
-export function getChatImageModeHint(attachedImageCount: number): string {
+export function getChatImageModeHint(
+  attachedImageCount: number,
+  visualQualityEnabled = false,
+): string {
   if (!willSendImagesToModel(attachedImageCount)) {
     return 'Mode édition texte — aucune image ne sera envoyée au modèle.';
   }
-  return 'Génération depuis image : une passe vision (maquette → HTML).';
+  if (visualQualityEnabled) {
+    return 'Mode qualité : vision + capture + critique visuelle (1 affinage max, plus de crédits).';
+  }
+  return 'Génération depuis image : 1 passe vision (la maquette prime sur le toggle orientation).';
 }
 
 /** Affichage budget IA : API renvoie des crédits (plafond typique 1000 / mois). */
