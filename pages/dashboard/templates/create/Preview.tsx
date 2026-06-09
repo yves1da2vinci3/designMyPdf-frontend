@@ -15,6 +15,12 @@ import {
   PDF_EXPORT_RESET_CSS,
   PDF_PRINT_BREAK_CSS,
 } from '@/utils/pdfPageLayout';
+import {
+  CODE_HIGHLIGHT_FIT_BODY_CLASS,
+  codeHighlightFitCss,
+  codeHighlightHeadTags,
+  codeHighlightInitScript,
+} from '@/utils/codeHighlightShell';
 import { Switch, Tooltip } from '@mantine/core';
 
 // Define the FormatType directly in this file
@@ -464,9 +470,11 @@ function Preview({
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    ${codeHighlightHeadTags()}
     ${fontImport}
     <style>
       ${fontStyle}
+      ${codeHighlightFitCss()}
       body {
         margin: 0;
         padding: 0;
@@ -496,11 +504,12 @@ function Preview({
       }
     </style>
   </head>
-  <body>
+  <body class="${CODE_HIGHLIGHT_FIT_BODY_CLASS}">
     <div class="content">
       ${finalHtml}
     </div>
     <script>
+      ${codeHighlightInitScript()}
       ${chartScript}
       ${pageBreakScript}
       // Book view spread listener

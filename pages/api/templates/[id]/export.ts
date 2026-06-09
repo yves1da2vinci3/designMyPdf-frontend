@@ -12,6 +12,12 @@ import {
   getContentAreaWidthPx,
 } from '@/utils/pdfPageLayout';
 import { ORPHAN_THRESHOLD, pageBreakHintsEvaluate } from '@/utils/pdfPagination';
+import {
+  CODE_HIGHLIGHT_FIT_BODY_CLASS,
+  codeHighlightFitCss,
+  codeHighlightHeadTags,
+  codeHighlightPdfAwaitScript,
+} from '@/utils/codeHighlightShell';
 
 function buildExportPageHtml(
   bodyInner: string,
@@ -41,7 +47,9 @@ function buildExportPageHtml(
           ${fontLinks}
           <script src="https://cdn.tailwindcss.com"></script>
           <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+          ${codeHighlightHeadTags()}
           <style>
+            ${codeHighlightFitCss()}
             @page {
               size: ${data.paperSize} ${data.isLandscape ? 'landscape' : 'portrait'};
               margin: 0;
@@ -74,7 +82,7 @@ function buildExportPageHtml(
             ${PDF_PRINT_BREAK_CSS}
           </style>
         </head>
-        <body>
+        <body class="${CODE_HIGHLIGHT_FIT_BODY_CLASS}">
           <div class="content">
             ${bodyInner}
           </div>
@@ -106,6 +114,7 @@ function buildExportPageHtml(
                   waitForTailwind(),
                   new Promise(function(r) { setTimeout(r, 2000); }),
                 ]);
+                await ${codeHighlightPdfAwaitScript().trim()};
                 if (document.fonts && document.fonts.ready) {
                   await document.fonts.ready;
                 }
