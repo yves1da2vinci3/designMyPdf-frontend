@@ -3,6 +3,12 @@ import { Box, Text } from '@mantine/core';
 import Handlebars from 'handlebars';
 import '@/utils/handlebarsHelpers';
 import { processChartData, replaceChartDataPlaceholders } from '@/utils/chartUtils';
+import {
+  CODE_HIGHLIGHT_FIT_BODY_CLASS,
+  codeHighlightFitCss,
+  codeHighlightHeadTags,
+  codeHighlightRunAndFitJs,
+} from '@/utils/codeHighlightShell';
 
 interface PreviewProps {
   format?: string;
@@ -61,6 +67,8 @@ function Preview({
     // The main script to be executed inside the iframe
     const mainScript = `
       document.addEventListener('DOMContentLoaded', function() {
+        ${codeHighlightRunAndFitJs()}
+
         // Initialize charts
         function initCharts() {
           document.querySelectorAll('canvas[data-chart-type]').forEach(canvas => {
@@ -148,6 +156,7 @@ function Preview({
         }
 
         processPageBreaks();
+        runCodeHighlight();
         initCharts();
       });
     `;
@@ -161,7 +170,9 @@ function Preview({
           ${fontLinks}
           <script src="https://cdn.tailwindcss.com"></script>
           <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+          ${codeHighlightHeadTags()}
           <style>
+            ${codeHighlightFitCss()}
             @page {
               size: ${format} ${isLandscape ? 'landscape' : 'portrait'};
               margin: 0;
@@ -223,7 +234,7 @@ function Preview({
             }
           </style>
         </head>
-        <body>
+        <body class="${CODE_HIGHLIGHT_FIT_BODY_CLASS}">
           <div class="page-container" id="page-container">
             ${bodyHtml}
           </div>

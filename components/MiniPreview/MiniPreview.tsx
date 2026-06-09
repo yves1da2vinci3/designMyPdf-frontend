@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import Handlebars from 'handlebars';
 import '../../utils/handlebarsHelpers';
+import {
+  CODE_HIGHLIGHT_FIT_BODY_CLASS,
+  codeHighlightFitCss,
+  codeHighlightHeadTags,
+  codeHighlightInitScript,
+} from '@/utils/codeHighlightShell';
 
 interface MiniPreviewProps {
   htmlContent: string;
@@ -134,9 +140,11 @@ function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    ${codeHighlightHeadTags()}
     ${fontImport}
     <style>
       ${fontStyle}
+      ${codeHighlightFitCss()}
       body {
         margin: 0;
         padding: 0;
@@ -158,11 +166,12 @@ function MiniPreview({ htmlContent, data, fonts }: MiniPreviewProps) {
       }
     </style>
   </head>
-  <body>
+  <body class="${CODE_HIGHLIGHT_FIT_BODY_CLASS}">
     <div class="content">
       ${rendered}
     </div>
     <script>
+      ${codeHighlightInitScript()}
       ${chartScript}
     </script>
   </body>
