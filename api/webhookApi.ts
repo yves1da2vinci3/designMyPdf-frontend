@@ -1,4 +1,5 @@
 import notificationService from '@/services/NotificationService';
+import { ensureArray } from '@/utils/ensureArray';
 import { apiClient } from './apiClient';
 
 export interface WebhookKeyDTO {
@@ -68,19 +69,19 @@ function normalizeSubscription(s: Record<string, unknown>): WebhookDTO {
       typeof s.extra_headers === 'string'
         ? JSON.parse(s.extra_headers || '{}')
         : ((s.extra_headers as Record<string, string>) ?? {}),
-    keys: (s.keys as WebhookKeyDTO[]) ?? [],
+    keys: ensureArray(s.keys as WebhookKeyDTO[]),
   };
 }
 
 export const webhookApi = {
   async getEventDefinitions(): Promise<string[]> {
     const res = await apiClient.get('/webhook-events/definitions');
-    return res.data.events ?? [];
+    return ensureArray(res.data.events);
   },
 
   async getSubscriptions(): Promise<WebhookDTO[]> {
     const res = await apiClient.get('/webhook-subscriptions');
-    return (res.data.subscriptions ?? []).map(normalizeSubscription);
+    return ensureArray<Record<string, unknown>>(res.data.subscriptions).map(normalizeSubscription);
   },
 
   async getSubscription(id: string): Promise<WebhookDTO> {
@@ -118,6 +119,6 @@ export const webhookApi = {
 
   async getDeliveries(id: string): Promise<{ attempts: DeliveryAttemptDTO[]; total: number }> {
     const res = await apiClient.get(`/webhook-subscriptions/${id}/deliveries`);
-    return { attempts: res.data.attempts ?? [], total: res.data.total ?? 0 };
+    return { attempts: ensureArray(res.data.attempts), total: res.data.total ?? 0 };
   },
 };

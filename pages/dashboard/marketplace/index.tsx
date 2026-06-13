@@ -34,6 +34,7 @@ import { notifications } from '@mantine/notifications';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { templateApi, MarketplaceListingDTO } from '@/api/templateApi';
 import { RequestStatus } from '@/api/request-status.enum';
+import { ensureArray } from '@/utils/ensureArray';
 
 export default function PublisherDashboard() {
   const router = useRouter();
@@ -48,7 +49,7 @@ export default function PublisherDashboard() {
     setStatus(RequestStatus.InProgress);
     try {
       const data = await templateApi.getMyListings();
-      setListings(data);
+      setListings(ensureArray(data));
       setStatus(RequestStatus.Succeeded);
     } catch {
       setStatus(RequestStatus.Failed);

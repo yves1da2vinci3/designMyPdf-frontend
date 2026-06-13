@@ -30,6 +30,7 @@ import { RequestStatus } from '@/api/request-status.enum';
 import { DeliveryAttemptDTO, WebhookDTO, webhookApi } from '@/api/webhookApi';
 import { eventColor, eventLabel } from '@/constants/webhookEvents';
 import DashboardLayout from '@/layouts/DashboardLayout';
+import { ensureArray } from '@/utils/ensureArray';
 
 function isJSON(s: string): boolean {
   try {
@@ -96,7 +97,7 @@ export default function WebhookHistory() {
           webhookApi.getDeliveries(id),
         ]);
         setSub(subData);
-        setAttempts(deliveries.attempts);
+        setAttempts(ensureArray(deliveries.attempts));
         setTotal(deliveries.total);
         setFetchStatus(RequestStatus.Succeeded);
       } catch {

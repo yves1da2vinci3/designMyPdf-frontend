@@ -1,4 +1,4 @@
-import notificationService from '@/services/NotificationService';
+import { ensureArray } from '@/utils/ensureArray';
 import { apiClient } from './apiClient';
 import { KeyDTO } from './keyApi';
 import { TemplateDTO } from './templateApi';
@@ -26,7 +26,7 @@ export const logApi = {
   async getLogs(): Promise<LogDTO[]> {
     try {
       const getKeysResponse = await apiClient.get('/logs');
-      return getKeysResponse.data.logs;
+      return ensureArray(getKeysResponse.data.logs);
     } catch (error) {
       throw new Error('Error fetching keys:' + error);
     }
@@ -34,7 +34,7 @@ export const logApi = {
   async getLogsStats(period: string): Promise<LogStatDTO[]> {
     try {
       const getKeysResponse = await apiClient.get(`/logs/stats?period=${period}`);
-      return getKeysResponse.data.stats;
+      return ensureArray(getKeysResponse.data.stats);
     } catch (error) {
       throw new Error('Error fetching keys:' + error);
     }

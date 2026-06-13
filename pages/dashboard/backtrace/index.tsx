@@ -39,6 +39,7 @@ import { RequestStatus } from '@/api/request-status.enum';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import ViewBacktrace from '@/modals/ViewBacktrace/ViewBacktrace';
 import { formatDate } from '@/utils/formatDate';
+import { ensureArray } from '@/utils/ensureArray';
 
 const PERIOD_OPTIONS = [
   { label: '7 Days', value: '7d' },
@@ -92,7 +93,7 @@ export default function Log() {
     setFetchLogRequestStatus(RequestStatus.InProgress);
     try {
       const fetchedLogs = await logApi.getLogs();
-      setLogs(fetchedLogs);
+      setLogs(ensureArray(fetchedLogs));
       setFetchLogRequestStatus(RequestStatus.Succeeded);
     } catch (error) {
       setFetchLogRequestStatus(RequestStatus.Failed);

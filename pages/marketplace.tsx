@@ -28,6 +28,7 @@ import {
 } from '@tabler/icons-react';
 import { templateApi, MarketplaceTemplateCard, marketplaceCoverUrl } from '@/api/templateApi';
 import { authApi } from '@/api/authApi';
+import { ensureArray } from '@/utils/ensureArray';
 import CopyTemplateModal from '@/components/marketplace/CopyTemplateModal';
 import PurchaseModal from '@/components/marketplace/PurchaseModal';
 
@@ -56,7 +57,7 @@ export default function MarketplacePage() {
     setLoading(true);
     try {
       const data = await templateApi.getMarketplaceTemplates(category || undefined);
-      setTemplates(data);
+      setTemplates(ensureArray(data));
     } catch {
       setTemplates([]);
     } finally {

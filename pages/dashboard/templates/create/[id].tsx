@@ -100,6 +100,7 @@ import {
 import { DEFAULT_FORMAT } from '../../../../utils/paperUtils';
 import { manuallyStartTour } from '../../../../utils/tourUtils';
 import { useLocalStorage } from '../../../../utils/useLocalStorage';
+import { ensureArray } from '@/utils/ensureArray';
 import { REFERENCE_TEMPLATES } from '@/services/agent/templateLibrary';
 import {
   extractVariablesFromTemplate,
@@ -347,7 +348,7 @@ const CreateTemplate: React.FC = () => {
     setMarketplaceLoading(true);
     try {
       const results = await templateApi.getMarketplaceTemplates();
-      setMarketplaceTemplates(results);
+      setMarketplaceTemplates(ensureArray(results));
       setMarketplaceLoaded(true);
     } catch {
       // Silently handle

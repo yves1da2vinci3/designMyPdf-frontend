@@ -32,6 +32,7 @@ import { RequestStatus } from '@/api/request-status.enum';
 import { CreateWebhookDto, webhookApi } from '@/api/webhookApi';
 import { eventLabel } from '@/constants/webhookEvents';
 import DashboardLayout from '@/layouts/DashboardLayout';
+import { ensureArray } from '@/utils/ensureArray';
 
 export default function CreateWebhook() {
   const router = useRouter();
@@ -45,12 +46,12 @@ export default function CreateWebhook() {
   useEffect(() => {
     webhookApi
       .getEventDefinitions()
-      .then(setEventDefs)
+      .then((e) => setEventDefs(ensureArray(e)))
       .catch(() => {});
     keyApi
       .getKeys()
       .then((keys) => {
-        setKeyOptions(keys.map((k) => ({ value: String(k.id), label: k.name })));
+        setKeyOptions(ensureArray(keys).map((k) => ({ value: String(k.id), label: k.name })));
       })
       .catch(() => {});
   }, []);

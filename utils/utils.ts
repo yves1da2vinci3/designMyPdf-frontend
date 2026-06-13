@@ -1,4 +1,5 @@
 export function importFontCreation(fonts: string[]): string {
+  if (!fonts?.length) return '';
   try {
     const encodedFont = encodeURIComponent(fonts[0]);
     const fontUrl = `https://fonts.googleapis.com/css2?family=${encodedFont}:wght@100;200;300;400;500;600;700;800;900${fonts
@@ -11,6 +12,7 @@ export function importFontCreation(fonts: string[]): string {
 }
 
 export function fontCssCreation(fonts: string[]): string {
+  if (!fonts?.length) return '';
   return `
     body {
       font-family: '${fonts[0]}', sans-serif;

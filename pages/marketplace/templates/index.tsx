@@ -20,6 +20,7 @@ import {
 import { IconShoppingCart } from '@tabler/icons-react';
 import { RequestStatus } from '@/api/request-status.enum';
 import { templateApi, MarketplaceTemplateCard, marketplaceCoverUrl } from '@/api/templateApi';
+import { ensureArray } from '@/utils/ensureArray';
 
 interface MarketplaceTemplate extends MarketplaceTemplateCard {
   id: string;
@@ -47,7 +48,7 @@ export default function MarketplaceTemplates() {
   const fetchTemplates = async () => {
     try {
       setIsLoading(RequestStatus.InProgress);
-      const response = await templateApi.getMarketplaceTemplates();
+      const response = ensureArray(await templateApi.getMarketplaceTemplates());
       setTemplates(
         response.map((template: MarketplaceTemplateCard) => ({
           ...template,
@@ -74,7 +75,7 @@ export default function MarketplaceTemplates() {
     router.push(`/marketplace/templates/${templateId}`);
   };
 
-  if (isLoading === RequestStatus.InProgress) {
+  if (isLoading === RequestStatus.InProgress || isLoading === RequestStatus.NotStated) {
     return (
       <Box bg="#1A1B1E" style={{ minHeight: '100vh' }}>
         <Center style={{ height: '100vh' }}>

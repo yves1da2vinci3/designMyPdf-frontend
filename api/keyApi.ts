@@ -1,4 +1,5 @@
 import notificationService from '@/services/NotificationService';
+import { ensureArray } from '@/utils/ensureArray';
 import { apiClient } from './apiClient';
 
 export interface CreateKeyDto {
@@ -62,7 +63,7 @@ export const keyApi = {
   async getKeys(): Promise<KeyDTO[]> {
     try {
       const getKeysResponse = await apiClient.get('/keys');
-      return getKeysResponse.data.keys;
+      return ensureArray(getKeysResponse.data.keys);
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'An unknown error occurred');
     }

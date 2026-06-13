@@ -34,6 +34,7 @@ import {
 } from '@tabler/icons-react';
 import { templateApi, TemplateDTO } from '@/api/templateApi';
 import { authApi } from '@/api/authApi';
+import { ensureArray } from '@/utils/ensureArray';
 import { MarketplaceFeaturesTags } from '@/components/marketplace/MarketplaceFeaturesTags';
 import { MARKETPLACE_CATEGORIES, validateMarketplaceListingInput } from '@/constants/marketplace';
 
@@ -83,7 +84,7 @@ export default function AddListingPage() {
   useEffect(() => {
     templateApi
       .getTemplates()
-      .then(setTemplates)
+      .then((t) => setTemplates(ensureArray(t)))
       .catch(() => {});
   }, []);
 
