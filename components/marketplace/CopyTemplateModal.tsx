@@ -4,6 +4,7 @@ import { Modal, Select, Button, Stack, Text, Group } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { templateApi, TemplateDTO, MarketplaceTemplateCard } from '@/api/templateApi';
 import { namespaceApi, NamespaceDTO } from '@/api/namespaceApi';
+import { ensureArray } from '@/utils/ensureArray';
 
 interface Props {
   opened: boolean;
@@ -20,8 +21,9 @@ export default function CopyTemplateModal({ opened, onClose, template }: Props) 
   useEffect(() => {
     if (opened) {
       namespaceApi.getNamespaces().then((ns) => {
-        setNamespaces(ns);
-        if (ns.length > 0) setSelectedNamespaceId(String(ns[0].ID));
+        const safe = ensureArray(ns);
+        setNamespaces(safe);
+        if (safe.length > 0) setSelectedNamespaceId(String(safe[0].ID));
       });
     }
   }, [opened]);
@@ -56,7 +58,7 @@ export default function CopyTemplateModal({ opened, onClose, template }: Props) 
           placeholder="Select a folder..."
           value={selectedNamespaceId}
           onChange={setSelectedNamespaceId}
-          data={namespaces.map((ns) => ({ value: String(ns.ID), label: ns.name }))}
+          data={ensureArray(namespaces).map((ns) => ({ value: String(ns.ID), label: ns.name }))}
         />
         <Group justify="flex-end" mt="xs">
           <Button variant="subtle" onClick={onClose}>

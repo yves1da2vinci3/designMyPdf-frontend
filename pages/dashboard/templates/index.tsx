@@ -35,13 +35,14 @@ import { CreateNamespaceDto, NamespaceDTO, namespaceApi } from '@/api/namespaceA
 import { RequestStatus } from '@/api/request-status.enum';
 import { manuallyStartTour } from '@/utils/tourUtils';
 import { useLocalStorage } from '@/utils/useLocalStorage';
+import { ensureArray } from '@/utils/ensureArray';
 import 'driver.js/dist/driver.css';
 import AiCreditsBadge from '@/components/AiCreditsBadge/AiCreditsBadge';
 import { useAiCredits } from '@/hooks/useAiCredits';
 
 function TemplatesPage() {
   const router = useRouter();
-  const isMdUp = useMediaQuery('(min-width: 62em)');
+  const isMdUp = useMediaQuery('(min-width: 62em)', false);
   const [addTemplateOpened, { open: openAddTemplate, close: closeAddTemplate }] =
     useDisclosure(false);
   const [addNamespaceOpened, { open: openAddNamespace, close: closeAddNamespace }] =
@@ -49,7 +50,7 @@ function TemplatesPage() {
   const [templates, setTemplates] = useState<TemplateDTO[]>([]);
   const [namespaces, setNamespaces] = useState<NamespaceDTO[]>([]);
   const [fetchTemplatesRequestStatus, setFetchTemplatesRequestStatus] = useState(
-    RequestStatus.NotStated,
+    RequestStatus.InProgress,
   );
   const [selectedNamespaceId, setSelectedNamespaceId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -67,7 +68,7 @@ function TemplatesPage() {
   }, [searchQuery]);
 
   const fetchNamespaces = useCallback(async () => {
-    const namespacesData = await namespaceApi.getNamespaces();
+    const namespacesData = ensureArray(await namespaceApi.getNamespaces());
     setNamespaces(namespacesData);
     return namespacesData;
   }, []);
@@ -81,7 +82,7 @@ function TemplatesPage() {
         limit: PAGE_SIZE,
         q: debouncedSearch,
       });
-      setTemplates(result.templates);
+      setTemplates(ensureArray(result.templates));
       setTotal(result.total);
       setFetchTemplatesRequestStatus(RequestStatus.Succeeded);
     } catch {
@@ -109,9 +110,9 @@ function TemplatesPage() {
   }, []);
 
   useEffect(() => {
-    if (selectedNamespaceId === null && namespaces.length === 0) return;
+    if (selectedNamespaceId === null && ensureArray(namespaces).length === 0) return;
     fetchTemplatesPage();
-  }, [selectedNamespaceId, page, debouncedSearch, namespaces.length, fetchTemplatesPage]);
+  }, [selectedNamespaceId, page, debouncedSearch, namespaces, fetchTemplatesPage]);
 
   useEffect(() => {
     setPage(1);
@@ -136,7 +137,7 @@ function TemplatesPage() {
       setAddNameSpaceRequestStatus(RequestStatus.InProgress);
       const namespace = await namespaceApi.createNamespace(nameSpaceDTO);
       setAddNameSpaceRequestStatus(RequestStatus.Succeeded);
-      const newNamespaces = [...namespaces, namespace];
+      const newNamespaces = [...ensureArray(namespaces), namespace];
       if (newNamespaces.length === 1) {
         setSelectedNamespaceId(namespace.ID);
       }
@@ -411,7 +412,7 @@ function TemplatesPage() {
                       All Templates
                     </Text>
                   </Box>
-                  {namespaces.map((namespace) => (
+                  {ensureArray(namespaces).map((namespace) => (
                     <NamespaceItem
                       key={namespace.ID}
                       id={namespace.ID}
@@ -475,7 +476,7 @@ function TemplatesPage() {
               <Center style={{ height: '200px' }}>
                 <Loader size="lg" />
               </Center>
-            ) : templates.length === 0 ? (
+            ) : ensureArray(templates).length === 0 ? (
               <Center style={{ height: '200px', flexDirection: 'column' }}>
                 <Text c="dimmed" mt="md">
                   {searchQuery ? 'No templates match your search' : 'No templates in this folder'}
@@ -492,7 +493,7 @@ function TemplatesPage() {
             ) : (
               <>
                 <Grid id="templates-grid" gutter="md">
-                  {templates.map((template) => (
+                  {ensureArray(templates).map((template) => (
                     <Grid.Col key={template.ID} span={{ base: 12, sm: 6, md: 4 }}>
                       <TemplateItem
                         DeleteTemplateFromClient={DeleteTemplateFromClient}

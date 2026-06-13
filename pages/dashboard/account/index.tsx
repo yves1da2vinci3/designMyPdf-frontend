@@ -23,6 +23,7 @@ import { IconFolderFilled, IconUserCircle } from '@tabler/icons-react';
 import { authApi, updateUserDTO } from '@/api/authApi';
 import { CreateNamespaceDto, NamespaceDTO, namespaceApi } from '@/api/namespaceApi';
 import { RequestStatus } from '@/api/request-status.enum';
+import { ensureArray } from '@/utils/ensureArray';
 import ManagedNamespaceItem from '@/components/ManageNamespaceItem/ManagedNamespaceItem';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import AddNamespace from '@/modals/AddNamespace/AddNamespace';
@@ -78,7 +79,7 @@ export default function Account() {
     SetfetchNamespacesRequestStatus(RequestStatus.InProgress);
     try {
       const fetchedNamespaces = await namespaceApi.getNamespaces();
-      setNamespaces(fetchedNamespaces);
+      setNamespaces(ensureArray(fetchedNamespaces));
       SetfetchNamespacesRequestStatus(RequestStatus.Succeeded);
     } catch (error) {
       SetfetchNamespacesRequestStatus(RequestStatus.Failed);
@@ -106,7 +107,7 @@ export default function Account() {
       setAddNameSpaceRequestStatus(RequestStatus.InProgress);
       const newNamespace = await namespaceApi.createNamespace(nameSpaceDTO);
       setAddNameSpaceRequestStatus(RequestStatus.Succeeded);
-      setNamespaces([...namespaces, newNamespace]);
+      setNamespaces([...ensureArray(namespaces), newNamespace]);
       closeAddNamespace();
     } catch (error) {
       setAddNameSpaceRequestStatus(RequestStatus.Failed);

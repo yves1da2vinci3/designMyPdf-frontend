@@ -34,6 +34,7 @@ import { Links } from '@/constants/routes';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import getFilledStats from '@/utils/filledStats';
 import { filterLogsByApiPeriod } from '@/utils/logPeriodFilter';
+import { ensureArray } from '@/utils/ensureArray';
 import AiCreditsBadge from '@/components/AiCreditsBadge/AiCreditsBadge';
 import { useAiCredits } from '@/hooks/useAiCredits';
 
@@ -70,12 +71,12 @@ export default function Overview() {
     try {
       const apiPeriod = API_PERIOD_MAP[period] || 'week';
       const logStats = await logApi.getLogsStats(apiPeriod);
-      const newLogs = logStats || [];
+      const newLogs = ensureArray(logStats);
       const filledStats = getFilledStats(newLogs, apiPeriod);
       setLogStats(filledStats);
 
       const fetchedLogs = await logApi.getLogs();
-      setAllLogs(fetchedLogs);
+      setAllLogs(ensureArray(fetchedLogs));
 
       setFetchLogStatsRequestStatus(RequestStatus.Succeeded);
     } catch (error) {

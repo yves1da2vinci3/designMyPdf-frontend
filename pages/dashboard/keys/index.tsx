@@ -39,6 +39,7 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import AddKeyModal from '@/modals/AddKey/AddKey';
 import UpdateKeyModal from '@/modals/UpdateKey/UpdateKey';
 import { formatDate } from '@/utils/formatDate';
+import { ensureArray } from '@/utils/ensureArray';
 
 const maskKey = (value: string) => {
   if (!value || value.length < 8) return value;
@@ -120,7 +121,7 @@ export default function Keys() {
     try {
       const fetchedKeys = await keyApi.getKeys();
       setFetchKeysRequestStatus(RequestStatus.Succeeded);
-      setKeys(fetchedKeys);
+      setKeys(ensureArray(fetchedKeys));
     } catch (error) {
       setFetchKeysRequestStatus(RequestStatus.Failed);
     }
@@ -129,7 +130,7 @@ export default function Keys() {
   const fetchDayStats = async () => {
     try {
       const stats = await logApi.getLogsStats('day');
-      const count = (stats || []).reduce((sum, s) => sum + (s.count || 0), 0);
+      const count = ensureArray(stats).reduce((sum, s) => sum + (s.count || 0), 0);
       setTotal24h(count);
     } catch {
       setTotal24h(0);

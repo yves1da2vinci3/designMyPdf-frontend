@@ -1,4 +1,5 @@
 import notificationService from '@/services/NotificationService';
+import { ensureArray } from '@/utils/ensureArray';
 import { apiClient } from './apiClient';
 
 export interface CreateNamespaceDto {
@@ -52,7 +53,7 @@ export const namespaceApi = {
   async getNamespaces(): Promise<NamespaceDTO[]> {
     try {
       const nameResponse = await apiClient.get(`/namespaces/`);
-      return nameResponse.data.namespaces;
+      return ensureArray(nameResponse.data.namespaces);
     } catch (error) {
       console.error('Namespace fetch error:', error);
       throw error; // Rethrow the error to propagate it further if needed

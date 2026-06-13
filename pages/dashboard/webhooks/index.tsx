@@ -42,6 +42,7 @@ import { useRouter } from 'next/router';
 import { RequestStatus } from '@/api/request-status.enum';
 import { WebhookDTO, webhookApi } from '@/api/webhookApi';
 import { eventColor, eventLabel } from '@/constants/webhookEvents';
+import { ensureArray } from '@/utils/ensureArray';
 import DashboardLayout from '@/layouts/DashboardLayout';
 
 function lastDeliveryText(sub: WebhookDTO): React.ReactNode {
@@ -85,7 +86,7 @@ export default function Webhooks() {
     setStatus(RequestStatus.InProgress);
     try {
       const data = await webhookApi.getSubscriptions();
-      setSubs(data);
+      setSubs(ensureArray(data));
       setStatus(RequestStatus.Succeeded);
     } catch {
       setStatus(RequestStatus.Failed);

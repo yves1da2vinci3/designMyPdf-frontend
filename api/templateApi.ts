@@ -1,6 +1,7 @@
 import { apiClient } from './apiClient';
 import { DEFAULT_TEMPLATE } from '@/constants/template';
 import notificationService from '@/services/NotificationService';
+import { ensureArray } from '@/utils/ensureArray';
 
 const defaultVariables = {
   fromCompany: {
@@ -170,7 +171,7 @@ export const templateApi = {
   async getTemplates(): Promise<TemplateDTO[]> {
     try {
       const getTemplatesResponse = await apiClient.get('/templates');
-      return getTemplatesResponse.data.templates;
+      return ensureArray(getTemplatesResponse.data.templates);
     } catch (error) {
       throw new Error(`Error fetching templates: ${error}`);
     }
@@ -194,7 +195,7 @@ export const templateApi = {
     try {
       const res = await apiClient.get(url);
       return {
-        templates: res.data.templates ?? [],
+        templates: ensureArray(res.data.templates),
         total: res.data.total ?? 0,
         page: res.data.page ?? 1,
         limit: res.data.limit ?? 12,
@@ -261,7 +262,7 @@ export const templateApi = {
   async getMarketplaceTemplates(category?: string): Promise<MarketplaceTemplateCard[]> {
     const params = category ? { category } : {};
     const res = await apiClient.get('/marketplace', { params });
-    return res.data.templates || [];
+    return ensureArray(res.data.templates);
   },
 
   async getMarketplaceTemplate(id: string): Promise<TemplateDTO> {
@@ -297,7 +298,7 @@ export const templateApi = {
 
   async getMyListings(): Promise<MarketplaceListingDTO[]> {
     const res = await apiClient.get('/marketplace/my-listings');
-    return res.data.listings || [];
+    return ensureArray(res.data.listings);
   },
 
   async exportTemplate(data: ExportTemplateDto): Promise<Blob> {
