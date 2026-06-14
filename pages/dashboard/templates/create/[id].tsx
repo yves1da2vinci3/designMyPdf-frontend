@@ -32,7 +32,7 @@ import {
 } from '@mantine/core';
 import type { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
-import { useDisclosure } from '@mantine/hooks';
+import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { DndProvider, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Dropzone, FileWithPath } from '@mantine/dropzone';
@@ -66,8 +66,15 @@ import {
 } from '@tabler/icons-react';
 
 import { Editor } from '@monaco-editor/react';
-import { ensureMonacoReady } from '@/lib/monacoBootstrap';
-import Preview from './Preview';
+import { ensureMonacoReady, installMonacoWorkersOnce } from '@/lib/monacoBootstrap';
+const PreviewPanel = dynamic(() => import('./Preview'), {
+  ssr: false,
+  loading: () => (
+    <Center h="100%">
+      <Loader size="sm" />
+    </Center>
+  ),
+});
 import AddVariable from '@/modals/AddVariable/AddVariable';
 import VariableBadge from '@/components/VariableBadge/VariableBadge';
 import ExportPdfProgress, {
@@ -101,7 +108,6 @@ import { DEFAULT_FORMAT } from '../../../../utils/paperUtils';
 import { manuallyStartTour } from '../../../../utils/tourUtils';
 import { useLocalStorage } from '../../../../utils/useLocalStorage';
 import { ensureArray } from '@/utils/ensureArray';
-import { REFERENCE_TEMPLATES } from '@/services/agent/templateLibrary';
 import {
   extractVariablesFromTemplate,
   buildVariableStructure,
@@ -212,6 +218,10 @@ const CreateTemplate: React.FC = () => {
     useDisclosure(false);
   const [templateTab, setTemplateTab] = useState<string>('default');
   const [templateSearch, setTemplateSearch] = useState('');
+  const [referenceTemplates, setReferenceTemplates] = useState<ReferenceTemplate[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const isMobileEditor = useMediaQuery('(max-width: 62em)', false);
+  const [mobileEditorTab, setMobileEditorTab] = useState<string | null>('preview');
   const [marketplaceTemplates, setMarketplaceTemplates] = useState<MarketplaceTemplateCard[]>([]);
   const [marketplaceLoading, setMarketplaceLoading] = useState(false);
   const [marketplaceLoaded, setMarketplaceLoaded] = useState(false);
@@ -261,6 +271,17 @@ const CreateTemplate: React.FC = () => {
       setIsLoading(RequestStatus.Failed);
     }
   };
+
+  useEffect(() => {
+    installMonacoWorkersOnce();
+  }, []);
+
+  useEffect(() => {
+    if (!templateDrawerOpened || referenceTemplates.length > 0) return;
+    void import('@/services/agent/templateLibrary').then((mod) => {
+      setReferenceTemplates(mod.REFERENCE_TEMPLATES);
+    });
+  }, [templateDrawerOpened, referenceTemplates.length]);
 
   useEffect(() => {
     if (!router.isReady || !templateId) return;
@@ -416,6 +437,7 @@ const CreateTemplate: React.FC = () => {
         notificationService.showErrorNotification('Le nom du template ne peut pas être vide.');
         return;
       }
+      setIsSaving(true);
       const updated = await templateApi.updateTemplate(template?.ID as number, {
         ...template,
         name: resolvedName,
@@ -427,8 +449,11 @@ const CreateTemplate: React.FC = () => {
       });
       setTemplate(updated);
       setTemplateName(updated.name?.trim() ?? '');
+      notificationService.showSuccessNotification('Template enregistré');
     } catch (error: any) {
       notificationService.showErrorNotification(error?.message || 'Error updating template');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -896,7 +921,7 @@ const CreateTemplate: React.FC = () => {
             }}
           >
             <Tabs.List>
-              <Tabs.Tab value="default">Défaut ({REFERENCE_TEMPLATES.length})</Tabs.Tab>
+              <Tabs.Tab value="default">Défaut ({referenceTemplates.length})</Tabs.Tab>
               <Tabs.Tab value="marketplace">Marketplace</Tabs.Tab>
             </Tabs.List>
 
@@ -906,10 +931,10 @@ const CreateTemplate: React.FC = () => {
                 {(() => {
                   const q = templateSearch.toLowerCase();
                   const filtered = q
-                    ? REFERENCE_TEMPLATES.filter(
+                    ? referenceTemplates.filter(
                         (t) => t.name.toLowerCase().includes(q) || t.type.toLowerCase().includes(q),
                       )
-                    : REFERENCE_TEMPLATES;
+                    : referenceTemplates;
 
                   const groups: Record<string, typeof filtered> = {};
                   filtered.forEach((t) => {
@@ -1423,6 +1448,7 @@ const CreateTemplate: React.FC = () => {
           <Button
             id="save-button"
             onClick={updateTemplate}
+            loading={isSaving}
             variant="filled"
             color="blue"
             styles={{
@@ -1442,477 +1468,528 @@ const CreateTemplate: React.FC = () => {
         <Center h="calc(100vh - 60px)" w="100%">
           <Loader size="lg" color="blue" />
         </Center>
+      ) : isLoading === RequestStatus.Failed ? (
+        <Center h="calc(100vh - 60px)" w="100%">
+          <Stack align="center" gap="md">
+            <Text fw={600} size="lg">
+              Template introuvable
+            </Text>
+            <Text c="dimmed" size="sm" ta="center" maw={360}>
+              Ce template n&apos;existe pas ou vous n&apos;y avez pas accès. Aucune modification
+              n&apos;a été enregistrée.
+            </Text>
+            <Button variant="light" onClick={() => router.push('/dashboard/templates')}>
+              Retour à la bibliothèque
+            </Button>
+          </Stack>
+        </Center>
       ) : (
-        <Group gap={0} style={{ height: 'calc(100vh - 60px)', flexWrap: 'nowrap' }}>
-          {/* Sidebar */}
-          <Stack
-            component={ScrollArea}
-            w={sidebarCollapsed ? '40px' : '24%'}
-            p={sidebarCollapsed ? 'xs' : 'lg'}
-            h="100%"
-            bg="#1A1B1E"
+        <>
+          {isMobileEditor ? (
+            <SegmentedControl
+              value={mobileEditorTab || 'preview'}
+              onChange={setMobileEditorTab}
+              data={[
+                { label: 'Code', value: 'code' },
+                { label: 'Preview', value: 'preview' },
+                { label: 'Settings', value: 'settings' },
+              ]}
+              fullWidth
+              mb="xs"
+            />
+          ) : null}
+          <Group
+            gap={0}
             style={{
-              borderRight: '1px solid #373A40',
-              transition: 'width 0.3s ease, padding 0.3s ease',
-              overflow: 'hidden',
-              flexShrink: 0,
+              height: isMobileEditor ? 'calc(100vh - 108px)' : 'calc(100vh - 60px)',
+              flexWrap: isMobileEditor ? 'wrap' : 'nowrap',
             }}
-            gap="xl"
           >
-            {sidebarCollapsed ? (
-              <Center>
-                <ActionIcon
-                  variant="subtle"
-                  color="blue"
-                  onClick={() => setSidebarCollapsed(false)}
-                  style={{
-                    marginTop: '10px',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <IconChevronRight size={20} />
-                </ActionIcon>
-              </Center>
-            ) : (
-              <>
-                <Group justify="space-between">
-                  <Text size="sm" fw={600} c="white" mb="md" fs="uppercase">
-                    Template settings
-                  </Text>
+            {/* Sidebar */}
+            <Stack
+              component={ScrollArea}
+              w={isMobileEditor ? '100%' : sidebarCollapsed ? '40px' : '24%'}
+              p={sidebarCollapsed && !isMobileEditor ? 'xs' : 'lg'}
+              h="100%"
+              bg="#1A1B1E"
+              style={{
+                borderRight: '1px solid #373A40',
+                transition: 'width 0.3s ease, padding 0.3s ease',
+                overflow: 'hidden',
+                flexShrink: 0,
+                display: isMobileEditor && mobileEditorTab !== 'settings' ? 'none' : undefined,
+              }}
+              gap="xl"
+            >
+              {sidebarCollapsed ? (
+                <Center>
                   <ActionIcon
                     variant="subtle"
                     color="blue"
-                    onClick={() => setSidebarCollapsed(true)}
+                    onClick={() => setSidebarCollapsed(false)}
                     style={{
+                      marginTop: '10px',
                       transition: 'all 0.2s ease',
                     }}
                   >
-                    <IconChevronLeft size={16} />
+                    <IconChevronRight size={20} />
                   </ActionIcon>
-                </Group>
-
-                {/* Paper size and orientation */}
-                <Group id="paper-settings" align="center" mb="lg">
-                  <Select
-                    size="sm"
-                    label="Paper Size"
-                    w={120}
-                    onChange={(value) => {
-                      const formatValue = (value as FormatType) || DEFAULT_FORMAT;
-                      setFormat(formatValue);
-                    }}
-                    defaultValue={DEFAULT_FORMAT}
-                    data={[
-                      { label: 'A1', value: 'a1' },
-                      { label: 'A2', value: 'a2' },
-                      { label: 'A3', value: 'a3' },
-                      { label: 'A4', value: 'a4' },
-                      { label: 'A5', value: 'a5' },
-                      { label: 'A6', value: 'a6' },
-                    ]}
-                    styles={{
-                      root: { marginBottom: 0 },
-                      input: {
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #dee2e6',
-                        color: '#212529',
+                </Center>
+              ) : (
+                <>
+                  <Group justify="space-between">
+                    <Text size="sm" fw={600} c="white" mb="md" fs="uppercase">
+                      Template settings
+                    </Text>
+                    <ActionIcon
+                      variant="subtle"
+                      color="blue"
+                      onClick={() => setSidebarCollapsed(true)}
+                      style={{
                         transition: 'all 0.2s ease',
-                        '&:hover': {
-                          borderColor: '#3B82F6',
-                        },
-                      },
-                      label: {
-                        color: '#909296',
-                        fontSize: '0.75rem',
-                        marginBottom: '0.25rem',
-                      },
-                      dropdown: {
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #dee2e6',
-                      },
-                      option: {
-                        color: '#212529',
-                        '&[data-selected]': {
-                          '&, &:hover': {
-                            backgroundColor: '#e7f5ff',
-                            color: '#1864ab',
-                          },
-                        },
-                        '&[data-combobox-active]': { backgroundColor: '#f1f3f5', color: '#212529' },
-                        '&[data-hovered]': { backgroundColor: '#f1f3f5', color: '#212529' },
-                        '&:hover': { backgroundColor: '#f1f3f5' },
-                      },
-                      section: { color: '#495057' },
-                    }}
-                  />
-                  <Checkbox
-                    checked={isLandScape}
-                    onChange={(event) => setIsLandScape(event.currentTarget.checked)}
-                    label="Landscape"
-                    styles={{
-                      label: {
-                        color: '#909296',
-                      },
-                    }}
-                  />
-                </Group>
-
-                {/* PDF Styles — Page Background */}
-                <Box id="pdf-styles-section">
-                  <Text size="sm" fw={600} c="white" mb="xs" fs="uppercase">
-                    PDF Styles
-                  </Text>
-                  <Text size="xs" c="dimmed" mb="xs">
-                    Page Background
-                  </Text>
-                  <Group gap={6} mb="xs">
-                    {['#FFFFFF', '#F3F4F6', '#DBEAFE', '#FEF3C7', '#1F2937'].map((color) => (
-                      <ColorSwatch
-                        key={color}
-                        color={color}
-                        size={24}
-                        style={{
-                          cursor: 'pointer',
-                          border: pdfBgColor === color ? '2px solid #228be6' : '2px solid #373A40',
-                        }}
-                        onClick={() => setPdfBgColor(color)}
-                      />
-                    ))}
-                  </Group>
-                  <ColorInput
-                    size="xs"
-                    value={pdfBgColor}
-                    onChange={setPdfBgColor}
-                    format="hex"
-                    label="Hex Code"
-                    styles={{
-                      label: { color: '#909296', fontSize: '11px' },
-                      input: { backgroundColor: '#25262b', color: 'white', borderColor: '#373A40' },
-                    }}
-                  />
-                  <Text size="xs" c="dimmed" mt="md" mb="xs">
-                    Padding du contenu (PDF / aperçu)
-                  </Text>
-                  <TextInput
-                    size="xs"
-                    placeholder="Vide = 2rem (défaut)"
-                    value={pdfContentPadding}
-                    onChange={(e) => setPdfContentPadding(e.currentTarget.value)}
-                    description="Ex. 16px, 1.5rem, none ou 0 pour aucun"
-                    styles={{
-                      label: { color: '#909296', fontSize: '11px' },
-                      input: { backgroundColor: '#25262b', color: 'white', borderColor: '#373A40' },
-                      description: { color: '#868e96', fontSize: '10px' },
-                    }}
-                  />
-                  <Group gap="xs" mt="xs" wrap="wrap">
-                    <Button
-                      size="xs"
-                      variant="default"
-                      onClick={() => setPdfContentPadding('none')}
-                    >
-                      Aucun padding
-                    </Button>
-                    <Button
-                      size="xs"
-                      variant="light"
-                      color="gray"
-                      onClick={() => {
-                        setPdfContentPadding('');
-                        setPdfBgColor('#FFFFFF');
                       }}
                     >
-                      Réinitialiser options PDF
-                    </Button>
+                      <IconChevronLeft size={16} />
+                    </ActionIcon>
                   </Group>
-                </Box>
 
-                {/* Export format */}
-                <Box>
-                  <Text size="sm" fw={600} c="white" mb="md" fs="uppercase">
-                    Export Settings
-                  </Text>
-                  <Text size="xs" c="dimmed" mb="md">
-                    PDF export will use the paper size and orientation selected above.
-                  </Text>
-                  <Button
-                    id="sidebar-export-button"
-                    fullWidth
-                    leftSection={<IconFileExport size={16} />}
-                    onClick={exportPdf}
-                    variant="light"
-                    color="blue"
-                    styles={{
-                      root: {
-                        transition: 'all 0.2s ease',
-                        '&:hover': { transform: 'translateY(-1px)' },
-                      },
-                    }}
-                    mb="md"
-                  >
-                    Export as {format.toUpperCase()} PDF
-                  </Button>
-                </Box>
-
-                {/* Start from Template section */}
-                <Box>
-                  <Text size="sm" fw={600} c="white" mb="md" fs="uppercase">
-                    Templates
-                  </Text>
-                  <Text size="xs" c="dimmed" mb="md">
-                    Start from a pre-built template
-                  </Text>
-                  <Button
-                    fullWidth
-                    leftSection={<IconFileText size={16} />}
-                    onClick={openTemplateDrawer}
-                    variant="light"
-                    color="purple"
-                    styles={{
-                      root: {
-                        transition: 'all 0.2s ease',
-                        '&:hover': { transform: 'translateY(-1px)' },
-                      },
-                    }}
-                    mb="md"
-                  >
-                    Start from Template
-                  </Button>
-                  {selectedTemplateId && (
-                    <Text size="xs" c="dimmed" style={{ fontStyle: 'italic' }}>
-                      Template selected
-                    </Text>
-                  )}
-                </Box>
-
-                {/* Variables section */}
-                <Box id="variables-section">
-                  <Group justify="space-between" mb="xs">
-                    <Text size="sm" fw={600} c="white" fs="uppercase">
-                      Variables
-                    </Text>
-                    <Tooltip label="Add variables">
-                      <ActionIcon
-                        variant="subtle"
-                        color="blue"
-                        onClick={handleAddVariable}
-                        style={{
+                  {/* Paper size and orientation */}
+                  <Group id="paper-settings" align="center" mb="lg">
+                    <Select
+                      size="sm"
+                      label="Paper Size"
+                      w={120}
+                      onChange={(value) => {
+                        const formatValue = (value as FormatType) || DEFAULT_FORMAT;
+                        setFormat(formatValue);
+                      }}
+                      defaultValue={DEFAULT_FORMAT}
+                      data={[
+                        { label: 'A1', value: 'a1' },
+                        { label: 'A2', value: 'a2' },
+                        { label: 'A3', value: 'a3' },
+                        { label: 'A4', value: 'a4' },
+                        { label: 'A5', value: 'a5' },
+                        { label: 'A6', value: 'a6' },
+                      ]}
+                      styles={{
+                        root: { marginBottom: 0 },
+                        input: {
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #dee2e6',
+                          color: '#212529',
                           transition: 'all 0.2s ease',
-                          '&:hover': { transform: 'scale(1.1)' },
-                        }}
-                      >
-                        <IconPlus size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                  </Group>
-                  <Text size="xs" c="dimmed" mb="md">
-                    How to use variables?
-                  </Text>
-
-                  {/* Variables list */}
-                  <Box
-                    style={{
-                      maxHeight: '200px',
-                      overflowY: 'auto',
-                      padding: '0.5rem',
-                      backgroundColor: '#25262B',
-                      borderRadius: '8px',
-                    }}
-                  >
-                    <Group gap="xs" style={{ flexWrap: 'wrap' }}>
-                      {Object.entries(variables).map(([varName, value]) => {
-                        let type = 'object';
-                        if (Array.isArray(value)) {
-                          type = 'array';
-                        } else if (typeof value === 'object' && value !== null) {
-                          type = 'object';
-                        } else {
-                          type = 'key-value';
-                        }
-                        return <VariableBadge key={varName} varName={varName} type={type} />;
-                      })}
-                    </Group>
-                  </Box>
-                </Box>
-
-                {/* Stylesheet section */}
-                <Box>
-                  <Text size="sm" fw={600} c="white" mb="md" fs="uppercase">
-                    Stylesheet
-                  </Text>
-                  <Select
-                    value="tailwind"
-                    data={[{ value: 'tailwind', label: 'Tailwind CSS' }]}
-                    styles={{
-                      input: {
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #dee2e6',
-                        color: '#212529',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          borderColor: '#3B82F6',
-                        },
-                      },
-                      dropdown: {
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #dee2e6',
-                      },
-                      option: {
-                        color: '#212529',
-                        '&[data-selected]': {
-                          '&, &:hover': {
-                            backgroundColor: '#e7f5ff',
-                            color: '#1864ab',
+                          '&:hover': {
+                            borderColor: '#3B82F6',
                           },
                         },
-                        '&[data-combobox-active]': { backgroundColor: '#f1f3f5', color: '#212529' },
-                        '&[data-hovered]': { backgroundColor: '#f1f3f5', color: '#212529' },
-                        '&:hover': { backgroundColor: '#f1f3f5' },
-                      },
-                      section: { color: '#495057' },
-                    }}
-                  />
-                </Box>
+                        label: {
+                          color: '#909296',
+                          fontSize: '0.75rem',
+                          marginBottom: '0.25rem',
+                        },
+                        dropdown: {
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #dee2e6',
+                        },
+                        option: {
+                          color: '#212529',
+                          '&[data-selected]': {
+                            '&, &:hover': {
+                              backgroundColor: '#e7f5ff',
+                              color: '#1864ab',
+                            },
+                          },
+                          '&[data-combobox-active]': {
+                            backgroundColor: '#f1f3f5',
+                            color: '#212529',
+                          },
+                          '&[data-hovered]': { backgroundColor: '#f1f3f5', color: '#212529' },
+                          '&:hover': { backgroundColor: '#f1f3f5' },
+                        },
+                        section: { color: '#495057' },
+                      }}
+                    />
+                    <Checkbox
+                      checked={isLandScape}
+                      onChange={(event) => setIsLandScape(event.currentTarget.checked)}
+                      label="Landscape"
+                      styles={{
+                        label: {
+                          color: '#909296',
+                        },
+                      }}
+                    />
+                  </Group>
 
-                {/* Fonts section */}
-                <Box id="fonts-section">
-                  <Group justify="space-between" mb="xs">
-                    <Text size="sm" fw={600} c="white" fs="uppercase">
-                      Fonts
+                  {/* PDF Styles — Page Background */}
+                  <Box id="pdf-styles-section">
+                    <Text size="sm" fw={600} c="white" mb="xs" fs="uppercase">
+                      PDF Styles
                     </Text>
-                    <Tooltip label="Add font">
-                      <ActionIcon
-                        variant="subtle"
-                        color="blue"
-                        onClick={addFont}
-                        style={{
-                          transition: 'all 0.2s ease',
-                          '&:hover': { transform: 'scale(1.1)' },
+                    <Text size="xs" c="dimmed" mb="xs">
+                      Page Background
+                    </Text>
+                    <Group gap={6} mb="xs">
+                      {['#FFFFFF', '#F3F4F6', '#DBEAFE', '#FEF3C7', '#1F2937'].map((color) => (
+                        <ColorSwatch
+                          key={color}
+                          color={color}
+                          size={24}
+                          style={{
+                            cursor: 'pointer',
+                            border:
+                              pdfBgColor === color ? '2px solid #228be6' : '2px solid #373A40',
+                          }}
+                          onClick={() => setPdfBgColor(color)}
+                        />
+                      ))}
+                    </Group>
+                    <ColorInput
+                      size="xs"
+                      value={pdfBgColor}
+                      onChange={setPdfBgColor}
+                      format="hex"
+                      label="Hex Code"
+                      styles={{
+                        label: { color: '#909296', fontSize: '11px' },
+                        input: {
+                          backgroundColor: '#25262b',
+                          color: 'white',
+                          borderColor: '#373A40',
+                        },
+                      }}
+                    />
+                    <Text size="xs" c="dimmed" mt="md" mb="xs">
+                      Padding du contenu (PDF / aperçu)
+                    </Text>
+                    <TextInput
+                      size="xs"
+                      placeholder="Vide = 2rem (défaut)"
+                      value={pdfContentPadding}
+                      onChange={(e) => setPdfContentPadding(e.currentTarget.value)}
+                      description="Ex. 16px, 1.5rem, none ou 0 pour aucun"
+                      styles={{
+                        label: { color: '#909296', fontSize: '11px' },
+                        input: {
+                          backgroundColor: '#25262b',
+                          color: 'white',
+                          borderColor: '#373A40',
+                        },
+                        description: { color: '#868e96', fontSize: '10px' },
+                      }}
+                    />
+                    <Group gap="xs" mt="xs" wrap="wrap">
+                      <Button
+                        size="xs"
+                        variant="default"
+                        onClick={() => setPdfContentPadding('none')}
+                      >
+                        Aucun padding
+                      </Button>
+                      <Button
+                        size="xs"
+                        variant="light"
+                        color="gray"
+                        onClick={() => {
+                          setPdfContentPadding('');
+                          setPdfBgColor('#FFFFFF');
                         }}
                       >
-                        <IconPlus size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                  </Group>
-                  <Stack gap="xs">
-                    {fontsSelected.map((font, index) => (
-                      <Group key={font} align="center">
-                        <Select
-                          size="sm"
-                          value={font}
-                          onChange={(value) => handleChangeFont({ value: value || '' }, index)}
-                          data={fonts}
-                          searchable
-                          placeholder="Search font..."
-                          nothingFoundMessage="No font found"
-                          style={{ flex: 1 }}
-                          styles={{
-                            input: {
-                              backgroundColor: '#ffffff',
-                              border: '1px solid #dee2e6',
-                              color: '#212529',
-                              transition: 'all 0.2s ease',
-                              '&:hover': {
-                                borderColor: '#3B82F6',
-                              },
+                        Réinitialiser options PDF
+                      </Button>
+                    </Group>
+                  </Box>
+
+                  {/* Export format */}
+                  <Box>
+                    <Text size="sm" fw={600} c="white" mb="md" fs="uppercase">
+                      Export Settings
+                    </Text>
+                    <Text size="xs" c="dimmed" mb="md">
+                      PDF export will use the paper size and orientation selected above.
+                    </Text>
+                    <Button
+                      id="sidebar-export-button"
+                      fullWidth
+                      leftSection={<IconFileExport size={16} />}
+                      onClick={exportPdf}
+                      variant="light"
+                      color="blue"
+                      styles={{
+                        root: {
+                          transition: 'all 0.2s ease',
+                          '&:hover': { transform: 'translateY(-1px)' },
+                        },
+                      }}
+                      mb="md"
+                    >
+                      Export as {format.toUpperCase()} PDF
+                    </Button>
+                  </Box>
+
+                  {/* Start from Template section */}
+                  <Box>
+                    <Text size="sm" fw={600} c="white" mb="md" fs="uppercase">
+                      Templates
+                    </Text>
+                    <Text size="xs" c="dimmed" mb="md">
+                      Start from a pre-built template
+                    </Text>
+                    <Button
+                      fullWidth
+                      leftSection={<IconFileText size={16} />}
+                      onClick={openTemplateDrawer}
+                      variant="light"
+                      color="purple"
+                      styles={{
+                        root: {
+                          transition: 'all 0.2s ease',
+                          '&:hover': { transform: 'translateY(-1px)' },
+                        },
+                      }}
+                      mb="md"
+                    >
+                      Start from Template
+                    </Button>
+                    {selectedTemplateId && (
+                      <Text size="xs" c="dimmed" style={{ fontStyle: 'italic' }}>
+                        Template selected
+                      </Text>
+                    )}
+                  </Box>
+
+                  {/* Variables section */}
+                  <Box id="variables-section">
+                    <Group justify="space-between" mb="xs">
+                      <Text size="sm" fw={600} c="white" fs="uppercase">
+                        Variables
+                      </Text>
+                      <Tooltip label="Add variables">
+                        <ActionIcon
+                          variant="subtle"
+                          color="blue"
+                          onClick={handleAddVariable}
+                          style={{
+                            transition: 'all 0.2s ease',
+                            '&:hover': { transform: 'scale(1.1)' },
+                          }}
+                        >
+                          <IconPlus size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    </Group>
+                    <Text size="xs" c="dimmed" mb="md">
+                      How to use variables?
+                    </Text>
+
+                    {/* Variables list */}
+                    <Box
+                      style={{
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                        padding: '0.5rem',
+                        backgroundColor: '#25262B',
+                        borderRadius: '8px',
+                      }}
+                    >
+                      <Group gap="xs" style={{ flexWrap: 'wrap' }}>
+                        {Object.entries(variables).map(([varName, value]) => {
+                          let type = 'object';
+                          if (Array.isArray(value)) {
+                            type = 'array';
+                          } else if (typeof value === 'object' && value !== null) {
+                            type = 'object';
+                          } else {
+                            type = 'key-value';
+                          }
+                          return <VariableBadge key={varName} varName={varName} type={type} />;
+                        })}
+                      </Group>
+                    </Box>
+                  </Box>
+
+                  {/* Stylesheet section */}
+                  <Box>
+                    <Text size="sm" fw={600} c="white" mb="md" fs="uppercase">
+                      Stylesheet
+                    </Text>
+                    <Select
+                      value="tailwind"
+                      data={[{ value: 'tailwind', label: 'Tailwind CSS' }]}
+                      styles={{
+                        input: {
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #dee2e6',
+                          color: '#212529',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            borderColor: '#3B82F6',
+                          },
+                        },
+                        dropdown: {
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #dee2e6',
+                        },
+                        option: {
+                          color: '#212529',
+                          '&[data-selected]': {
+                            '&, &:hover': {
+                              backgroundColor: '#e7f5ff',
+                              color: '#1864ab',
                             },
-                            dropdown: {
-                              backgroundColor: '#ffffff',
-                              border: '1px solid #dee2e6',
-                            },
-                            option: {
-                              color: '#212529',
-                              '&[data-selected]': {
-                                '&, &:hover': {
-                                  backgroundColor: '#e7f5ff',
-                                  color: '#1864ab',
+                          },
+                          '&[data-combobox-active]': {
+                            backgroundColor: '#f1f3f5',
+                            color: '#212529',
+                          },
+                          '&[data-hovered]': { backgroundColor: '#f1f3f5', color: '#212529' },
+                          '&:hover': { backgroundColor: '#f1f3f5' },
+                        },
+                        section: { color: '#495057' },
+                      }}
+                    />
+                  </Box>
+
+                  {/* Fonts section */}
+                  <Box id="fonts-section">
+                    <Group justify="space-between" mb="xs">
+                      <Text size="sm" fw={600} c="white" fs="uppercase">
+                        Fonts
+                      </Text>
+                      <Tooltip label="Add font">
+                        <ActionIcon
+                          variant="subtle"
+                          color="blue"
+                          onClick={addFont}
+                          style={{
+                            transition: 'all 0.2s ease',
+                            '&:hover': { transform: 'scale(1.1)' },
+                          }}
+                        >
+                          <IconPlus size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    </Group>
+                    <Stack gap="xs">
+                      {fontsSelected.map((font, index) => (
+                        <Group key={font} align="center">
+                          <Select
+                            size="sm"
+                            value={font}
+                            onChange={(value) => handleChangeFont({ value: value || '' }, index)}
+                            data={fonts}
+                            searchable
+                            placeholder="Search font..."
+                            nothingFoundMessage="No font found"
+                            style={{ flex: 1 }}
+                            styles={{
+                              input: {
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #dee2e6',
+                                color: '#212529',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  borderColor: '#3B82F6',
                                 },
                               },
-                              '&[data-combobox-active]': {
-                                backgroundColor: '#f1f3f5',
-                                color: '#212529',
+                              dropdown: {
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #dee2e6',
                               },
-                              '&[data-hovered]': { backgroundColor: '#f1f3f5', color: '#212529' },
-                              '&:hover': { backgroundColor: '#f1f3f5' },
-                            },
-                            section: { color: '#495057' },
-                          }}
-                        />
-                        {index !== 0 && (
-                          <ActionIcon
-                            variant="subtle"
-                            color="red"
-                            onClick={() => removeFont(font)}
-                            style={{
-                              transition: 'all 0.2s ease',
-                              '&:hover': { transform: 'scale(1.1)' },
+                              option: {
+                                color: '#212529',
+                                '&[data-selected]': {
+                                  '&, &:hover': {
+                                    backgroundColor: '#e7f5ff',
+                                    color: '#1864ab',
+                                  },
+                                },
+                                '&[data-combobox-active]': {
+                                  backgroundColor: '#f1f3f5',
+                                  color: '#212529',
+                                },
+                                '&[data-hovered]': { backgroundColor: '#f1f3f5', color: '#212529' },
+                                '&:hover': { backgroundColor: '#f1f3f5' },
+                              },
+                              section: { color: '#495057' },
                             }}
+                          />
+                          {index !== 0 && (
+                            <ActionIcon
+                              variant="subtle"
+                              color="red"
+                              onClick={() => removeFont(font)}
+                              style={{
+                                transition: 'all 0.2s ease',
+                                '&:hover': { transform: 'scale(1.1)' },
+                              }}
+                            >
+                              <IconMinus size={16} />
+                            </ActionIcon>
+                          )}
+                        </Group>
+                      ))}
+                    </Stack>
+                  </Box>
+
+                  {/* Charts section */}
+                  <Stack id="charts-section" gap="sm" mah={520} style={{ overflow: 'auto' }}>
+                    <Box p="xs">
+                      <Text size="sm" fw={600} c="white" mb="xs" tt="uppercase">
+                        Graphiques
+                      </Text>
+                      <Text size="xs" c="dimmed" mb="sm">
+                        Ajoutez un type ci-dessous. Les données sont séparées du JSON « variables »
+                        (panneau ci-dessous).
+                      </Text>
+                      {(() => {
+                        const bindings = extractChartBindingsFromTemplate(code);
+                        if (bindings.length === 0) return null;
+                        return (
+                          <Button
+                            fullWidth
+                            size="xs"
+                            variant="light"
+                            leftSection={<IconChartDots size={14} />}
+                            onClick={openChartsHub}
+                            mb="md"
                           >
-                            <IconMinus size={16} />
-                          </ActionIcon>
-                        )}
-                      </Group>
-                    ))}
-                  </Stack>
-                </Box>
+                            Gérer les données des graphiques ({bindings.length})
+                          </Button>
+                        );
+                      })()}
+                      <SimpleGrid cols={2} spacing="xs">
+                        {Object.entries(CHART_TYPES).map(([type, label]) => (
+                          <Box
+                            key={type}
+                            onClick={() => {
+                              const editor = editorRef.current;
+                              if (!editor) {
+                                notificationService.showErrorNotification(
+                                  'Éditeur non prêt — réessayez dans une seconde.',
+                                );
+                                return;
+                              }
+                              const model = editor.getModel();
+                              if (!model) {
+                                notificationService.showErrorNotification(
+                                  'Modèle éditeur introuvable.',
+                                );
+                                return;
+                              }
 
-                {/* Charts section */}
-                <Stack id="charts-section" gap="sm" mah={520} style={{ overflow: 'auto' }}>
-                  <Box p="xs">
-                    <Text size="sm" fw={600} c="white" mb="xs" tt="uppercase">
-                      Graphiques
-                    </Text>
-                    <Text size="xs" c="dimmed" mb="sm">
-                      Ajoutez un type ci-dessous. Les données sont séparées du JSON « variables »
-                      (panneau ci-dessous).
-                    </Text>
-                    {(() => {
-                      const bindings = extractChartBindingsFromTemplate(code);
-                      if (bindings.length === 0) return null;
-                      return (
-                        <Button
-                          fullWidth
-                          size="xs"
-                          variant="light"
-                          leftSection={<IconChartDots size={14} />}
-                          onClick={openChartsHub}
-                          mb="md"
-                        >
-                          Gérer les données des graphiques ({bindings.length})
-                        </Button>
-                      );
-                    })()}
-                    <SimpleGrid cols={2} spacing="xs">
-                      {Object.entries(CHART_TYPES).map(([type, label]) => (
-                        <Box
-                          key={type}
-                          onClick={() => {
-                            const editor = editorRef.current;
-                            if (!editor) {
-                              notificationService.showErrorNotification(
-                                'Éditeur non prêt — réessayez dans une seconde.',
-                              );
-                              return;
-                            }
-                            const model = editor.getModel();
-                            if (!model) {
-                              notificationService.showErrorNotification(
-                                'Modèle éditeur introuvable.',
-                              );
-                              return;
-                            }
+                              const lastLine = model.getLineCount();
+                              const lastLineContent = model.getLineContent(lastLine);
+                              const chartId = `${type}Chart${Math.random().toString(36).substr(2, 9)}`;
+                              const chartData = generateChartData(type as keyof typeof CHART_TYPES);
 
-                            const lastLine = model.getLineCount();
-                            const lastLineContent = model.getLineContent(lastLine);
-                            const chartId = `${type}Chart${Math.random().toString(36).substr(2, 9)}`;
-                            const chartData = generateChartData(type as keyof typeof CHART_TYPES);
+                              setChartDatasets((prev) => ({
+                                ...prev,
+                                [chartId]: chartData,
+                              }));
 
-                            setChartDatasets((prev) => ({
-                              ...prev,
-                              [chartId]: chartData,
-                            }));
-
-                            const text = `\n\n<!-- Chart Section -->
+                              const text = `\n\n<!-- Chart Section -->
 <div class="w-full py-4" style="display:flex;justify-content:center;align-items:center;">
   <canvas 
     id="${chartId}"
@@ -1922,163 +1999,171 @@ const CreateTemplate: React.FC = () => {
   ></canvas>
 </div>`;
 
-                            const position = {
-                              lineNumber: lastLine,
-                              column: lastLineContent.length + 1,
-                            };
+                              const position = {
+                                lineNumber: lastLine,
+                                column: lastLineContent.length + 1,
+                              };
 
-                            const range = {
-                              startLineNumber: position.lineNumber,
-                              startColumn: position.column,
-                              endLineNumber: position.lineNumber,
-                              endColumn: position.column,
-                            };
+                              const range = {
+                                startLineNumber: position.lineNumber,
+                                startColumn: position.column,
+                                endLineNumber: position.lineNumber,
+                                endColumn: position.column,
+                              };
 
-                            const op = {
-                              identifier: { major: 1, minor: 1 },
-                              range,
-                              text,
-                              forceMoveMarkers: true,
-                            };
+                              const op = {
+                                identifier: { major: 1, minor: 1 },
+                                range,
+                                text,
+                                forceMoveMarkers: true,
+                              };
 
-                            editor.executeEdits('chart-insert', [op]);
-                          }}
-                          style={{
-                            backgroundColor: '#25262B',
-                            padding: '12px',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            border: '1px solid #373A40',
-                            transition: 'all 0.2s ease',
-                            '&:hover': {
-                              transform: 'translateY(-2px)',
-                            },
-                          }}
-                        >
-                          <Stack gap={4} align="center">
-                            <IconChartDots size={24} style={{ color: '#3B82F6' }} />
-                            <Text size="xs" c="white" ta="center">
-                              {label}
-                            </Text>
-                          </Stack>
-                        </Box>
-                      ))}
-                    </SimpleGrid>
-                  </Box>
-                </Stack>
-              </>
-            )}
-          </Stack>
-
-          {/* Code editor */}
-          <Box
-            id="editor-container"
-            style={{
-              width: sidebarCollapsed ? 'calc(61% - 20px)' : '46%',
-              height: '100%',
-              backgroundColor: '#ffffff',
-              transition: 'width 0.3s ease',
-              flexShrink: 0,
-              flexGrow: 0,
-            }}
-            ref={drop}
-          >
-            <DndProvider backend={HTML5Backend}>
-              {monacoReady ? (
-                <IDE
-                  key={editorSessionKey}
-                  onChange={(newCode) => {
-                    setCode(newCode);
-                    setTemplateContent(newCode);
-                  }}
-                  defaultValue={code}
-                  editorDidMount={(editor) => {
-                    editorRef.current = editor;
-                  }}
-                />
-              ) : (
-                <Center h="100%">
-                  <Loader size="sm" />
-                </Center>
+                              editor.executeEdits('chart-insert', [op]);
+                            }}
+                            style={{
+                              backgroundColor: '#25262B',
+                              padding: '12px',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              border: '1px solid #373A40',
+                              transition: 'all 0.2s ease',
+                              '&:hover': {
+                                transform: 'translateY(-2px)',
+                              },
+                            }}
+                          >
+                            <Stack gap={4} align="center">
+                              <IconChartDots size={24} style={{ color: '#3B82F6' }} />
+                              <Text size="xs" c="white" ta="center">
+                                {label}
+                              </Text>
+                            </Stack>
+                          </Box>
+                        ))}
+                      </SimpleGrid>
+                    </Box>
+                  </Stack>
+                </>
               )}
-            </DndProvider>
-          </Box>
+            </Stack>
 
-          {/* Preview */}
-          <Box
-            id="preview-container"
-            style={
-              isPreviewFullscreen
-                ? {
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    zIndex: 9999,
-                    backgroundColor: '#1A1B1E',
-                  }
-                : {
-                    width: sidebarCollapsed ? 'calc(39% - 20px)' : '30%',
-                    height: '100%',
-                    backgroundColor: '#1A1B1E',
-                    borderLeft: '1px solid #373A40',
-                    position: 'relative',
-                    transition: 'width 0.3s ease',
-                    flexShrink: 0,
-                    flexGrow: 0,
-                  }
-            }
-          >
-            <Tooltip label={isPreviewFullscreen ? 'Exit fullscreen' : 'Fullscreen preview'}>
-              <ActionIcon
-                id="fullscreen-button"
-                onClick={() => setIsPreviewFullscreen((v) => !v)}
+            {/* Code editor */}
+            <Box
+              id="editor-container"
+              style={{
+                width: isMobileEditor ? '100%' : sidebarCollapsed ? 'calc(61% - 20px)' : '46%',
+                height: '100%',
+                backgroundColor: '#ffffff',
+                transition: 'width 0.3s ease',
+                flexShrink: 0,
+                flexGrow: isMobileEditor ? 1 : 0,
+                display: isMobileEditor && mobileEditorTab !== 'code' ? 'none' : undefined,
+              }}
+              ref={drop}
+            >
+              <DndProvider backend={HTML5Backend}>
+                {monacoReady ? (
+                  <IDE
+                    key={editorSessionKey}
+                    onChange={(newCode) => {
+                      setCode(newCode);
+                      setTemplateContent(newCode);
+                    }}
+                    defaultValue={code}
+                    editorDidMount={(editor) => {
+                      editorRef.current = editor;
+                    }}
+                  />
+                ) : (
+                  <Center h="100%">
+                    <Loader size="sm" />
+                  </Center>
+                )}
+              </DndProvider>
+            </Box>
+
+            {/* Preview */}
+            <Box
+              id="preview-container"
+              style={
+                isPreviewFullscreen
+                  ? {
+                      position: 'fixed',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      zIndex: 9999,
+                      backgroundColor: '#1A1B1E',
+                    }
+                  : {
+                      width: isMobileEditor
+                        ? '100%'
+                        : sidebarCollapsed
+                          ? 'calc(39% - 20px)'
+                          : '30%',
+                      height: '100%',
+                      backgroundColor: '#1A1B1E',
+                      borderLeft: isMobileEditor ? undefined : '1px solid #373A40',
+                      position: 'relative',
+                      transition: 'width 0.3s ease',
+                      flexShrink: 0,
+                      flexGrow: isMobileEditor ? 1 : 0,
+                      display: isMobileEditor && mobileEditorTab !== 'preview' ? 'none' : undefined,
+                    }
+              }
+            >
+              <Tooltip label={isPreviewFullscreen ? 'Exit fullscreen' : 'Fullscreen preview'}>
+                <ActionIcon
+                  id="fullscreen-button"
+                  aria-label={isPreviewFullscreen ? 'Quitter le plein écran' : 'Aperçu plein écran'}
+                  onClick={() => setIsPreviewFullscreen((v) => !v)}
+                  style={{
+                    position: 'absolute',
+                    top: 8,
+                    left: 8,
+                    zIndex: 10,
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    color: 'white',
+                  }}
+                  variant="subtle"
+                  size="sm"
+                >
+                  {isPreviewFullscreen ? (
+                    <IconArrowsMinimize size={14} />
+                  ) : (
+                    <IconArrowsMaximize size={14} />
+                  )}
+                </ActionIcon>
+              </Tooltip>
+              <Box
                 style={{
                   position: 'absolute',
-                  top: 8,
-                  left: 8,
-                  zIndex: 10,
-                  backgroundColor: 'rgba(0,0,0,0.5)',
-                  color: 'white',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  overflow: isPreviewFullscreen ? 'auto' : 'hidden',
+                  padding: '1rem 1rem 1rem 2.75rem',
                 }}
-                variant="subtle"
-                size="sm"
               >
-                {isPreviewFullscreen ? (
-                  <IconArrowsMinimize size={14} />
-                ) : (
-                  <IconArrowsMaximize size={14} />
-                )}
-              </ActionIcon>
-            </Tooltip>
-            <Box
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                overflow: 'auto',
-                padding: '1rem 1rem 1rem 2.75rem',
-              }}
-            >
-              <Preview
-                format={format}
-                htmlContent={code}
-                renderedBodyHtml={previewRenderedHtml}
-                data={mergedTemplateData}
-                isLandscape={isLandScape}
-                fonts={fontsSelected}
-                setTemplateContent={setTemplateContent}
-                backgroundColor={pdfBgColor}
-                pdfContentPadding={pdfContentPadding}
-                viewMode={viewMode}
-                isFullscreen={isPreviewFullscreen}
-              />
+                <PreviewPanel
+                  format={format}
+                  htmlContent={code}
+                  renderedBodyHtml={previewRenderedHtml}
+                  data={mergedTemplateData}
+                  isLandscape={isLandScape}
+                  fonts={fontsSelected}
+                  setTemplateContent={setTemplateContent}
+                  backgroundColor={pdfBgColor}
+                  pdfContentPadding={pdfContentPadding}
+                  viewMode={viewMode}
+                  isFullscreen={isPreviewFullscreen}
+                />
+              </Box>
             </Box>
-          </Box>
-        </Group>
+          </Group>
+        </>
       )}
     </Stack>
   );

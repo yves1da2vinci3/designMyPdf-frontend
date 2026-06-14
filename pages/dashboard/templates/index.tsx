@@ -37,8 +37,9 @@ import { manuallyStartTour } from '@/utils/tourUtils';
 import { useLocalStorage } from '@/utils/useLocalStorage';
 import { ensureArray } from '@/utils/ensureArray';
 import 'driver.js/dist/driver.css';
-import AiCreditsBadge from '@/components/AiCreditsBadge/AiCreditsBadge';
 import { useAiCredits } from '@/hooks/useAiCredits';
+import QueryState from '@/components/QueryState/QueryState';
+import AiCreditsBadge from '@/components/AiCreditsBadge/AiCreditsBadge';
 
 function TemplatesPage() {
   const router = useRouter();
@@ -60,7 +61,16 @@ function TemplatesPage() {
   const PAGE_SIZE = 12;
   const [showTourButton, setShowTourButton] = useState(false);
   const [hasSeenTour, setHasSeenTour] = useLocalStorage('hasSeenTemplatesDashboardTour', false);
+  const [namespacesReady, setNamespacesReady] = useState(false);
   const aiCredits = useAiCredits();
+
+  useEffect(() => {
+    if (router.query.create === '1') {
+      openAddTemplate();
+      const { create: _c, ...rest } = router.query;
+      void router.replace({ pathname: router.pathname, query: rest }, undefined, { shallow: true });
+    }
+  }, [router.query.create, router.pathname, router.query, router, openAddTemplate]);
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedSearch(searchQuery), 300);
@@ -92,27 +102,29 @@ function TemplatesPage() {
 
   const refreshDashboard = async () => {
     try {
-      const namespacesData = await fetchNamespaces();
-      if (selectedNamespaceId === null && namespacesData.length > 0) {
-        setSelectedNamespaceId(namespacesData[0].ID);
-      } else {
-        await fetchTemplatesPage();
-      }
+      await fetchNamespaces();
+      await fetchTemplatesPage();
     } catch {
       setFetchTemplatesRequestStatus(RequestStatus.Failed);
     }
   };
 
-  const fetchTemplatesAndNamespaces = refreshDashboard;
+  useEffect(() => {
+    void fetchNamespaces()
+      .then((namespacesData) => {
+        if (selectedNamespaceId === null && namespacesData.length > 0) {
+          setSelectedNamespaceId(namespacesData[0].ID);
+        }
+      })
+      .catch(() => setFetchTemplatesRequestStatus(RequestStatus.Failed))
+      .finally(() => setNamespacesReady(true));
+  }, [fetchNamespaces]);
 
   useEffect(() => {
-    fetchTemplatesAndNamespaces();
-  }, []);
-
-  useEffect(() => {
-    if (selectedNamespaceId === null && ensureArray(namespaces).length === 0) return;
-    fetchTemplatesPage();
-  }, [selectedNamespaceId, page, debouncedSearch, namespaces, fetchTemplatesPage]);
+    if (!namespacesReady) return;
+    if (selectedNamespaceId === null && ensureArray(namespaces).length > 0) return;
+    void fetchTemplatesPage();
+  }, [namespacesReady, selectedNamespaceId, page, debouncedSearch, namespaces, fetchTemplatesPage]);
 
   useEffect(() => {
     setPage(1);
@@ -436,51 +448,19 @@ function TemplatesPage() {
                 </>
               )}
             </Stack>
-
-            <Text
-              size="xs"
-              fw={700}
-              tt="uppercase"
-              style={{ letterSpacing: '0.05em' }}
-              c="dimmed"
-              mb="sm"
-            >
-              Tags
-            </Text>
-            <Group gap={6}>
-              {['DRAFT', 'PROD', 'LEGACY'].map((tag) => (
-                <Box
-                  key={tag}
-                  px="sm"
-                  py={4}
-                  style={{
-                    borderRadius: 4,
-                    border: '1px solid #dee2e6',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: '#495057',
-                    cursor: 'pointer',
-                    letterSpacing: '0.03em',
-                  }}
-                >
-                  {tag}
-                </Box>
-              ))}
-            </Group>
           </Box>
 
           {/* Main content area */}
           <Box style={{ flex: 1, minWidth: 0, padding: '20px', overflowY: 'auto' }}>
-            {/* Templates grid */}
-            {fetchTemplatesRequestStatus === RequestStatus.InProgress ? (
-              <Center style={{ height: '200px' }}>
-                <Loader size="lg" />
-              </Center>
-            ) : ensureArray(templates).length === 0 ? (
-              <Center style={{ height: '200px', flexDirection: 'column' }}>
-                <Text c="dimmed" mt="md">
-                  {searchQuery ? 'No templates match your search' : 'No templates in this folder'}
-                </Text>
+            <QueryState
+              status={fetchTemplatesRequestStatus}
+              errorMessage="Unable to load templates. Please try again."
+              onRetry={() => void fetchTemplatesPage()}
+              empty={ensureArray(templates).length === 0}
+              emptyMessage={
+                searchQuery ? 'No templates match your search' : 'No templates in this folder'
+              }
+              emptyAction={
                 <Button
                   variant="light"
                   mt="md"
@@ -489,23 +469,22 @@ function TemplatesPage() {
                 >
                   Create new template
                 </Button>
-              </Center>
-            ) : (
-              <>
-                <Grid id="templates-grid" gutter="md">
-                  {ensureArray(templates).map((template) => (
-                    <Grid.Col key={template.ID} span={{ base: 12, sm: 6, md: 4 }}>
-                      <TemplateItem
-                        DeleteTemplateFromClient={DeleteTemplateFromClient}
-                        id={template?.ID}
-                        template={template}
-                        onRename={(t) => setRenameTarget(t)}
-                      />
-                    </Grid.Col>
-                  ))}
-                </Grid>
-              </>
-            )}
+              }
+              minHeight={200}
+            >
+              <Grid id="templates-grid" gutter="md">
+                {ensureArray(templates).map((template) => (
+                  <Grid.Col key={template.ID} span={{ base: 12, sm: 6, md: 4 }}>
+                    <TemplateItem
+                      DeleteTemplateFromClient={DeleteTemplateFromClient}
+                      id={template?.ID}
+                      template={template}
+                      onRename={(t) => setRenameTarget(t)}
+                    />
+                  </Grid.Col>
+                ))}
+              </Grid>
+            </QueryState>
 
             {/* Pagination */}
             {total > 0 && (

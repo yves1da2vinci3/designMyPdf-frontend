@@ -49,6 +49,7 @@ const TEMPLATE_MOCK_FILENAME = '// template.html';
 
 export default function Signup() {
   const router = useRouter();
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const form = useForm<SignupDto>({
     initialValues: {
       email: '',
@@ -66,6 +67,12 @@ export default function Signup() {
   const [oauthProvider, setOauthProvider] = useState<'google' | 'github' | null>(null);
 
   const onSubmit = async (signupDto: SignupDto) => {
+    if (!termsAccepted) {
+      notificationService.showErrorNotification(
+        'Vous devez accepter les conditions d’utilisation pour créer un compte.',
+      );
+      return;
+    }
     setIsLoading(RequestStatus.InProgress);
     try {
       await authApi.signup(signupDto);
@@ -213,15 +220,17 @@ export default function Signup() {
                 required
               />
               <Checkbox
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.currentTarget.checked)}
                 label={
                   <Text size="sm">
-                    I agree to the{' '}
-                    <Anchor size="sm" href="#">
-                      Terms of Service
+                    J&apos;accepte les{' '}
+                    <Anchor size="sm" href="/documentation">
+                      Conditions d&apos;utilisation
                     </Anchor>{' '}
-                    and{' '}
-                    <Anchor size="sm" href="#">
-                      Privacy Policy
+                    et la{' '}
+                    <Anchor size="sm" href="/documentation">
+                      Politique de confidentialité
                     </Anchor>
                   </Text>
                 }

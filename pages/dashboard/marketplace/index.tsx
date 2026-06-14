@@ -31,6 +31,7 @@ import {
 } from '@tabler/icons-react';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
+import QueryState from '@/components/QueryState/QueryState';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { templateApi, MarketplaceListingDTO } from '@/api/templateApi';
 import { RequestStatus } from '@/api/request-status.enum';
@@ -290,7 +291,16 @@ export default function PublisherDashboard() {
       </SimpleGrid>
 
       {/* Listings table */}
-      {isLoading ? (
+      {status === RequestStatus.Failed ? (
+        <QueryState
+          status={RequestStatus.Failed}
+          errorMessage="Unable to load your marketplace listings. Please try again."
+          onRetry={() => void fetchListings()}
+          minHeight={240}
+        >
+          {null}
+        </QueryState>
+      ) : isLoading ? (
         <Center h={200}>
           <Loader type="bars" size="lg" />
         </Center>

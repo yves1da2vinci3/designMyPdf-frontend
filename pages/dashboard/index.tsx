@@ -20,7 +20,6 @@ import {
 import { BarChart } from '@mantine/charts';
 import {
   IconAlertCircle,
-  IconCalendar,
   IconClock,
   IconCurrencyDollar,
   IconExternalLink,
@@ -35,8 +34,9 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import getFilledStats from '@/utils/filledStats';
 import { filterLogsByApiPeriod } from '@/utils/logPeriodFilter';
 import { ensureArray } from '@/utils/ensureArray';
-import AiCreditsBadge from '@/components/AiCreditsBadge/AiCreditsBadge';
+import QueryState from '@/components/QueryState/QueryState';
 import { useAiCredits } from '@/hooks/useAiCredits';
+import AiCreditsBadge from '@/components/AiCreditsBadge/AiCreditsBadge';
 
 const DEFAULT_PERIOD = '7d';
 
@@ -70,16 +70,16 @@ export default function Overview() {
     setFetchLogStatsRequestStatus(RequestStatus.InProgress);
     try {
       const apiPeriod = API_PERIOD_MAP[period] || 'week';
-      const logStats = await logApi.getLogsStats(apiPeriod);
+      const [logStats, fetchedLogs] = await Promise.all([
+        logApi.getLogsStats(apiPeriod),
+        logApi.getLogs(),
+      ]);
       const newLogs = ensureArray(logStats);
       const filledStats = getFilledStats(newLogs, apiPeriod);
       setLogStats(filledStats);
-
-      const fetchedLogs = await logApi.getLogs();
       setAllLogs(ensureArray(fetchedLogs));
-
       setFetchLogStatsRequestStatus(RequestStatus.Succeeded);
-    } catch (error) {
+    } catch {
       setFetchLogStatsRequestStatus(RequestStatus.Failed);
     }
   }, [period]);
@@ -123,6 +123,25 @@ export default function Overview() {
   const isLoading =
     fetchLogStatsRequestStatus === RequestStatus.InProgress ||
     fetchLogStatsRequestStatus === RequestStatus.NotStated;
+  const isFailed = fetchLogStatsRequestStatus === RequestStatus.Failed;
+
+  if (isFailed) {
+    return (
+      <Stack gap="xl">
+        <Title order={2} fw={700}>
+          Overview
+        </Title>
+        <QueryState
+          status={RequestStatus.Failed}
+          errorMessage="Unable to load overview statistics. Please try again."
+          onRetry={() => void fetchLogStats()}
+          minHeight={240}
+        >
+          {null}
+        </QueryState>
+      </Stack>
+    );
+  }
 
   return (
     <Stack gap="xl">
@@ -144,9 +163,6 @@ export default function Overview() {
             fullWidth
             maw={{ base: '100%', sm: 420 }}
           />
-          <Button variant="light" size="sm" px="xs">
-            <IconCalendar size={16} />
-          </Button>
         </Group>
       </Group>
 
