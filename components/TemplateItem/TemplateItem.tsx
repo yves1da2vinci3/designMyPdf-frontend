@@ -7,6 +7,7 @@ import {
   IconDots,
   IconTrash,
   IconEdit,
+  IconExternalLink,
   IconPencil,
 } from '@tabler/icons-react';
 import { useRouter } from 'next/router';
@@ -43,6 +44,11 @@ export default function TemplateItem({
 
   const navigateToTemplate = () => {
     router.push(`/dashboard/templates/create/${uuid}`);
+  };
+
+  const openInNewTab = () => {
+    if (!uuid) return;
+    window.open(`/dashboard/templates/create/${uuid}`, '_blank', 'noopener,noreferrer');
   };
 
   const deleteTemplate = async () => {
@@ -94,6 +100,15 @@ export default function TemplateItem({
               }}
             >
               Edit
+            </Menu.Item>
+            <Menu.Item
+              leftSection={<IconExternalLink size={14} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                openInNewTab();
+              }}
+            >
+              Open in new tab
             </Menu.Item>
             <Menu.Item
               leftSection={<IconPencil size={14} />}
