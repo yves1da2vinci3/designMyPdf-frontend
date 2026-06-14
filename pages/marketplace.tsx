@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import {
   Box,
@@ -8,70 +8,57 @@ import {
   SimpleGrid,
   Text,
   Title,
-  Select,
   Badge,
-  Stack,
   Card,
-  ActionIcon,
-  TextInput,
-  Avatar,
-  Center,
-  Loader,
-  Anchor,
+  Pagination,
 } from '@mantine/core';
-import {
-  IconSearch,
-  IconBell,
-  IconSettings,
-  IconDiamondFilled,
-  IconShoppingCart,
-} from '@tabler/icons-react';
+import { IconShoppingCart } from '@tabler/icons-react';
 import { templateApi, MarketplaceTemplateCard, marketplaceCoverUrl } from '@/api/templateApi';
-import { authApi } from '@/api/authApi';
+import { RequestStatus } from '@/api/request-status.enum';
+import { MARKETPLACE_PUBLIC_FILTERS } from '@/constants/marketplace';
 import { ensureArray } from '@/utils/ensureArray';
+import QueryState from '@/components/QueryState/QueryState';
 import CopyTemplateModal from '@/components/marketplace/CopyTemplateModal';
 import PurchaseModal from '@/components/marketplace/PurchaseModal';
+import MarketplacePublicLayout from '@/layouts/MarketplacePublicLayout';
 
-const CATEGORIES = [
-  { value: '', label: 'All Templates' },
-  { value: 'FINANCIAL REPORT', label: 'Financial Reports' },
-  { value: 'INVOICE', label: 'Invoices' },
-  { value: 'MARKETING', label: 'Marketing' },
-  { value: 'LEGAL', label: 'Legal Docs' },
-];
+const PAGE_SIZE = 12;
 
 export default function MarketplacePage() {
   const router = useRouter();
   const [templates, setTemplates] = useState<MarketplaceTemplateCard[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState(RequestStatus.NotStated);
   const [activeCategory, setActiveCategory] = useState('');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [copyTarget, setCopyTarget] = useState<MarketplaceTemplateCard | null>(null);
   const [purchaseTarget, setPurchaseTarget] = useState<MarketplaceTemplateCard | null>(null);
 
-  const session = authApi.getUserSession();
-  const userName = session?.userName ?? 'G';
-  const initials = userName.slice(0, 2).toUpperCase();
-
   const fetchTemplates = async (category: string) => {
-    setLoading(true);
+    setStatus(RequestStatus.InProgress);
     try {
       const data = await templateApi.getMarketplaceTemplates(category || undefined);
       setTemplates(ensureArray(data));
+      setStatus(RequestStatus.Succeeded);
     } catch {
-      setTemplates([]);
-    } finally {
-      setLoading(false);
+      setStatus(RequestStatus.Failed);
     }
   };
 
   useEffect(() => {
-    fetchTemplates(activeCategory);
+    void fetchTemplates(activeCategory);
+    setPage(1);
   }, [activeCategory]);
 
-  const filtered = search
-    ? templates.filter((t) => t.name?.toLowerCase().includes(search.toLowerCase()))
-    : templates;
+  const filtered = useMemo(() => {
+    const list = search
+      ? templates.filter((t) => t.name?.toLowerCase().includes(search.toLowerCase()))
+      : templates;
+    return list;
+  }, [templates, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleBuyNow = (template: MarketplaceTemplateCard) => {
     if ((template.price ?? 0) === 0) {
@@ -82,70 +69,17 @@ export default function MarketplacePage() {
   };
 
   return (
-    <Box style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
-      {/* Header */}
-      <Box
-        style={{
-          backgroundColor: '#fff',
-          borderBottom: '1px solid #e9ecef',
-          padding: '0 32px',
-          height: 56,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <Group gap="xl">
-          <Group gap={6} style={{ cursor: 'pointer' }} onClick={() => router.push('/dashboard/')}>
-            <IconDiamondFilled size={18} color="#228be6" />
-            <Text fw={700} size="sm">
-              Design My PDF
-            </Text>
-          </Group>
-          <Group gap={0}>
-            <Anchor
-              size="sm"
-              fw={600}
-              c="blue"
-              style={{ borderBottom: '2px solid #228be6', paddingBottom: 2 }}
-              onClick={() => router.push('/marketplace')}
-            >
-              Marketplace
-            </Anchor>
-            <Anchor size="sm" c="dimmed" ml="lg" onClick={() => router.push('/marketplace/add')}>
-              Add Listing
-            </Anchor>
-          </Group>
-        </Group>
-        <Group gap="sm">
-          <TextInput
-            placeholder="Search templates..."
-            leftSection={<IconSearch size={14} />}
-            size="xs"
-            style={{ width: 220 }}
-            value={search}
-            onChange={(e) => setSearch(e.currentTarget.value)}
-          />
-          <ActionIcon variant="subtle" color="gray">
-            <IconBell size={18} />
-          </ActionIcon>
-          <ActionIcon variant="subtle" color="gray">
-            <IconSettings size={18} />
-          </ActionIcon>
-          <Avatar
-            size={32}
-            radius="xl"
-            color="blue"
-            variant="filled"
-            style={{ cursor: 'pointer' }}
-            onClick={() => router.push('/dashboard/account')}
-          >
-            {initials}
-          </Avatar>
-        </Group>
-      </Box>
-
-      {/* Hero */}
+    <MarketplacePublicLayout
+      activeNav="marketplace"
+      search={{
+        value: search,
+        placeholder: 'Search templates...',
+        onChange: (value) => {
+          setSearch(value);
+          setPage(1);
+        },
+      }}
+    >
       <Box px={48} pt={40} pb={24}>
         <Title order={2} fw={700} mb={4}>
           PDF Template Marketplace
@@ -155,12 +89,11 @@ export default function MarketplacePage() {
           generation and high-density data reporting.
         </Text>
 
-        {/* Category filter + sort */}
-        <Group justify="space-between" mb="xl">
-          <Group gap={8}>
-            {CATEGORIES.map((cat) => (
+        <Group mb="xl">
+          <Group gap={8} style={{ flexWrap: 'wrap' }}>
+            {MARKETPLACE_PUBLIC_FILTERS.map((cat) => (
               <Box
-                key={cat.value}
+                key={cat.value || 'all'}
                 px="md"
                 py={6}
                 onClick={() => setActiveCategory(cat.value)}
@@ -179,48 +112,31 @@ export default function MarketplacePage() {
               </Box>
             ))}
           </Group>
-          <Group gap={6}>
-            <Text size="xs" c="dimmed" fw={600} tt="uppercase" style={{ letterSpacing: '0.05em' }}>
-              SORT BY:
-            </Text>
-            <Select
-              size="xs"
-              defaultValue="popular"
-              data={[
-                { value: 'popular', label: 'Most Popular' },
-                { value: 'newest', label: 'Newest' },
-                { value: 'price_asc', label: 'Price: Low to High' },
-                { value: 'price_desc', label: 'Price: High to Low' },
-              ]}
-              style={{ width: 150 }}
-            />
-          </Group>
         </Group>
 
-        {/* Template grid */}
-        {loading ? (
-          <Center h={300}>
-            <Loader size="lg" />
-          </Center>
-        ) : filtered.length === 0 ? (
-          <Center h={300}>
-            <Stack align="center" gap="sm">
-              <Text c="dimmed">No templates found.</Text>
-              <Button
-                variant="light"
-                size="sm"
-                onClick={() => {
-                  setActiveCategory('');
-                  setSearch('');
-                }}
-              >
-                Clear filters
-              </Button>
-            </Stack>
-          </Center>
-        ) : (
-          <SimpleGrid cols={4} spacing="md">
-            {filtered.map((template) => {
+        <QueryState
+          status={status}
+          errorMessage="Unable to load marketplace templates. Please try again."
+          onRetry={() => void fetchTemplates(activeCategory)}
+          empty={filtered.length === 0}
+          emptyMessage="No templates found."
+          emptyAction={
+            <Button
+              variant="light"
+              size="sm"
+              mt="sm"
+              onClick={() => {
+                setActiveCategory('');
+                setSearch('');
+              }}
+            >
+              Clear filters
+            </Button>
+          }
+          minHeight={300}
+        >
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="md">
+            {pageItems.map((template) => {
               const coverSrc = marketplaceCoverUrl(template);
               return (
                 <Card
@@ -302,51 +218,23 @@ export default function MarketplacePage() {
               );
             })}
           </SimpleGrid>
-        )}
 
-        {/* Load more */}
-        {!loading && filtered.length > 0 && (
-          <Center mt={40}>
-            <Stack align="center" gap={8}>
-              <Button variant="outline" size="sm" style={{ minWidth: 200 }}>
-                Load More Templates
-              </Button>
-              <Text size="xs" c="dimmed">
-                Showing {filtered.length} templates
+          {filtered.length > PAGE_SIZE ? (
+            <Group justify="space-between" mt="xl" align="center">
+              <Text size="sm" c="dimmed">
+                Showing {(page - 1) * PAGE_SIZE + 1} to{' '}
+                {Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} templates
               </Text>
-            </Stack>
-          </Center>
-        )}
+              <Pagination value={page} onChange={setPage} total={totalPages} size="sm" />
+            </Group>
+          ) : filtered.length > 0 ? (
+            <Text size="xs" c="dimmed" ta="center" mt="xl">
+              Showing {filtered.length} template{filtered.length === 1 ? '' : 's'}
+            </Text>
+          ) : null}
+        </QueryState>
       </Box>
 
-      {/* Footer */}
-      <Box
-        px={48}
-        py={24}
-        mt={40}
-        style={{ borderTop: '1px solid #e9ecef', backgroundColor: '#fff' }}
-      >
-        <Group justify="space-between">
-          <Group gap={4}>
-            <IconDiamondFilled size={14} color="#228be6" />
-            <Text size="xs" fw={700} c="blue">
-              Design My PDF
-            </Text>
-            <Text size="xs" c="dimmed">
-              © 2024 Enterprise PDF Systems. All rights reserved.
-            </Text>
-          </Group>
-          <Group gap="lg">
-            {['Privacy', 'Terms', 'Security', 'Documentation'].map((link) => (
-              <Anchor key={link} size="xs" c="dimmed">
-                {link}
-              </Anchor>
-            ))}
-          </Group>
-        </Group>
-      </Box>
-
-      {/* Modals */}
       {copyTarget && (
         <CopyTemplateModal opened onClose={() => setCopyTarget(null)} template={copyTarget} />
       )}
@@ -361,6 +249,6 @@ export default function MarketplacePage() {
           }}
         />
       )}
-    </Box>
+    </MarketplacePublicLayout>
   );
 }

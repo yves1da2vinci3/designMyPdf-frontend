@@ -16,7 +16,7 @@ export default function Custom404() {
             page has been moved to another URL. If you think this is an error contact support.
           </Text>
           <Button
-            onClick={() => router.back()}
+            onClick={() => router.push('/dashboard')}
             variant="outline"
             size="md"
             mt="xl"

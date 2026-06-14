@@ -43,6 +43,7 @@ import { RequestStatus } from '@/api/request-status.enum';
 import { WebhookDTO, webhookApi } from '@/api/webhookApi';
 import { eventColor, eventLabel } from '@/constants/webhookEvents';
 import { ensureArray } from '@/utils/ensureArray';
+import QueryState from '@/components/QueryState/QueryState';
 import DashboardLayout from '@/layouts/DashboardLayout';
 
 function lastDeliveryText(sub: WebhookDTO): React.ReactNode {
@@ -271,6 +272,15 @@ export default function Webhooks() {
         <Center h="95vh">
           <Loader type="bars" size="xl" />
         </Center>
+      ) : status === RequestStatus.Failed ? (
+        <QueryState
+          status={RequestStatus.Failed}
+          errorMessage="Unable to load webhooks. Please try again."
+          onRetry={() => void fetchSubs()}
+          minHeight="60vh"
+        >
+          {null}
+        </QueryState>
       ) : (
         <Stack gap="xl">
           <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">

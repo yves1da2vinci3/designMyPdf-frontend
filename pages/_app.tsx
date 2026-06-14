@@ -29,7 +29,7 @@ import '../styles/global.css';
 
 // Imports locaux
 import { authApi } from '@/api/authApi';
-import { installMonacoWorkersOnce } from '@/lib/monacoBootstrap';
+import { AiCreditsProvider } from '@/contexts/AiCreditsContext';
 import { theme } from '../theme';
 
 // Enregistrer les langages nécessaires
@@ -57,10 +57,6 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
   const router = useRouter();
 
   useEffect(() => {
-    installMonacoWorkersOnce();
-  }, []);
-
-  useEffect(() => {
     if (!router.isReady) return;
 
     const session = authApi.getUserSession();
@@ -86,16 +82,15 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
         <ModalsProvider>
           <Head>
             <title>DesignMyPDF</title>
-            <meta
-              name="viewport"
-              content="minimum-scale=1, initial-scale=1, width=device-width, user-scalable=no"
-            />
+            <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width" />
             <link rel="shortcut icon" href="/favicon.png" />
           </Head>
           {getLayout(
-            <DndProvider backend={HTML5Backend}>
-              <Component {...pageProps} />
-            </DndProvider>,
+            <AiCreditsProvider>
+              <DndProvider backend={HTML5Backend}>
+                <Component {...pageProps} />
+              </DndProvider>
+            </AiCreditsProvider>,
           )}
         </ModalsProvider>
       </CodeHighlightAdapterProvider>

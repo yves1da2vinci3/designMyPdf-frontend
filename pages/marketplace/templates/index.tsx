@@ -200,5 +200,8 @@ export default function MarketplaceTemplates() {
 }
 
 export const getServerSideProps: GetServerSideProps = async () => ({
-  props: {},
+  redirect: {
+    destination: '/marketplace',
+    permanent: true,
+  },
 });

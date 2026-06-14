@@ -1,5 +1,6 @@
+import Link from 'next/link';
 import { authApi } from '@/api/authApi';
-import { ActionIcon, Avatar, Box, Button, Group, Text, Tooltip } from '@mantine/core';
+import { ActionIcon, Avatar, Box, Button, Group, Text, Tooltip, Anchor } from '@mantine/core';
 import {
   IconInfoCircle,
   IconKey,
@@ -75,32 +76,31 @@ function DashboardNav({ onToggleDesktop, desktopOpened, onMobileNavigate }: Dash
     }
   };
 
-  const navigate = (label: string, link: string) => {
-    router.push(link);
-    setActive(label);
-    onMobileNavigate?.();
-  };
-
   const goNewTemplate = () => {
-    router.push('/dashboard/templates');
+    router.push('/dashboard/templates?create=1');
     onMobileNavigate?.();
   };
 
   const links = data.map((item) => {
+    const isActive = item.label === active;
     const linkEl = (
-      <Box
+      <Anchor
+        component={Link}
+        href={item.link}
         className={classes.link}
-        data-active={item.label === active || undefined}
+        data-active={isActive || undefined}
+        aria-current={isActive ? 'page' : undefined}
         key={item.label}
-        onClick={(event) => {
-          event.preventDefault();
-          navigate(item.label, item.link);
+        onClick={() => {
+          setActive(item.label);
+          onMobileNavigate?.();
         }}
         style={!desktopOpened ? { justifyContent: 'center', padding: '10px 0' } : undefined}
+        underline="never"
       >
         <item.icon className={classes.linkIcon} stroke={1.5} />
         {desktopOpened && <span>{item.label}</span>}
-      </Box>
+      </Anchor>
     );
 
     return desktopOpened ? (

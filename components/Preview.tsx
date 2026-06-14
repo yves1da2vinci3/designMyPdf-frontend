@@ -9,6 +9,8 @@ import {
   codeHighlightHeadTags,
   codeHighlightRunAndFitJs,
 } from '@/utils/codeHighlightShell';
+import { paperViewportCssPixels } from '@/utils/paperDimensions';
+import { getContentAreaWidthPx, PDF_EXPORT_RESET_CSS } from '@/utils/pdfPageLayout';
 
 interface PreviewProps {
   format?: string;
@@ -28,21 +30,11 @@ function Preview({
   const [pageCount, setPageCount] = useState(1);
   const [iframeContent, setIframeContent] = useState('');
 
-  // Define paper dimensions in mm
-  const formatToSize = {
-    a1: { width: 841, height: 1189 },
-    a2: { width: 594, height: 841 },
-    a3: { width: 420, height: 594 },
-    a4: { width: 210, height: 297 },
-    a5: { width: 148, height: 210 },
-    a6: { width: 105, height: 148 },
-  };
-
-  // Get dimensions for the selected format
   const paperSize = (() => {
-    const selectedSize = formatToSize[format as keyof typeof formatToSize] || formatToSize.a4;
-    return isLandscape ? { width: selectedSize.height, height: selectedSize.width } : selectedSize;
+    const { width, height } = paperViewportCssPixels(format, isLandscape);
+    return { width: width / (96 / 25.4), height: height / (96 / 25.4) };
   })();
+  const contentWidthPx = getContentAreaWidthPx(format, isLandscape);
 
   useEffect(() => {
     let bodyHtml = htmlContent;
@@ -181,11 +173,14 @@ function Preview({
               margin: 0;
               font-family: ${fonts[0] || 'system-ui'}, sans-serif;
               background-color: #f0f0f0;
-              padding: 20px;
+              padding: 0;
+              overflow-x: hidden;
             }
+            ${PDF_EXPORT_RESET_CSS}
             .page {
               width: ${paperSize.width}mm;
               min-height: ${paperSize.height}mm;
+              max-height: ${paperSize.height}mm;
               margin: 10px auto;
               background-color: white;
               box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -194,10 +189,15 @@ function Preview({
               flex-direction: column;
               box-sizing: border-box;
               page-break-after: always;
+              overflow: hidden;
             }
             .page-content {
               padding: 10mm;
               flex: 1;
+              width: ${contentWidthPx}px;
+              max-width: 100%;
+              box-sizing: border-box;
+              overflow: hidden;
             }
             .page-number {
               position: absolute;
@@ -243,7 +243,16 @@ function Preview({
       </html>
     `;
     setIframeContent(content);
-  }, [htmlContent, data, fonts, format, isLandscape, paperSize.width, paperSize.height]);
+  }, [
+    htmlContent,
+    data,
+    fonts,
+    format,
+    isLandscape,
+    paperSize.width,
+    paperSize.height,
+    contentWidthPx,
+  ]);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -269,8 +278,9 @@ function Preview({
           border: 'none',
           backgroundColor: '#f0f0f0',
         }}
-        title="Template Preview"
+        title="Aperçu du template"
         sandbox="allow-scripts allow-same-origin"
+        scrolling="no"
       />
       {pageCount > 1 && (
         <Text

@@ -479,6 +479,8 @@ function Preview({
         margin: 0;
         padding: 0;
         width: 100%;
+        min-height: ${getContentAreaHeightPx(format, isLandscape, pdfContentPadding)}px;
+        overflow-x: hidden;
         background: ${pageBg};
         position: relative;
       }
@@ -675,7 +677,7 @@ function Preview({
       window.removeEventListener('resize', updatePaperSize);
       ro.disconnect();
     };
-  }, [a4AspectRatio, getSize, isFullscreen]);
+  }, [a4AspectRatio, isLandscape, isFullscreen, format]);
 
   // Toggle page delimiters using postMessage
   const togglePageDelimiters = (value: boolean) => {
@@ -797,15 +799,17 @@ function Preview({
           </div>
         </div>
       ) : (
-        <div ref={paperRef} className="shadow-lg bg-white rounded overflow-visible relative">
+        <div ref={paperRef} className="shadow-lg bg-white rounded overflow-hidden relative">
           <iframe
             ref={iframeRef}
             title="Preview"
             srcDoc={renderedContent}
+            scrolling="no"
             style={{
               width: `${getSize().width}mm`,
               height: `${getSize().height}mm`,
               border: 'none',
+              overflow: 'hidden',
             }}
             sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-pointer-lock allow-top-navigation allow-modals"
           />
